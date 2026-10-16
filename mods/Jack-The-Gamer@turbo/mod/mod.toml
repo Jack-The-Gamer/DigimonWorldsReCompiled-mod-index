@@ -1,7 +1,7 @@
 [mod]
 id = "turbo"
 name = "Turbo"
-version = "1.0.0"
+version = "1.0.1"
 author = "Jack-The-Gamer"
 description = "Hold the turbo button (R2), then hold one or two other buttons: they are pressed and released rapidly for as long as you hold them. The game never sees the turbo button."
 game = "any"
@@ -21,7 +21,7 @@ name = "Turbo button"
 description = "Hold this, then the buttons to turbo. The game never sees it."
 type = "choice"
 default = "R2"
-choices = ["R2", "L2", "R1", "L1", "Select"]
+choices = ["R2", "L2"]
 
 [[option]]
 id = "rate"

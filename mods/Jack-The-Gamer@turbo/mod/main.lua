@@ -3,7 +3,9 @@
 -- keep holding them, even after you let go of the turbo button. The game
 -- never sees the turbo button itself.
 
-local trigger = dwrc.buttons[dwrc.options.hold] or dwrc.buttons.R2
+-- R2 or L2 (a choice saved by an older version, like R1, falls back to R2).
+local hold = dwrc.options.hold == "L2" and "L2" or "R2"
+local trigger = dwrc.buttons[hold]
 local rate = math.max(2, math.floor(dwrc.options.rate or 4))
 local MAX = 2   -- buttons on turbo at once
 local GRACE = 4 -- frames: a button pressed just before the turbo button still joins
@@ -62,4 +64,4 @@ dwrc.on_input(function(b)
   return b
 end)
 
-dwrc.log("Turbo ready: hold " .. dwrc.options.hold .. ", then the buttons to turbo")
+dwrc.log("Turbo ready: hold " .. hold .. ", then the buttons to turbo")

@@ -7,11 +7,11 @@ Hold **R2** (**E** on the keyboard), then hold one or two other buttons: they ar
 - Press the button and R2 at the same moment and it still works.
 - A third button pressed meanwhile works normally.
 
-The game never sees the turbo button itself, so whatever R2 normally does is unavailable while the mod is on: pick another turbo button in the options if you need R2.
+The game never sees the turbo button itself, so whatever R2 normally does is unavailable while the mod is on: switch the turbo button to L2 (**Q** on the keyboard) in the options if you need R2.
 
 **Options**
 
-- **Turbo button**: R2 (default), L2, R1, L1 or Select
+- **Turbo button**: R2 (default) or L2
 - **Frames per press**: 4 by default (15 presses a second); 2 is the fastest, 30 the slowest
 
 Works in Digimon World, Digimon World 2 and Digimon World 3. Replaces **Turbo Text**: uninstall that one if you have it.
