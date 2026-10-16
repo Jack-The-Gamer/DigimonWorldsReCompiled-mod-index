@@ -1,6 +1,6 @@
 # Digimon Worlds Re:Compiled — mod index
 
-The community list of mods for [Digimon Worlds Re:Compiled](https://github.com/DigimonWorldsReCompiled/DigimonWorldsReCompiled).
+The community list of mods for [Digimon Worlds Re:Compiled](https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled).
 Every Re:Compiled launcher reads this index in **Mods → Find mods**; players
 install a listed mod with one click and are offered its updates.
 
@@ -10,7 +10,7 @@ where it is and what it needs. The design follows
 [Gen1Recomp's mod index](https://github.com/bryanthaboi/gen1recomp-mod-index).
 
 * **Add your mod:** open a pull request adding one folder to `mods/` (below).
-* **Read the index:** `https://digimonworldsrecompiled.github.io/mod-index/data/index.json`,
+* **Read the index:** `https://jack-the-gamer.github.io/DigimonWorldsReCompiled-mod-index/data/index.json`,
   rebuilt on every push and nightly.
 
 ## Layout
@@ -115,11 +115,11 @@ plain HTML listing). The **Build and publish** workflow runs it on every push to
 
 ### Setting up the repository (maintainers, once)
 
-1. Create the repository as `DigimonWorldsReCompiled/mod-index` and push this folder to `main`.
+1. Create the repository as `Jack-The-Gamer/DigimonWorldsReCompiled-mod-index` (public) and push this folder to `main`; GitHub Desktop's **Publish repository** does both.
 2. Run **Actions → Build and publish the index** once (or push); it creates the `gh-pages` branch.
 3. **Settings → Pages → Build and deployment:** *Deploy from a branch*, branch `gh-pages`, folder `/ (root)`.
 
-The launcher reads `https://digimonworldsrecompiled.github.io/mod-index/data/index.json`,
+The launcher reads `https://jack-the-gamer.github.io/DigimonWorldsReCompiled-mod-index/data/index.json`,
 and falls back to the `gh-pages` branch on raw.githubusercontent.com while Pages deploys.
 
 ## Rules
