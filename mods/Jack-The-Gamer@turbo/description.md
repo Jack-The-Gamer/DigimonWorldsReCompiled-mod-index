@@ -1,6 +1,6 @@
 # Turbo
 
-Hold **R2**, then hold one or two other buttons: they are pressed and released for you, rapidly, for as long as you keep holding them. Let go of R2 once turbo has started if you like; a button stays on turbo until you release it.
+Hold **R2** (**E** on the keyboard), then hold one or two other buttons: they are pressed and released for you, rapidly, for as long as you keep holding them. Let go of R2 once turbo has started if you like; a button stays on turbo until you release it.
 
 - Race through dialogue with **R2 + Cross**.
 - Mash through menus or training with any button, or two at once (**R2 + Cross + Circle**).
