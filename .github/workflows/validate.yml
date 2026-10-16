@@ -1,0 +1,25 @@
+name: Validate
+
+on:
+  pull_request:
+  push:
+    branches-ignore: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/build-index
+      - name: Check every entry
+        run: cargo run --quiet --release --manifest-path tools/build-index/Cargo.toml -- validate --examples
+      - name: Resolve releases (does each listed mod have an installable release?)
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cargo run --quiet --release --manifest-path tools/build-index/Cargo.toml -- build --releases --out "$RUNNER_TEMP/site"

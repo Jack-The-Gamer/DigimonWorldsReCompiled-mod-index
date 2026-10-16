@@ -1,0 +1,48 @@
+name: Build and publish the index
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Nightly: re-read every listed mod's GitHub Releases, so new versions
+    # appear in the launcher without anyone opening a pull request.
+    - cron: '23 4 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch the last published copy (download history lives there)
+        run: git clone --depth 1 --branch gh-pages "https://github.com/${GITHUB_REPOSITORY}.git" previous || mkdir -p previous/data
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: tools/build-index
+      - name: Build the feed
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: cargo run --quiet --release --manifest-path tools/build-index/Cargo.toml -- build --releases --previous previous/data/history.json --out site
+      - name: Summary
+        run: |
+          {
+            echo '### data/index.json'
+            jq -r '"- \(.count) mod(s), generated \(.generated_at)", (.mods[] | "- `\(.folder)` \(.latest.version // .version) (\(.update_check))")' site/data/index.json
+          } >> "$GITHUB_STEP_SUMMARY"
+      - name: Publish to the gh-pages branch
+        env:
+          TOKEN: ${{ github.token }}
+        run: |
+          cd site
+          git init -q -b gh-pages
+          git add -A
+          git -c user.name="github-actions[bot]" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -q -m "Publish index (${GITHUB_SHA::7})"
+          git push -q --force "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" gh-pages

@@ -1,0 +1,23 @@
+[package]
+name = "dwrc-build-index"
+description = "Validates the Digimon Worlds Re:Compiled mod index and builds its published feed"
+version = "1.0.0"
+edition = "2021"
+license = "MIT OR Apache-2.0"
+publish = false
+
+# Its own workspace: this folder is a separate repository.
+[workspace]
+
+[[bin]]
+name = "build-index"
+path = "src/main.rs"
+
+[dependencies]
+anyhow = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+semver = "1"
+ureq = { version = "3.4", default-features = false, features = ["rustls", "gzip"] }
+
+[profile.release]
+opt-level = 2
