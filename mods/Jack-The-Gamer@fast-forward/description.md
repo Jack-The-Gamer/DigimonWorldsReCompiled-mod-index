@@ -14,7 +14,7 @@ A **2x** or **3x** badge in the top-right corner shows when you're sped up.
 
 **Notes**
 
-- You can still use Select and Start on their own. The mod holds a lone press back for a moment (about 1/15 of a second) to see whether the other button follows, then passes it to the game.
+- You can still use Select and Start on their own. Press them within about 1/8 of a second of each other and it counts as together. A lone press is held back for that long to see whether the other button follows, then goes to the game.
 - With L1, L2, R1 or R2 held, Select + Start goes to the game as usual.
 - Movies are sped up along with their sound.
 - If your computer can't keep up at 3x, the game runs as fast as it can and the sound may crackle. 2x is easier on slower machines.

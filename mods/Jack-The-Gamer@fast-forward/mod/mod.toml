@@ -1,7 +1,7 @@
 [mod]
 id = "fast-forward"
 name = "Fast-Forward"
-version = "1.0.0"
+version = "1.0.1"
 author = "Jack-The-Gamer"
 description = "Press Select and Start together to play at double speed, again for triple speed, and a third time for normal speed. The music keeps playing at its normal speed."
 game = "any"

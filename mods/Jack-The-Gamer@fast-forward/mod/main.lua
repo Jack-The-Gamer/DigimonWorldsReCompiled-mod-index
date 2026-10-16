@@ -20,7 +20,7 @@ local BOTH = SELECT | START
 -- With a shoulder button held, Select + Start goes to the game untouched
 -- (L1 + L2 + R1 + R2 + Select + Start is a common reset combination).
 local SHOULDERS = dwrc.buttons.L1 | dwrc.buttons.L2 | dwrc.buttons.R1 | dwrc.buttons.R2
-local HOLD = 4          -- frames a lone Select or Start waits for the other
+local HOLD = 8          -- frames a lone Select or Start waits for the other (~1/8 s)
 local MAX_SPEED = 3
 local sped_up_effects = dwrc.options.effects == "Sped up"
 
