@@ -54,7 +54,8 @@ as a **GitHub Release** whose tag is the version (`v1.2.0`, or
 `<id>-v1.2.0` if one repository holds several mods), with the mod attached as
 **`<id>-<version>.zip`** containing an `<id>/` folder. `dwrc-cli mod pack`
 builds exactly that file, and the Re:Compiled repository has a ready-made
-workflow (`docs/templates/release-mod.yml`) that does it on every tag.
+workflow (`docs/templates/release-mod.yml`) that publishes a release whenever the
+`version` in `mod.toml` changes.
 
 The launcher's Mods page reads those releases to offer **Update** and
 **Versions** (install any release, including rolling back). This index reads
