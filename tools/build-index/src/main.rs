@@ -2,9 +2,17 @@
 //! the feed the launcher's **Find mods** tab reads.
 //!
 //! ```text
-//! build-index validate [--examples] [mods/<Author>@<id> ...]
+//! build-index validate [--examples] [--repo owner/repo] [mods/<Author>@<id> ...]
 //! build-index build [--releases] [--previous <history.json>] [--out site]
+//! build-index hosted [--repo owner/repo]
 //! ```
+//!
+//! An entry either points at the mod's own repository, or **hosts** the mod
+//! here: `mods/<Author>@<id>/mod/` is then the mod itself (`mod.toml` at its
+//! top). A hosted mod is released from this repository as `<id>-v<version>`
+//! with `<id>-<version>.zip` (see `.github/workflows/publish.yml`; `hosted`
+//! lists what to release), and every meta.json field its mod.toml can answer
+//! may be left out of meta.json.
 //!
 //! `build` writes `site/data/index.json` (the feed), copies each entry's
 //! description and thumbnail next to it, and renders `site/index.html`.
@@ -13,8 +21,10 @@
 //! the newest release and download counts, so authors never have to open a
 //! pull request just to bump a version.
 //!
-//! Environment: `GITHUB_TOKEN` (optional; raises GitHub's rate limit) and
-//! `GITHUB_API_URL` (default `https://api.github.com`).
+//! Environment: `GITHUB_TOKEN` (optional; raises GitHub's rate limit),
+//! `GITHUB_API_URL` (default `https://api.github.com`) and
+//! `GITHUB_REPOSITORY` (this index's `owner/repo`; otherwise `--repo`, else
+//! the `origin` remote).
 
 use anyhow::{bail, Context, Result};
 use serde_json::{json, Map, Value};
@@ -25,7 +35,7 @@ const SCHEMA_VERSION: u64 = 1;
 const CATEGORIES: &[&str] =
     &["GAMEPLAY", "CONTENT", "BALANCE", "ART", "AUDIO", "UI", "QOL", "TRANSLATION", "TOTAL_CONVERSION", "LIBRARY", "TOOL", "OTHER"];
 const GAMES: &[&str] = &["dw1", "dw2", "dw3", "any"];
-const FILES: &[&str] = &["meta.json", "description.md", "thumbnail.png"];
+const FILES: &[&str] = &["meta.json", "description.md", "thumbnail.png", "mod"];
 const FIELDS: &[&str] = &[
     "id",
     "title",
@@ -51,6 +61,18 @@ struct Entry {
     folder: String,
     dir: PathBuf,
     meta: Map<String, Value>,
+    /// Set when the mod is hosted in this repository (`mod/`).
+    hosted: Option<Hosted>,
+    /// Problems found while reading the entry.
+    problems: Vec<String>,
+}
+
+/// A mod kept in the index itself, read from `mod/mod.toml`.
+struct Hosted {
+    id: String,
+    /// Normalised (`1.2.0`): the release is `<id>-v<version>`.
+    version: String,
+    name: String,
 }
 
 impl Entry {
@@ -103,25 +125,148 @@ fn http_url(s: &str) -> bool {
 // Loading and validation
 // ---------------------------------------------------------------------------
 
-fn load_dir(dir: &Path) -> Result<Vec<Entry>> {
+fn load_dir(dir: &Path, repo: Option<&str>) -> Result<Vec<Entry>> {
     let mut out = Vec::new();
     let Ok(rd) = std::fs::read_dir(dir) else { return Ok(out) };
     let mut dirs: Vec<PathBuf> = rd.flatten().map(|e| e.path()).filter(|p| p.is_dir()).collect();
     dirs.sort();
     for d in dirs {
-        out.push(load_entry(&d)?);
+        out.push(load_entry(&d, repo)?);
     }
     Ok(out)
 }
 
-fn load_entry(d: &Path) -> Result<Entry> {
+fn load_entry(d: &Path, repo: Option<&str>) -> Result<Entry> {
     let folder = d.file_name().context("entry folder")?.to_string_lossy().to_string();
-    let text = std::fs::read_to_string(d.join("meta.json")).unwrap_or_default();
-    let meta = match serde_json::from_str::<Value>(&text) {
-        Ok(Value::Object(m)) => m,
-        _ => Map::new(),
+    let mut problems = Vec::new();
+    let meta = match std::fs::read_to_string(d.join("meta.json")) {
+        Ok(text) => match serde_json::from_str::<Value>(&text) {
+            Ok(Value::Object(m)) => m,
+            Ok(_) => {
+                problems.push("meta.json must be a JSON object".into());
+                Map::new()
+            }
+            Err(e) => {
+                problems.push(format!("meta.json is not valid JSON ({e})"));
+                Map::new()
+            }
+        },
+        Err(_) => Map::new(),
     };
-    Ok(Entry { folder, dir: d.to_path_buf(), meta })
+    let mut e = Entry { folder, dir: d.to_path_buf(), meta, hosted: None, problems };
+    if d.join("mod").is_dir() {
+        load_hosted(&mut e, repo);
+    } else if !d.join("meta.json").exists() {
+        e.problems.push("meta.json is required (or a mod/ folder holding the mod itself)".into());
+    }
+    Ok(e)
+}
+
+/// The GitHub repository this index is (`owner/repo`).
+fn this_repo(root: &Path, given: Option<String>) -> Option<String> {
+    if let Some(r) = given.or_else(|| std::env::var("GITHUB_REPOSITORY").ok()).filter(|r| valid_repo(r)) {
+        return Some(r);
+    }
+    let out = std::process::Command::new("git").arg("-C").arg(root).args(["config", "--get", "remote.origin.url"]).output().ok()?;
+    let url = String::from_utf8_lossy(&out.stdout).trim().to_string();
+    let rest = url.split_once("github.com").map(|(_, r)| r.trim_start_matches([':', '/']))?;
+    let r = rest.trim_end_matches('/').trim_end_matches(".git").to_string();
+    valid_repo(&r).then_some(r)
+}
+
+fn toml_str(t: &toml::Table, k: &str) -> Option<String> {
+    t.get(k).and_then(|v| v.as_str()).map(str::to_string)
+}
+
+/// A string or a list of strings.
+fn toml_list(t: &toml::Table, k: &str) -> Option<Vec<String>> {
+    match t.get(k)? {
+        toml::Value::String(s) => Some(vec![s.clone()]),
+        toml::Value::Array(a) => Some(a.iter().filter_map(|x| x.as_str().map(str::to_string)).collect()),
+        _ => None,
+    }
+}
+
+/// `text` cut to at most `max` characters at a word boundary.
+fn summarize(text: &str, max: usize) -> String {
+    let t = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    if t.chars().count() <= max {
+        return t;
+    }
+    let cut: String = t.chars().take(max - 1).collect();
+    let cut = cut.rsplit_once(' ').map(|(a, _)| a).unwrap_or(&cut);
+    format!("{}…", cut.trim_end_matches([',', ';', ':', '.']))
+}
+
+fn fill(meta: &mut Map<String, Value>, k: &str, v: Option<Value>) {
+    if let Some(v) = v {
+        meta.entry(k.to_string()).or_insert(v);
+    }
+}
+
+/// Reads a hosted mod's `mod/mod.toml` and fills in every meta.json field
+/// it answers that meta.json leaves out, so the mod is described once.
+fn load_hosted(e: &mut Entry, repo: Option<&str>) {
+    let text = match std::fs::read_to_string(e.dir.join("mod").join("mod.toml")) {
+        Ok(t) => t,
+        Err(_) => return e.problems.push("mod/ must hold the mod itself, with its mod.toml at the top".into()),
+    };
+    let table: toml::Table = match text.parse() {
+        Ok(t) => t,
+        Err(err) => return e.problems.push(format!("mod/mod.toml: {}", err.message().trim())),
+    };
+    let Some(m) = table.get("mod").and_then(|v| v.as_table()) else {
+        return e.problems.push("mod/mod.toml has no [mod] section".into());
+    };
+    let (Some(id), Some(version), Some(name)) = (toml_str(m, "id"), toml_str(m, "version"), toml_str(m, "name")) else {
+        return e.problems.push("mod/mod.toml needs id, name and version in its [mod] section".into());
+    };
+    let Some(v) = parse_version(&version) else {
+        return e.problems.push(format!("mod/mod.toml: version '{version}' is not a version number like 1.2.0"));
+    };
+    if let Some(mid) = e.s("id").filter(|x| *x != id) {
+        e.problems.push(format!("meta.json says id '{mid}' but mod/mod.toml says '{id}'"));
+    }
+    if let Some(mv) = e.s("version") {
+        if parse_version(mv).as_ref() != Some(&v) {
+            e.problems.push(format!("meta.json says version {mv} but mod/mod.toml says {version}: leave version out of meta.json, a hosted mod's comes from its mod.toml"));
+        }
+    }
+    let meta = &mut e.meta;
+    meta.insert("version".into(), json!(v.to_string()));
+    fill(meta, "id", Some(json!(id)));
+    fill(meta, "title", Some(json!(name)));
+    fill(meta, "author", toml_str(m, "author").map(Value::from));
+    fill(meta, "summary", toml_str(m, "description").filter(|d| !d.trim().is_empty()).map(|d| json!(summarize(&d, 200))));
+    fill(meta, "categories", toml_list(m, "categories").map(Value::from));
+    fill(meta, "tags", toml_list(m, "tags").map(Value::from));
+    fill(meta, "games", toml_list(m, "games").or_else(|| toml_list(m, "game")).map(Value::from));
+    fill(meta, "license", toml_str(m, "license").map(Value::from));
+    fill(meta, "engine", toml_str(m, "engine").map(Value::from));
+    fill(meta, "dependencies", toml_list(m, "dependencies").map(Value::from));
+    fill(meta, "conflicts", toml_list(m, "conflicts").map(Value::from));
+    fill(meta, "experimental", m.get("experimental").and_then(|v| v.as_bool()).map(Value::from));
+    match repo {
+        Some(repo) => {
+            if let Some(g) = meta.get("github").and_then(Value::as_str).filter(|g| !g.eq_ignore_ascii_case(repo)) {
+                e.problems.push(format!("a mod hosted here is released from {repo}; meta.json's github ('{g}') must be left out"));
+            }
+            meta.insert("github".into(), json!(repo));
+            fill(meta, "repo", Some(json!(format!("https://github.com/{repo}/tree/HEAD/mods/{}", e.folder))));
+            match toml_str(m, "github") {
+                Some(g) if g.eq_ignore_ascii_case(repo) => {}
+                Some(g) => e.problems.push(format!("mod/mod.toml must say github = \"{repo}\" (it says \"{g}\"), so players are offered its updates")),
+                None => e.problems.push(format!("add github = \"{repo}\" to mod/mod.toml, so players are offered its updates")),
+            }
+        }
+        None => e.problems.push("can't tell which GitHub repository this index is: pass --repo owner/repo".into()),
+    }
+    if let Some(script) = toml_str(m, "script") {
+        if !e.dir.join("mod").join(&script).is_file() {
+            e.problems.push(format!("mod/mod.toml names script '{script}', which is not in mod/"));
+        }
+    }
+    e.hosted = Some(Hosted { id, version: v.to_string(), name });
 }
 
 fn png_size(bytes: &[u8]) -> Option<(u32, u32)> {
@@ -134,11 +279,13 @@ fn png_size(bytes: &[u8]) -> Option<(u32, u32)> {
 }
 
 fn check(e: &Entry) -> (Vec<String>, Vec<String>) {
-    let mut err = Vec::new();
+    let mut err = e.problems.clone();
     let mut warn = Vec::new();
     let m = &e.meta;
     if m.is_empty() {
-        err.push("meta.json is missing or is not a JSON object".into());
+        if err.is_empty() {
+            err.push("meta.json is missing or is not a JSON object".into());
+        }
         return (err, warn);
     }
     // Folder: <Author>@<id>, id matching meta.json.
@@ -158,7 +305,9 @@ fn check(e: &Entry) -> (Vec<String>, Vec<String>) {
         for f in rd.flatten() {
             let n = f.file_name().to_string_lossy().to_string();
             if !FILES.contains(&n.as_str()) {
-                err.push(format!("'{n}' is not allowed here (only {})", FILES.join(", ")));
+                err.push(format!("'{n}' is not allowed here (only meta.json, description.md, thumbnail.png and a mod/ folder)"));
+            } else if (n == "mod") != f.path().is_dir() {
+                err.push(format!("'{n}' must be {}", if n == "mod" { "a folder" } else { "a file" }));
             }
         }
     }
@@ -292,7 +441,22 @@ fn check(e: &Entry) -> (Vec<String>, Vec<String>) {
     (err, warn)
 }
 
-fn validate(entries: &[Entry]) -> usize {
+/// Whether mod `a`'s release tags could be read as releases of mod `b`
+/// when both are released from one repository. Read for mod `pack`, the
+/// tag `pack-2-v1.0.0` (mod `pack-2`) strips to `2-v1.0.0`, which parses
+/// as version 2.0.0-v1.0.0; so there an id may not be another id followed
+/// by `-<number>` or `-v<number>`.
+fn tags_collide(a: &str, b: &str) -> bool {
+    let Some(rest) = a.strip_prefix(b) else { return false };
+    let mut c = rest.chars();
+    matches!(c.next(), Some('-' | '@' | '_')) && {
+        let rest: String = c.collect();
+        let rest = rest.strip_prefix(['v', 'V']).unwrap_or(&rest);
+        rest.starts_with(|ch: char| ch.is_ascii_digit())
+    }
+}
+
+fn validate(entries: &[Entry], out: &mut dyn std::io::Write) -> usize {
     let mut errors = 0;
     let mut ids: BTreeMap<String, String> = BTreeMap::new();
     for e in entries {
@@ -302,19 +466,22 @@ fn validate(entries: &[Entry]) -> usize {
             if let Some(other) = ids.insert(id.to_string(), e.folder.clone()) {
                 err.push(format!("id '{id}' is already listed by {other}"));
             }
+            for o in entries {
+                let same_repo = matches!((e.s("github"), o.s("github")), (Some(x), Some(y)) if x.eq_ignore_ascii_case(y));
+                if let Some(oid) = o.s("id").filter(|oid| same_repo && *oid != id && tags_collide(id, oid)) {
+                    err.push(format!("id '{id}' would be mistaken for a version of '{oid}' in the release tags they share ({}): choose another id", e.s("github").unwrap_or("")));
+                }
+            }
         }
-        if err.is_empty() {
-            println!("ok    {}", e.folder);
-        } else {
-            println!("FAIL  {}", e.folder);
-        }
+        let _ = writeln!(out, "{}  {}{}", if err.is_empty() { "ok  " } else { "FAIL" }, e.folder, if e.hosted.is_some() { "  (hosted here)" } else { "" });
         for w in &warn {
-            println!("        note: {w}");
+            let _ = writeln!(out, "        note: {w}");
         }
         for x in &err {
-            println!("        error: {x}");
+            let _ = writeln!(out, "        error: {x}");
             if std::env::var("GITHUB_ACTIONS").is_ok() {
-                println!("::error file={}/meta.json::{x}", e.dir.display());
+                let file = if e.hosted.is_some() && x.contains("mod.toml") { "mod/mod.toml" } else { "meta.json" };
+                let _ = writeln!(out, "::error file={}/{file}::{x}", e.dir.display());
             }
         }
         errors += err.len();
@@ -565,8 +732,8 @@ a {{ color:#409cff; }} p {{ margin:4px 0; }} .meta, footer {{ color:var(--muted)
 code {{ background:#1c1f26; padding:1px 5px; border-radius:4px; }}
 </style></head><body><main>
 <h1>Digimon Worlds <span>Re:Compiled</span> mods</h1>
-<p>Every mod listed here can be installed from the <b>Mods → Find mods</b> tab in Re:Compiled, which reads this index automatically. Mods live in their authors' own repositories; this index only says where they are. Listing is not vetting.</p>
-<p>Want your mod here? Open a pull request adding <code>mods/&lt;You&gt;@&lt;mod-id&gt;/meta.json</code> and <code>description.md</code> to this repository (see its README).</p>
+<p>Every mod listed here can be installed from the <b>Mods → Find mods</b> tab in Re:Compiled, which reads this index automatically. A mod lives either in its author's own repository or in this one. Listing is not vetting.</p>
+<p>Want your mod here? Open a pull request adding <code>mods/&lt;You&gt;@&lt;mod-id&gt;/</code> to this repository: a <code>meta.json</code> pointing at your repository, or the mod itself in a <code>mod/</code> folder (see the README).</p>
 {cards}
 <footer><p>Feed: <a href="data/index.json">data/index.json</a> · generated {generated}</p></footer>
 </main></body></html>
@@ -574,9 +741,9 @@ code {{ background:#1c1f26; padding:1px 5px; border-radius:4px; }}
     )
 }
 
-fn build(root: &Path, out: &Path, releases: bool, previous: Option<&Path>) -> Result<()> {
-    let entries = load_dir(&root.join("mods"))?;
-    if validate(&entries) > 0 {
+fn build(root: &Path, repo: Option<&str>, out: &Path, releases: bool, previous: Option<&Path>) -> Result<()> {
+    let entries = load_dir(&root.join("mods"), repo)?;
+    if validate(&entries, &mut std::io::stdout()) > 0 {
         bail!("fix the errors above first");
     }
     let gh = Github::new();
@@ -598,6 +765,9 @@ fn build(root: &Path, out: &Path, releases: bool, previous: Option<&Path>) -> Re
         v.insert("folder".into(), json!(e.folder));
         for (k, x) in &e.meta {
             v.insert(k.clone(), x.clone());
+        }
+        if e.hosted.is_some() {
+            v.insert("hosted".into(), json!(true));
         }
         std::fs::copy(e.dir.join("description.md"), dest.join("description.md"))?;
         v.insert("description_url".into(), json!(format!("data/mods/{}/description.md", e.folder)));
@@ -655,21 +825,23 @@ fn main() -> Result<()> {
     let flag = |f: &str| args.iter().any(|a| a == f);
     let opt = |f: &str| args.iter().position(|a| a == f).and_then(|i| args.get(i + 1)).cloned();
     let root = PathBuf::from(opt("--root").unwrap_or_else(|| ".".into()));
+    let repo = this_repo(&root, opt("--repo"));
     match args.first().map(String::as_str) {
         Some("validate") => {
-            let named: Vec<&String> = args[1..].iter().filter(|a| !a.starts_with("--")).filter(|a| Some(*a) != opt("--root").as_ref()).collect();
+            let values = [opt("--root"), opt("--repo")];
+            let named: Vec<&String> = args[1..].iter().filter(|a| !a.starts_with("--")).filter(|a| !values.iter().any(|v| v.as_ref() == Some(*a))).collect();
             let mut entries = Vec::new();
             if named.is_empty() {
-                entries.extend(load_dir(&root.join("mods"))?);
+                entries.extend(load_dir(&root.join("mods"), repo.as_deref())?);
                 if flag("--examples") {
-                    entries.extend(load_dir(&root.join("examples"))?);
+                    entries.extend(load_dir(&root.join("examples"), repo.as_deref())?);
                 }
             } else {
                 for n in named {
-                    entries.push(load_entry(Path::new(n))?);
+                    entries.push(load_entry(Path::new(n), repo.as_deref())?);
                 }
             }
-            let n = validate(&entries);
+            let n = validate(&entries, &mut std::io::stdout());
             if n > 0 {
                 bail!("{n} error(s)");
             }
@@ -678,10 +850,25 @@ fn main() -> Result<()> {
         }
         Some("build") => {
             let out = PathBuf::from(opt("--out").unwrap_or_else(|| "site".into()));
-            build(&root, &out, flag("--releases"), opt("--previous").as_deref().map(Path::new))
+            build(&root, repo.as_deref(), &out, flag("--releases"), opt("--previous").as_deref().map(Path::new))
+        }
+        // The mods hosted here, one per line: folder, id, version, name
+        // (tab-separated), for the release step. Checks go to stderr.
+        Some("hosted") => {
+            let entries = load_dir(&root.join("mods"), repo.as_deref())?;
+            let n = validate(&entries, &mut std::io::stderr());
+            if n > 0 {
+                bail!("{n} error(s)");
+            }
+            for e in &entries {
+                if let Some(h) = &e.hosted {
+                    println!("{}\t{}\t{}\t{}", e.folder, h.id, h.version, h.name.replace(['\t', '\n'], " "));
+                }
+            }
+            Ok(())
         }
         _ => {
-            eprintln!("usage:\n  build-index validate [--examples] [mods/<Author>@<id> ...]\n  build-index build [--releases] [--previous <history.json>] [--out site]");
+            eprintln!("usage:\n  build-index validate [--examples] [--repo owner/repo] [mods/<Author>@<id> ...]\n  build-index build [--releases] [--previous <history.json>] [--out site]\n  build-index hosted [--repo owner/repo]");
             std::process::exit(2);
         }
     }
@@ -708,6 +895,54 @@ mod tests {
         let assets = vec![json!({"name":"x.zip","browser_download_url":"u1"}), json!({"name":"cool-1.0.0.zip","browser_download_url":"u2"})];
         assert_eq!(pick_zip(&assets, "cool", "1.0.0").unwrap()["browser_download_url"], "u2");
         assert!(valid_repo("a-b/c.d") && !valid_repo("a/b/c") && !valid_repo("../x"));
+    }
+
+    #[test]
+    fn hosted_entries() {
+        let root = std::env::temp_dir().join(format!("build-index-test-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&root);
+        let d = root.join("mods").join("Me@cool");
+        std::fs::create_dir_all(d.join("mod")).unwrap();
+        std::fs::write(d.join("description.md"), "# Cool\n").unwrap();
+        let toml = |github: &str| {
+            format!(
+                "[mod]\nid = \"cool\"\nname = \"Cool Mod\"\nversion = \"1.2\"\nauthor = \"Me\"\ndescription = \"Does cool things.\"\ngame = \"dw1\"\ncategories = [\"QOL\"]\nscript = \"main.lua\"\n{github}"
+            )
+        };
+        std::fs::write(d.join("mod/main.lua"), "").unwrap();
+        std::fs::write(d.join("mod/mod.toml"), toml("github = \"Me/index\"\n")).unwrap();
+        // Everything comes from mod.toml: no meta.json needed.
+        let e = load_entry(&d, Some("Me/index")).unwrap();
+        let (err, _) = check(&e);
+        assert!(err.is_empty(), "{err:?}");
+        assert_eq!(e.s("version"), Some("1.2.0"));
+        assert_eq!(e.s("title"), Some("Cool Mod"));
+        assert_eq!(e.s("github"), Some("Me/index"));
+        assert_eq!(e.s("repo"), Some("https://github.com/Me/index/tree/HEAD/mods/Me@cool"));
+        assert_eq!(e.meta["games"], json!(["dw1"]));
+        assert_eq!(e.hosted.as_ref().map(|h| h.version.as_str()), Some("1.2.0"));
+        // meta.json may add to it, but not contradict it.
+        std::fs::write(d.join("meta.json"), r#"{"summary":"Short.","version":"1.1.0"}"#).unwrap();
+        let e = load_entry(&d, Some("Me/index")).unwrap();
+        assert_eq!(e.s("summary"), Some("Short."));
+        assert!(check(&e).0.iter().any(|x| x.contains("leave version out")));
+        std::fs::remove_file(d.join("meta.json")).unwrap();
+        // mod.toml must point update checks here.
+        std::fs::write(d.join("mod/mod.toml"), toml("")).unwrap();
+        assert!(check(&load_entry(&d, Some("Me/index")).unwrap()).0.iter().any(|x| x.contains("add github = \"Me/index\"")));
+        std::fs::write(d.join("mod/mod.toml"), toml("github = \"Me/index\"\n")).unwrap();
+        // Stray files are refused.
+        std::fs::write(d.join("notes.txt"), "").unwrap();
+        assert!(check(&load_entry(&d, Some("Me/index")).unwrap()).0.iter().any(|x| x.contains("notes.txt")));
+        let _ = std::fs::remove_dir_all(&root);
+    }
+
+    #[test]
+    fn shared_tags() {
+        assert!(tags_collide("pack-2", "pack") && tags_collide("pack-v3", "pack") && tags_collide("pack_2", "pack"));
+        assert!(!tags_collide("pack-extra", "pack") && !tags_collide("packer", "pack") && !tags_collide("pack", "pack-2"));
+        assert_eq!(summarize("one two three", 9), "one two…");
+        assert_eq!(summarize("short", 200), "short");
     }
 
     #[test]

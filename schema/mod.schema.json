@@ -2,11 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://jack-the-gamer.github.io/DigimonWorldsReCompiled-mod-index/schema/mod.schema.json",
   "title": "Digimon Worlds Re:Compiled mod index entry (meta.json)",
-  "description": "Checked by tools/build-index (the source of truth); this schema is for editors.",
+  "description": "Checked by tools/build-index (the source of truth); this schema is for editors. A listing that points at the mod's own repository needs id, title, author, version, categories, games, repo and github (or downloadURL). For a mod hosted in the index (a mod/ folder beside meta.json) meta.json is optional and every field comes from its mod.toml, so nothing is required here.",
   "type": "object",
   "additionalProperties": false,
-  "required": ["id", "title", "author", "version", "categories", "games", "repo"],
-  "anyOf": [{ "required": ["github"] }, { "required": ["downloadURL"] }],
   "properties": {
     "id": { "type": "string", "pattern": "^[A-Za-z0-9_-]{1,64}$", "description": "The mod's id, exactly as in its mod.toml." },
     "title": { "type": "string", "minLength": 1, "maxLength": 80 },

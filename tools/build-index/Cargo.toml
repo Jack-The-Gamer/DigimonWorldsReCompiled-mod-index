@@ -17,6 +17,7 @@ path = "src/main.rs"
 anyhow = "1"
 serde_json = { version = "1", features = ["preserve_order"] }
 semver = "1"
+toml = { version = "0.8", default-features = false, features = ["parse"] }
 ureq = { version = "3.4", default-features = false, features = ["rustls", "gzip"] }
 
 [profile.release]

@@ -3,10 +3,14 @@ name: Validate
 on:
   pull_request:
   push:
-    branches-ignore: [main]
+    branches-ignore: [main, gh-pages]
 
 permissions:
   contents: read
+
+env:
+  RUST_BACKTRACE: '0'
+  TOOL: tools/build-index/target/release/build-index
 
 jobs:
   validate:
@@ -17,9 +21,17 @@ jobs:
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: tools/build-index
+      - name: Build and test the index tool
+        run: |
+          cargo build --quiet --release --manifest-path tools/build-index/Cargo.toml
+          cargo test --quiet --release --manifest-path tools/build-index/Cargo.toml
       - name: Check every entry
-        run: cargo run --quiet --release --manifest-path tools/build-index/Cargo.toml -- validate --examples
+        run: '"$TOOL" validate --examples'
+      - name: Check hosted mods with Re:Compiled's own validator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/check-hosted.sh
       - name: Resolve releases (does each listed mod have an installable release?)
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: cargo run --quiet --release --manifest-path tools/build-index/Cargo.toml -- build --releases --out "$RUNNER_TEMP/site"
+        run: '"$TOOL" build --releases --out "$RUNNER_TEMP/site"'

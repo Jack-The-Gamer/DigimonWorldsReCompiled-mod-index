@@ -1,5 +1,10 @@
 name: Build and publish the index
 
+# On every push to main (and nightly):
+#  1. mods hosted here (mods/<Author>@<id>/mod/) whose mod.toml version has
+#     no release yet are released as <id>-v<version> with <id>-<version>.zip;
+#  2. the feed is rebuilt from every entry, reading each mod's GitHub
+#     Releases, and published to the gh-pages branch.
 on:
   push:
     branches: [main]
@@ -16,21 +21,37 @@ concurrency:
   group: publish
   cancel-in-progress: false
 
+env:
+  RUST_BACKTRACE: '0'
+  TOOL: tools/build-index/target/release/build-index
+
 jobs:
   publish:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # release notes come from the history
       - name: Fetch the last published copy (download history lives there)
         run: git clone --depth 1 --branch gh-pages "https://github.com/${GITHUB_REPOSITORY}.git" previous || mkdir -p previous/data
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: tools/build-index
+      - name: Build the index tool
+        run: cargo build --quiet --release --manifest-path tools/build-index/Cargo.toml
+      - name: Check hosted mods with Re:Compiled's own validator
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/check-hosted.sh
+      - name: Release hosted mods with a new version
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: .github/scripts/release-hosted.sh
       - name: Build the feed
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: cargo run --quiet --release --manifest-path tools/build-index/Cargo.toml -- build --releases --previous previous/data/history.json --out site
+        run: '"$TOOL" build --releases --previous previous/data/history.json --out site'
       - name: Summary
         run: |
           {
