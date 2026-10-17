@@ -6,8 +6,11 @@ Hold **R2** (**E** on the keyboard), then hold one or two other buttons: they ar
 - Mash through menus or training with any button, or two at once (**R2 + Cross + Circle**).
 - Press the button and R2 at the same moment and it still works.
 - A third button pressed meanwhile works normally.
+- L2 and R2 are never turboed.
 
 The game never sees the turbo button itself, so whatever R2 normally does is unavailable while the mod is on: switch the turbo button to L2 (**Q** on the keyboard) in the options if you need R2.
+
+Pressing **L2 and R2 together** is the one exception: the mod leaves that alone (both buttons pass through, no turbo starts), because **Fast-Forward** uses L2 + R2 to change speed. Holding the turbo button first and pressing the other one a moment later still counts as together, up to about 1/8 of a second.
 
 **Options**
 
