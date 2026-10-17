@@ -1,5 +1,6 @@
--- Fast-Forward: press Select and Start together to play at double speed,
--- again for triple speed, and a third time to return to normal speed.
+-- Fast-Forward: press L2 and R2 together to play at double speed, again for
+-- triple speed, and a third time to return to normal speed. L2 and R2 reach
+-- the game the moment they are pressed; only the pair is taken.
 --
 -- The music keeps its normal speed. All three games play music with Sony's
 -- sound library (libsnd), whose sequencer runs once per tick from an
@@ -15,12 +16,12 @@
 --   Sped up:      only the music's voices keep real time; effects play
 --                 faster and higher, like everything else.
 
-local SELECT, START = dwrc.buttons.Select, dwrc.buttons.Start
-local BOTH = SELECT | START
--- With a shoulder button held, Select + Start goes to the game untouched
+local L2, R2 = dwrc.buttons.L2, dwrc.buttons.R2
+local BOTH = L2 | R2
+-- With any of these held, L2 + R2 goes to the game untouched
 -- (L1 + L2 + R1 + R2 + Select + Start is a common reset combination).
-local SHOULDERS = dwrc.buttons.L1 | dwrc.buttons.L2 | dwrc.buttons.R1 | dwrc.buttons.R2
-local HOLD = 8          -- frames a lone Select or Start waits for the other (~1/8 s)
+local RESET = dwrc.buttons.L1 | dwrc.buttons.R1 | dwrc.buttons.Select | dwrc.buttons.Start
+local TOGETHER = 8      -- frames (~1/8 s) between the two presses that still count as together
 local MAX_SPEED = 3
 local sped_up_effects = dwrc.options.effects == "Sped up"
 
@@ -131,16 +132,15 @@ dwrc.on_frame(function(ctx)
 end)
 
 -- ---------------------------------------------------------------------------
--- Select + Start
+-- L2 + R2
 
-local prev = 0       -- Select/Start as pressed on the previous frame
-local pending = 0    -- a lone Select or Start held back from the game
-local wait = 0       -- ...for this many frames
-local combo = false  -- both are down: hidden from the game until released
-local replay, replay_left = 0, 0 -- a short tap held back, shown late
+local prev = 0         -- L2/R2 as pressed on the previous frame
+local since = nil      -- frames since the first of the two went down
+local combo = false    -- the pair switched speed: hidden from the game until released
+local undo = nil       -- the speed before the switch, while a reset can still cancel it
+local age = 0          -- frames since the switch
 
-local function switch_speed()
-  local speed = dwrc.speed() % MAX_SPEED + 1
+local function switch_speed(speed)
   dwrc.set_speed(speed)
   if speed == 1 then dwrc.set_realtime_voices(0) end
   tick = 0
@@ -151,40 +151,36 @@ dwrc.on_input(function(b)
   local s = b & BOTH
   local new = s & ~prev
   prev = s
+  -- Frames are counted in real time, whatever the speed.
+  local window = TOGETHER * dwrc.speed()
   if combo then
-    if s == 0 then combo = false end
-    return b & ~BOTH
-  end
-  local free = (b & SHOULDERS) == 0
-  if pending ~= 0 then
-    if s == BOTH then
-      pending, combo = 0, true
-      switch_speed()
-      return b & ~BOTH
-    elseif (s & pending) == 0 then
-      -- Let go before the other came: the game gets the tap now.
-      replay, replay_left = pending, 2
-      pending = 0
+    age = age + 1
+    if undo and (b & RESET) ~= 0 then
+      -- Part of a reset combination after all: put the speed back and
+      -- let the buttons through.
+      if age <= window then switch_speed(undo) end
+      undo, combo = nil, false
+    elseif s == 0 then
+      combo = false
     else
-      -- Wait a little longer for the other (in real time, at any speed).
-      wait = wait + 1
-      if wait < HOLD * dwrc.speed() then return b & ~pending end
-      pending = 0
+      return b & ~BOTH
     end
-  elseif free and s == BOTH and new == BOTH then
-    combo = true
-    switch_speed()
-    return b & ~BOTH
-  elseif free and new ~= 0 and s == new then
-    pending, wait = new, 0
-    return b & ~new
   end
-  if replay_left > 0 then
-    replay_left = replay_left - 1
-    b = b | replay
+  if s == 0 then
+    since = nil
+  elseif s ~= BOTH then
+    if new ~= 0 then since = 0 elseif since then since = since + 1 end
+  else
+    local together = new == BOTH or (new ~= 0 and since ~= nil and since < window)
+    since = nil
+    if together and (b & RESET) == 0 then
+      combo, undo, age = true, dwrc.speed(), 0
+      switch_speed(dwrc.speed() % MAX_SPEED + 1)
+      return b & ~BOTH
+    end
   end
   return b
 end)
 
-dwrc.log("Fast-Forward ready: press Select + Start to change speed (sound effects: " ..
+dwrc.log("Fast-Forward ready: press L2 + R2 to change speed (sound effects: " ..
          (sped_up_effects and "sped up" or "normal pitch") .. ")")

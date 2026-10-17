@@ -1,9 +1,9 @@
 [mod]
 id = "fast-forward"
 name = "Fast-Forward"
-version = "1.0.1"
+version = "1.1.0"
 author = "Jack-The-Gamer"
-description = "Press Select and Start together to play at double speed, again for triple speed, and a third time for normal speed. The music keeps playing at its normal speed."
+description = "Press L2 and R2 together to play at double speed, again for triple speed, and a third time for normal speed. The music keeps playing at its normal speed."
 game = "any"
 script = "main.lua"
 categories = ["QOL"]
