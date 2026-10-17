@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-expanded-stats"
 name = "DW1 Expanded Stats"
-version = "1.0.0"
+version = "1.0.1"
 author = "Jack-The-Gamer"
 description = "Adds a tiredness meter, care mistakes and battles to your Digimon's status screen."
 game = "dw1"

@@ -116,8 +116,10 @@ end
 
 -- Sweat drop, 7 x 11, in the colours of the feelings effect texture's
 -- blue palette (272, 481). The game's own drops are 7 x 9 and 5 x 12; this
--- one sits between the two.
-local DROP = {
+-- one sits between the two. It gets a one-pixel near-black outline (palette
+-- index 1) around its sides, like the status screen's other icons, which
+-- makes it 9 x 13.
+local DROP_SHAPE = {
   "...6...",
   "..545..",
   "..a74..",
@@ -132,12 +134,36 @@ local DROP = {
 }
 local DROP_CLUT = 0x7851
 
+-- Rows of palette indices: the shape plus its outline (every clear pixel
+-- next to the shape above, below, left or right of it).
+local function outlined(shape)
+  local h, w = #shape + 2, #shape[1] + 2
+  local px = {}
+  for y = 0, h - 1 do px[y] = {} for x = 0, w - 1 do px[y][x] = 0 end end
+  for y, row in ipairs(shape) do
+    for x = 1, #row do
+      local ch = row:sub(x, x)
+      if ch ~= "." then px[y][x] = tonumber(ch, 16) end
+    end
+  end
+  local inside = function(y, x) return px[y] and (px[y][x] or 0) > 1 end
+  for y = 0, h - 1 do
+    for x = 0, w - 1 do
+      if px[y][x] == 0 and (inside(y - 1, x) or inside(y + 1, x) or inside(y, x - 1) or inside(y, x + 1)) then
+        px[y][x] = 1
+      end
+    end
+  end
+  return px, w, h
+end
+local DROP, DROP_W, DROP_H = outlined(DROP_SHAPE)
+
 -- The menu text texture: page at video memory (704, 256), 4-bit. The game
 -- writes the status screen's words in rows 24-83 and clears rows 24-223
 -- first; the mod uses rows 200-219.
 local TEXT_TPAGE = 0x1b
 local TIRED_U, TIRED_V = 0, 200
-local GLYPH_U, GLYPH_V, GLYPH_W, GLYPH_H = 128, 200, 48, 20
+local GLYPH_U, GLYPH_V, GLYPH_W, GLYPH_H = 128, 200, 52, 20
 local DROP_U, DROP_V = GLYPH_U + 40, GLYPH_V
 local LABEL_CLUT = 0x7c46 -- the NAME / DIGI palette, (96, 497)
 
@@ -153,11 +179,8 @@ do
     labels[name] = { u = GLYPH_U, v = GLYPH_V + v, w = w }
     v = v + 10
   end
-  for y, row in ipairs(DROP) do
-    for x = 1, #row do
-      local ch = row:sub(x, x)
-      if ch ~= "." then t[DROP_V - GLYPH_V + y - 1][DROP_U - GLYPH_U + x - 1] = tonumber(ch, 16) end
-    end
+  for y = 0, DROP_H - 1 do
+    for x = 0, DROP_W - 1 do t[DROP_V - GLYPH_V + y][DROP_U - GLYPH_U + x] = DROP[y][x] end
   end
   local vx, vy = 704 + GLYPH_U // 4, 256 + GLYPH_V
   local words = { 0xA0000000, (vy << 16) | vx, (GLYPH_H << 16) | (GLYPH_W // 4) }
@@ -248,7 +271,7 @@ local function install()
     -- Within one depth the game draws what was added last first, so numbers
     -- go in before their boxes and bars before theirs.
     return {
-      { F.rect, -136, TIRED_Y, #DROP[1], #DROP, DROP_U, DROP_V, TEXT_TPAGE, DROP_CLUT, DEPTH, 0 },
+      { F.rect, -137, TIRED_Y - 1, DROP_W, DROP_H, DROP_U, DROP_V, TEXT_TPAGE, DROP_CLUT, DEPTH, 0 },
       { F.sprite, 3, -126, TIRED_Y + 1, 40, 12, TIRED_U, TIRED_V, DEPTH, 1 },
       { F.segbar, -84, TIRED_Y + 3, t // 2, 6, TIRED_BAR[1], TIRED_BAR[2], TIRED_BAR[3], 0, DEPTH },
       { F.square, 75, 201, 50, 8, DEPTH },
