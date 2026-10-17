@@ -1,0 +1,313 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-17T18:03:49Z",
+  "count": 6,
+  "categories": [
+    "GAMEPLAY",
+    "CONTENT",
+    "BALANCE",
+    "ART",
+    "AUDIO",
+    "UI",
+    "QOL",
+    "TRANSLATION",
+    "TOTAL_CONVERSION",
+    "LIBRARY",
+    "TOOL",
+    "OTHER"
+  ],
+  "games": [
+    "dw1",
+    "dw2",
+    "dw3"
+  ],
+  "mods": [
+    {
+      "folder": "Jack-The-Gamer@dw1-better-exp",
+      "version": "1.0.0",
+      "id": "dw1-better-exp",
+      "title": "DW1 Better EXP",
+      "author": "Jack-The-Gamer",
+      "summary": "Twice the stat gains from training at any gym, and three times the stat gains from battles.",
+      "categories": [
+        "GAMEPLAY",
+        "BALANCE"
+      ],
+      "tags": [
+        "training",
+        "stats",
+        "battle",
+        "gym"
+      ],
+      "games": [
+        "dw1"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-better-exp",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw1-better-exp/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw1-better-exp/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw1-better-exp-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T12:47:41Z",
+        "zip": {
+          "name": "dw1-better-exp-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw1-better-exp-v1.0.0/dw1-better-exp-1.0.0.zip",
+          "size": 3267
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 2,
+        "recent": null,
+        "window_days": null,
+        "as_of": "2026-10-17T18:03:48Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw1-expanded-stats",
+      "version": "1.0.1",
+      "id": "dw1-expanded-stats",
+      "title": "DW1 Expanded Stats",
+      "author": "Jack-The-Gamer",
+      "summary": "Adds a tiredness meter, care mistakes and battles to your Digimon's status screen.",
+      "categories": [
+        "QOL",
+        "UI"
+      ],
+      "tags": [
+        "status",
+        "tiredness",
+        "care mistakes",
+        "battles",
+        "menu"
+      ],
+      "games": [
+        "dw1"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-expanded-stats",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw1-expanded-stats/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw1-expanded-stats/thumbnail.png",
+      "latest": {
+        "version": "1.0.1",
+        "tag": "dw1-expanded-stats-v1.0.1",
+        "prerelease": false,
+        "published_at": "2026-10-17T17:49:20Z",
+        "zip": {
+          "name": "dw1-expanded-stats-1.0.1.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw1-expanded-stats-v1.0.1/dw1-expanded-stats-1.0.1.zip",
+          "size": 6293
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 2,
+        "recent": null,
+        "window_days": null,
+        "as_of": "2026-10-17T18:03:48Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw3-better-exp",
+      "version": "1.0.0",
+      "id": "dw3-better-exp",
+      "title": "DW3 Better EXP",
+      "author": "Jack-The-Gamer",
+      "summary": "Every won battle gives 5 DV EXP to each digivolution that earns DV EXP, instead of anywhere from 1 to 10. Normal EXP is unchanged.",
+      "categories": [
+        "GAMEPLAY",
+        "BALANCE"
+      ],
+      "tags": [
+        "dv",
+        "exp",
+        "digivolution",
+        "battle"
+      ],
+      "games": [
+        "dw3"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-better-exp",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw3-better-exp/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw3-better-exp/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw3-better-exp-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T12:03:17Z",
+        "zip": {
+          "name": "dw3-better-exp-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw3-better-exp-v1.0.0/dw3-better-exp-1.0.0.zip",
+          "size": 2564
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 1,
+        "recent": null,
+        "window_days": null,
+        "as_of": "2026-10-17T18:03:48Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw3-better-training",
+      "version": "1.0.0",
+      "id": "dw3-better-training",
+      "title": "DW3 Better Training",
+      "author": "Jack-The-Gamer",
+      "summary": "Training at Leomon's gym always succeeds: every round passes, so you always reach the bonus round, and it passes too.",
+      "categories": [
+        "GAMEPLAY",
+        "QOL"
+      ],
+      "tags": [
+        "training",
+        "gym",
+        "stats"
+      ],
+      "games": [
+        "dw3"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-better-training",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw3-better-training/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw3-better-training/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw3-better-training-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T00:55:01Z",
+        "zip": {
+          "name": "dw3-better-training-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw3-better-training-v1.0.0/dw3-better-training-1.0.0.zip",
+          "size": 2565
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 1,
+        "recent": null,
+        "window_days": null,
+        "as_of": "2026-10-17T18:03:49Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@fast-forward",
+      "version": "1.1.0",
+      "id": "fast-forward",
+      "title": "Fast-Forward",
+      "author": "Jack-The-Gamer",
+      "summary": "Press L2 and R2 together to play at double speed, again for triple speed, and a third time for normal speed. The music keeps playing at its normal speed.",
+      "categories": [
+        "QOL"
+      ],
+      "tags": [
+        "speed",
+        "fast-forward",
+        "audio"
+      ],
+      "games": [
+        "any"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@fast-forward",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@fast-forward/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@fast-forward/thumbnail.png",
+      "latest": {
+        "version": "1.1.0",
+        "tag": "fast-forward-v1.1.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T18:03:44Z",
+        "zip": {
+          "name": "fast-forward-1.1.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/fast-forward-v1.1.0/fast-forward-1.1.0.zip",
+          "size": 4253
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 3,
+        "recent": 1,
+        "window_days": 1,
+        "as_of": "2026-10-17T18:03:49Z"
+      },
+      "first_release": "2026-10-16",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@turbo",
+      "version": "1.1.0",
+      "id": "turbo",
+      "title": "Turbo",
+      "author": "Jack-The-Gamer",
+      "summary": "Hold the turbo button (R2), then hold one or two other buttons: they are pressed and released rapidly for as long as you hold them. The game never sees the turbo button.",
+      "categories": [
+        "QOL"
+      ],
+      "tags": [
+        "turbo",
+        "input",
+        "dialogue"
+      ],
+      "games": [
+        "any"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2",
+      "conflicts": [
+        "turbo-text"
+      ],
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@turbo",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@turbo/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@turbo/thumbnail.png",
+      "latest": {
+        "version": "1.1.0",
+        "tag": "turbo-v1.1.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T18:03:47Z",
+        "zip": {
+          "name": "turbo-1.1.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/turbo-v1.1.0/turbo-1.1.0.zip",
+          "size": 3065
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 4,
+        "recent": 1,
+        "window_days": 1,
+        "as_of": "2026-10-17T18:03:49Z"
+      },
+      "first_release": "2026-10-16",
+      "last_release": "2026-10-17"
+    }
+  ]
+}
