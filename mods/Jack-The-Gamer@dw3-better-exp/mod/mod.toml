@@ -1,0 +1,14 @@
+[mod]
+id = "dw3-better-exp"
+name = "DW3 Better EXP"
+version = "1.0.0"
+author = "Jack-The-Gamer"
+description = "Every won battle gives 5 DV EXP to each digivolution that earns DV EXP, instead of anywhere from 1 to 10. Normal EXP is unchanged."
+game = "dw3"
+script = "main.lua"
+categories = ["GAMEPLAY", "BALANCE"]
+tags = ["dv", "exp", "digivolution", "battle"]
+license = "MIT"
+engine = ">=0.2.6"
+github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
+homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-better-exp"
