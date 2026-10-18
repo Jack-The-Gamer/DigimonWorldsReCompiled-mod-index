@@ -67,7 +67,7 @@ pull request). The **Build and publish** workflow then
 3. rebuilds the feed, which now lists the new version.
 
 Players are offered the update in the launcher. Old releases stay, so
-**Versions…** can still roll back. Releases are never marked "latest" (the
+**Version History** can still roll back. Releases are never marked "latest" (the
 repository holds many mods); please don't create plain `v1.2.0` tags here.
 Because every hosted mod shares this repository's tags, an id may not be
 another hosted id followed by `-<number>` (`pack` and `pack-2`); the check
@@ -103,7 +103,7 @@ workflow (`docs/templates/release-mod.yml`) that publishes a release whenever th
 `version` in `mod.toml` changes.
 
 The launcher's Mods page reads those releases to offer **Update** and
-**Versions** (install any release, including rolling back). This index reads
+**Version History** (install any release, including rolling back). This index reads
 them nightly and records the newest installable release, so **you do not open a
 pull request per version** — only when the listing itself changes.
 
