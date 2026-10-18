@@ -1,4 +1,4 @@
--- DW3 Better EXP: every won battle gives 5 DV EXP.
+-- DW3 Better DV EXP: every won battle gives 5 DV EXP.
 --
 -- After a battle, the results screen works out the DV EXP for each
 -- digivolution used in the battle with one function (in an overlay loaded
@@ -46,11 +46,11 @@ dwrc.on_frame(function(ctx)
   local at = ctx:find(GAIN, FROM, TO)
   while at do
     if not hooked[at + RETURN] then
-      dwrc.log(string.format("DW3 Better EXP: DV EXP code found at %08x", at + RETURN))
+      dwrc.log(string.format("DW3 Better DV EXP: DV EXP code found at %08x", at + RETURN))
       hook(at + RETURN)
     end
     at = ctx:find(GAIN, at + 4, TO)
   end
 end)
 
-dwrc.log("DW3 Better EXP ready: battles give " .. DV_EXP .. " DV EXP")
+dwrc.log("DW3 Better DV EXP ready: battles give " .. DV_EXP .. " DV EXP")

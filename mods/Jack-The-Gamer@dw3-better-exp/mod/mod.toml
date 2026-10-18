@@ -1,7 +1,7 @@
 [mod]
 id = "dw3-better-exp"
-name = "DW3 Better EXP"
-version = "1.0.0"
+name = "DW3 Better DV EXP"
+version = "1.0.1"
 author = "Jack-The-Gamer"
 description = "Every won battle gives 5 DV EXP to each digivolution that earns DV EXP, instead of anywhere from 1 to 10. Normal EXP is unchanged."
 game = "dw3"

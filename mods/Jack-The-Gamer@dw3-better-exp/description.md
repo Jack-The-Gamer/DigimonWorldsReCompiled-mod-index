@@ -1,4 +1,4 @@
-# DW3 Better EXP
+# DW3 Better DV EXP
 
 Every battle you win gives exactly **5 DV EXP**, instead of anywhere from 1 to 10.
 
