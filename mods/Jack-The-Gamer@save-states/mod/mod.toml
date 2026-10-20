@@ -1,0 +1,15 @@
+[mod]
+id = "save-states"
+name = "Save States"
+version = "1.0.0"
+author = "Jack-The-Gamer"
+description = "Press 1 to 5 to save the game exactly where you are, into one of five slots; Shift + 1 to 5 brings it back. Works in all three games."
+game = "any"
+script = "main.lua"
+categories = ["QOL"]
+tags = ["save states", "keyboard"]
+license = "MIT"
+# Save states and keyboard keys for mods arrived in Re:Compiled 1.3.
+engine = ">=1.3"
+github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
+homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@save-states"
