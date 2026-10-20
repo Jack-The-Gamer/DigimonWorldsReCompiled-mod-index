@@ -1,29 +1,34 @@
--- DW1 Un-Rigged Bonus Try: the gym slot machine stops each reel on the
--- picture that was in the middle of the window when X was pressed.
+-- DW1 Un-Rigged Bonus Try: takes the rigging out of the gym slot machine.
 --
--- How the game rigs it (TRN_REL.BIN at 0x8008e824, TRN2_REL.BIN at
+-- How the game does it (TRN_REL.BIN at 0x8008e824, TRN2_REL.BIN at
 -- 0x8008d1fc, both loaded at 0x80088800): pressing X calls a "stop reel"
 -- function with the reel (a0, 0-2) and the slot state (a1). It sets how many
 -- more pictures the reel rolls before stopping (byte 14+reel), according to
--- a mode picked for the round before it starts (byte 34): in one mode, when
--- the first two reels match and the third would match too, it rolls the
--- third reel one or two pictures further (rand()), so the round can't be
--- won; the other modes steer reels onto a match or the jackpot instead.
---
+-- a mode picked for the round before it starts (byte 34):
+--   0: the reels stop on the next picture, except that when the first two
+--      reels match and the third would match too, the third rolls one or
+--      two pictures further (rand()): the round can't be won;
+--   1: the second and third reels are steered onto a match within two
+--      pictures, except a jackpot: when the first two reels show it and
+--      the third would too, the third rolls one or two pictures further;
+--   2: reels are steered onto the jackpot picture.
 -- Slot state: byte 8+reel = picture index (0-12) on the reel's strip,
--- halfword 18+2*reel = scroll offset (0-31 px), halfword 24+2*reel = speed
--- (offset step = speed >> 6, 16 px). Every game step (3 frames) a moving
--- reel scrolls by one step; on passing 32 the next picture (index - 1)
--- arrives and a stopping reel stops there unless it still has pictures to
--- roll. Strips: three tables of 13 picture ids, read from the function.
+-- halfword 18+2*reel = scroll offset, byte 11+reel = the picture the reel is
+-- expected to stop on (used by the later reels' decisions). A stopping reel
+-- stops on the first picture boundary it passes after X, plus the extra
+-- pictures. Strips: three tables of 13 picture ids, read from the function.
 --
--- This mod replaces the stop function: it works out the picture that was on
--- screen (the screen shows the reel one step behind the game) and sets the
--- reel up to stop on exactly that picture at the next step.
+-- Option "Slot machine":
+--   Original - No Rigging: the function runs as shipped, help included,
+--     except where it rolls the third reel past a match (mode 0, and mode 1
+--     with two jackpots): the third reel then just stops on the next picture.
+--   True Slots: every reel stops on the next picture after X (no extra
+--     pictures, no steering), whatever the mode.
 
 local STOP = "27bdffe0 afbf0018 afb10014 afb00010 24010002 108100?? 00a08021 24010001 108100?? 00000000 1480???? 00000000 82020022"
 local FROM, TO = 0x80088000, 0x80098000
 local PICTURES = 13
+local TRUE_SLOTS = dwrc.options.mode == "True Slots"
 
 local hooked = {}
 
@@ -46,25 +51,23 @@ local function hook(fn, strips)
     end
     local reel, s = c:reg("a0"), c:reg("a1")
     if reel > 2 then return false end
-    local sym = c:read8(s + 8 + reel)
-    local pos = c:read_s16(s + 18 + 2 * reel)
-    local step = c:read_s16(s + 24 + 2 * reel) >> 6
-    if sym >= PICTURES or step <= 0 or step > 31 or pos < 0 or pos > 31 then return false end
-    -- What the player saw: the reel one step earlier.
-    local seen_pos, seen = pos - step, sym
-    if seen_pos < 0 then
-      seen_pos = seen_pos + 32
-      seen = (sym + 1) % PICTURES
+    if TRUE_SLOTS then
+      local sym = c:read8(s + 8 + reel)
+      if sym >= PICTURES then return false end
+      c:write8(s + 14 + reel, 0)
+      c:write8(s + 11 + reel, c:read8(strips_at + PICTURES * reel + (sym + PICTURES - 1) % PICTURES))
+      return c:ret(0)
     end
-    -- More than half scrolled: the next picture is the one in the middle.
-    if seen_pos >= 16 then seen = (seen + PICTURES - 1) % PICTURES end
-    -- Stop on it at the next step: one picture before it, scrolled so that
-    -- one more step passes 32 (exactly 32 would be held at 31).
-    c:write8(s + 8 + reel, (seen + 1) % PICTURES)
-    c:write16(s + 18 + 2 * reel, 33 - step)
-    c:write8(s + 14 + reel, 0)
-    c:write8(s + 11 + reel, c:read8(strips_at + PICTURES * reel + seen))
-    return c:ret(0)
+    -- Original - No Rigging: only the cases that roll past a match go.
+    if reel == 2 then
+      local mode = c:read8(s + 34)
+      local jackpots = c:read_s8(s + 11) == 7 and c:read_s8(s + 12) == 7
+      if mode == 0 or (mode == 1 and jackpots) then
+        c:write8(s + 14 + reel, 0)
+        return c:ret(0)
+      end
+    end
+    return false
   end)
 end
 
@@ -77,7 +80,7 @@ dwrc.on_frame(function(ctx)
       if strips then
         hooked[at] = true
         hook(at, strips)
-        dwrc.log(string.format("DW1 Un-Rigged Bonus Try: slot machine found at %08x", at))
+        dwrc.log(string.format("DW1 Un-Rigged Bonus Try: slot machine found at %08x (%s)", at, dwrc.options.mode))
       end
     end
     at = ctx:find(STOP, at + 4, TO)

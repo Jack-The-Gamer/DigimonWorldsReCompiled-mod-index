@@ -3,7 +3,7 @@ id = "dw1-unrigged-bonus-try"
 name = "DW1 Un-Rigged Bonus Try"
 version = "1.0.0"
 author = "Jack-The-Gamer"
-description = "The Bonus Try slot machine at the gyms plays fair: each reel stops on the picture that was in the middle when you pressed X. The game no longer rolls past a match or decides before you play whether the round can be won."
+description = "The Bonus Try slot machine at the gyms no longer decides before you play that a round can't be won. Choose between the original slot machine without that rigging, or a fully fair one where only your timing counts."
 game = "dw1"
 script = "main.lua"
 categories = ["GAMEPLAY"]
@@ -12,3 +12,11 @@ license = "MIT"
 engine = ">=0.2.6"
 github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
 homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-unrigged-bonus-try"
+
+[[option]]
+id = "mode"
+name = "Slot machine"
+description = "Original - No Rigging: the game's own slot machine, with its help toward a match or the jackpot, but never rolling past a match on purpose. True Slots: every reel stops where your timing puts it, the same moment after X as the original; no help, no rigging."
+type = "choice"
+default = "Original - No Rigging"
+choices = ["Original - No Rigging", "True Slots"]
