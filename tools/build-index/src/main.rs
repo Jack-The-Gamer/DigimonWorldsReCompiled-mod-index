@@ -18,8 +18,8 @@
 //! description and thumbnail next to it, and renders `site/index.html`.
 //! With `--releases` it reads every listed repository's GitHub Releases,
 //! picks the installable `.zip` the same way the launcher does, and records
-//! the newest release and download counts, so authors never have to open a
-//! pull request just to bump a version.
+//! the newest release and download counts, so a listing never has to change
+//! just because its mod has a new version.
 //!
 //! Environment: `GITHUB_TOKEN` (optional; raises GitHub's rate limit),
 //! `GITHUB_API_URL` (default `https://api.github.com`) and
@@ -690,7 +690,13 @@ fn esc(s: &str) -> String {
     s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;").replace('"', "&quot;")
 }
 
-fn render_html(mods: &[Value], generated: &str) -> String {
+fn render_html(mods: &[Value], generated: &str, repo: Option<&str>) -> String {
+    // How a player gets this index into the launcher.
+    let how = match repo {
+        Some(r) if r.eq_ignore_ascii_case("Jack-The-Gamer/DigimonWorldsReCompiled-mod-index") => "This index is built into the launcher. ".to_string(),
+        Some(r) => format!("To list them there, add <code>{}</code> under <b>Find mods → Indexes…</b>. ", esc(r)),
+        None => String::new(),
+    };
     let mut cards = String::new();
     for m in mods {
         let g = |k: &str| m.get(k).and_then(Value::as_str).unwrap_or("");
@@ -732,8 +738,8 @@ a {{ color:#409cff; }} p {{ margin:4px 0; }} .meta, footer {{ color:var(--muted)
 code {{ background:#1c1f26; padding:1px 5px; border-radius:4px; }}
 </style></head><body><main>
 <h1>Digimon Worlds <span>Re:Compiled</span> mods</h1>
-<p>Every mod listed here can be installed from the <b>Mods → Find mods</b> tab in Re:Compiled, which reads this index automatically. A mod lives either in its author's own repository or in this one. Listing is not vetting.</p>
-<p>Want your mod here? Open a pull request adding <code>mods/&lt;You&gt;@&lt;mod-id&gt;/</code> to this repository: a <code>meta.json</code> pointing at your repository, or the mod itself in a <code>mod/</code> folder (see the README).</p>
+<p>Every mod listed here can be installed from the <b>Mods → Find mods</b> tab in Re:Compiled. {how}A mod lives either in the index itself or in its author's own repository. Listing is not vetting.</p>
+<p>Anyone can run a mod index like this one for their own mods: see <a href="https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index#your-own-mod-index">Your own mod index</a>.</p>
 {cards}
 <footer><p>Feed: <a href="data/index.json">data/index.json</a> · generated {generated}</p></footer>
 </main></body></html>
@@ -810,7 +816,7 @@ fn build(root: &Path, repo: Option<&str>, out: &Path, releases: bool, previous: 
     std::fs::write(data.join("index.json"), serde_json::to_string_pretty(&feed)?)?;
     history.retain(|k, _| entries.iter().any(|e| &e.folder == k));
     std::fs::write(data.join("history.json"), serde_json::to_string(&json!({ "version": 1, "entries": history }))?)?;
-    std::fs::write(out.join("index.html"), render_html(feed["mods"].as_array().unwrap(), &generated))?;
+    std::fs::write(out.join("index.html"), render_html(feed["mods"].as_array().unwrap(), &generated, repo))?;
     std::fs::write(out.join(".nojekyll"), "")?;
     if root.join("schema/mod.schema.json").exists() {
         std::fs::create_dir_all(out.join("schema"))?;

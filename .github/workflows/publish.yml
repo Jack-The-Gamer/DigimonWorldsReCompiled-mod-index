@@ -10,7 +10,7 @@ on:
     branches: [main]
   schedule:
     # Nightly: re-read every listed mod's GitHub Releases, so new versions
-    # appear in the launcher without anyone opening a pull request.
+    # appear in the launcher without anyone changing the index.
     - cron: '23 4 * * *'
   workflow_dispatch:
 
