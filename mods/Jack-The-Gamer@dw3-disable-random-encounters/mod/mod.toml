@@ -1,7 +1,7 @@
 [mod]
 id = "dw3-disable-random-encounters"
 name = "DW3 Disable Random Encounters"
-version = "1.0.0"
+version = "1.0.1"
 author = "Jack-The-Gamer"
 description = "Press R to switch random battles off, and R again to switch them back on. A red sign in the top right corner shows while they are off."
 game = "dw3"
