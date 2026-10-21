@@ -1,0 +1,15 @@
+[mod]
+id = "dw3-auction-notifications"
+name = "DW3 Auction Notifications"
+version = "1.0.0"
+author = "Jack-The-Gamer"
+description = "Never miss an auction: a notice slides in when one opens in Asuka City, and a yellow \"!\" marks Asuka City on the world map while it is open."
+game = "dw3"
+script = "main.lua"
+categories = ["QOL", "UI"]
+tags = ["auction", "map", "notification"]
+license = "MIT"
+# Images over the picture (dwrc.show_image) arrived in Re:Compiled 1.4.
+engine = ">=1.4"
+github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
+homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-auction-notifications"
