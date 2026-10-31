@@ -1,0 +1,547 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-10-31T10:27:05Z",
+  "count": 11,
+  "categories": [
+    "GAMEPLAY",
+    "CONTENT",
+    "BALANCE",
+    "ART",
+    "AUDIO",
+    "UI",
+    "QOL",
+    "TRANSLATION",
+    "TOTAL_CONVERSION",
+    "LIBRARY",
+    "TOOL",
+    "OTHER"
+  ],
+  "games": [
+    "dw1",
+    "dw2",
+    "dw3"
+  ],
+  "mods": [
+    {
+      "folder": "Jack-The-Gamer@dw1-better-exp",
+      "version": "1.0.0",
+      "id": "dw1-better-exp",
+      "title": "DW1 Better EXP",
+      "author": "Jack-The-Gamer",
+      "summary": "Twice the stat gains from training at any gym, and three times the stat gains from battles.",
+      "categories": [
+        "GAMEPLAY",
+        "BALANCE"
+      ],
+      "tags": [
+        "training",
+        "stats",
+        "battle",
+        "gym"
+      ],
+      "games": [
+        "dw1"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-better-exp",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw1-better-exp/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw1-better-exp/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw1-better-exp-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T12:47:41Z",
+        "zip": {
+          "name": "dw1-better-exp-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw1-better-exp-v1.0.0/dw1-better-exp-1.0.0.zip",
+          "size": 3267
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 6,
+        "recent": 4,
+        "window_days": 14,
+        "as_of": "2026-10-31T10:27:02Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw1-expanded-stats",
+      "version": "1.0.1",
+      "id": "dw1-expanded-stats",
+      "title": "DW1 Expanded Stats",
+      "author": "Jack-The-Gamer",
+      "summary": "Adds a tiredness meter, care mistakes and battles to your Digimon's status screen.",
+      "categories": [
+        "QOL",
+        "UI"
+      ],
+      "tags": [
+        "status",
+        "tiredness",
+        "care mistakes",
+        "battles",
+        "menu"
+      ],
+      "games": [
+        "dw1"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-expanded-stats",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw1-expanded-stats/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw1-expanded-stats/thumbnail.png",
+      "latest": {
+        "version": "1.0.1",
+        "tag": "dw1-expanded-stats-v1.0.1",
+        "prerelease": false,
+        "published_at": "2026-10-17T17:49:20Z",
+        "zip": {
+          "name": "dw1-expanded-stats-1.0.1.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw1-expanded-stats-v1.0.1/dw1-expanded-stats-1.0.1.zip",
+          "size": 6293
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 5,
+        "recent": 3,
+        "window_days": 14,
+        "as_of": "2026-10-31T10:27:03Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw1-unrigged-bonus-try",
+      "version": "1.0.0",
+      "id": "dw1-unrigged-bonus-try",
+      "title": "DW1 Un-Rigged Bonus Try",
+      "author": "Jack-The-Gamer",
+      "summary": "The Bonus Try slot machine at the gyms no longer decides before you play that a round can't be won. Choose between the original slot machine without that rigging, or a fully fair one where only your…",
+      "categories": [
+        "GAMEPLAY"
+      ],
+      "tags": [
+        "training",
+        "gym",
+        "bonus try",
+        "slot machine"
+      ],
+      "games": [
+        "dw1"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-unrigged-bonus-try",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw1-unrigged-bonus-try/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw1-unrigged-bonus-try/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw1-unrigged-bonus-try-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-20T20:18:54Z",
+        "zip": {
+          "name": "dw1-unrigged-bonus-try-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw1-unrigged-bonus-try-v1.0.0/dw1-unrigged-bonus-try-1.0.0.zip",
+          "size": 3383
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 3,
+        "recent": 3,
+        "window_days": 11,
+        "as_of": "2026-10-31T10:27:03Z"
+      },
+      "first_release": "2026-10-20",
+      "last_release": "2026-10-20"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw3-auction-notifications",
+      "version": "1.0.0",
+      "id": "dw3-auction-notifications",
+      "title": "DW3 Auction Notifications",
+      "author": "Jack-The-Gamer",
+      "summary": "Never miss an auction: a notice slides in when one opens in Asuka City, and a yellow \"!\" marks Asuka City on the world map while it is open.",
+      "categories": [
+        "QOL",
+        "UI"
+      ],
+      "tags": [
+        "auction",
+        "map",
+        "notification"
+      ],
+      "games": [
+        "dw3"
+      ],
+      "license": "MIT",
+      "engine": ">=1.4",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-auction-notifications",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw3-auction-notifications/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw3-auction-notifications/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw3-auction-notifications-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-21T06:11:11Z",
+        "zip": {
+          "name": "dw3-auction-notifications-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw3-auction-notifications-v1.0.0/dw3-auction-notifications-1.0.0.zip",
+          "size": 7088
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 7,
+        "recent": 6,
+        "window_days": 10,
+        "as_of": "2026-10-31T10:27:03Z"
+      },
+      "first_release": "2026-10-21",
+      "last_release": "2026-10-21"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw3-better-burst-gauge",
+      "version": "1.0.0",
+      "id": "dw3-better-burst-gauge",
+      "title": "DW3 Better Burst Gauge",
+      "author": "Jack-The-Gamer",
+      "summary": "Your Digimon's burst gauges keep their progress when you load a save, even after switching the game off.",
+      "categories": [
+        "GAMEPLAY",
+        "QOL"
+      ],
+      "tags": [
+        "burst",
+        "digivolution",
+        "battle",
+        "save"
+      ],
+      "games": [
+        "dw3"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-better-burst-gauge",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw3-better-burst-gauge/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw3-better-burst-gauge/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw3-better-burst-gauge-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-21T00:55:38Z",
+        "zip": {
+          "name": "dw3-better-burst-gauge-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw3-better-burst-gauge-v1.0.0/dw3-better-burst-gauge-1.0.0.zip",
+          "size": 4291
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 7,
+        "recent": 5,
+        "window_days": 10,
+        "as_of": "2026-10-31T10:27:04Z"
+      },
+      "first_release": "2026-10-21",
+      "last_release": "2026-10-21"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw3-better-exp",
+      "version": "1.0.1",
+      "id": "dw3-better-exp",
+      "title": "DW3 Better DV EXP",
+      "author": "Jack-The-Gamer",
+      "summary": "Every won battle gives 5 DV EXP to each digivolution that earns DV EXP, instead of anywhere from 1 to 10. Normal EXP is unchanged.",
+      "categories": [
+        "GAMEPLAY",
+        "BALANCE"
+      ],
+      "tags": [
+        "dv",
+        "exp",
+        "digivolution",
+        "battle"
+      ],
+      "games": [
+        "dw3"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-better-exp",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw3-better-exp/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw3-better-exp/thumbnail.png",
+      "latest": {
+        "version": "1.0.1",
+        "tag": "dw3-better-exp-v1.0.1",
+        "prerelease": false,
+        "published_at": "2026-10-18T19:20:25Z",
+        "zip": {
+          "name": "dw3-better-exp-1.0.1.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw3-better-exp-v1.0.1/dw3-better-exp-1.0.1.zip",
+          "size": 2565
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 9,
+        "recent": 8,
+        "window_days": 14,
+        "as_of": "2026-10-31T10:27:04Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-18"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw3-better-training",
+      "version": "1.0.0",
+      "id": "dw3-better-training",
+      "title": "DW3 Better Training",
+      "author": "Jack-The-Gamer",
+      "summary": "Training at Leomon's gym always succeeds: every round passes, so you always reach the bonus round, and it passes too.",
+      "categories": [
+        "GAMEPLAY",
+        "QOL"
+      ],
+      "tags": [
+        "training",
+        "gym",
+        "stats"
+      ],
+      "games": [
+        "dw3"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-better-training",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw3-better-training/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw3-better-training/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "dw3-better-training-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T00:55:01Z",
+        "zip": {
+          "name": "dw3-better-training-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw3-better-training-v1.0.0/dw3-better-training-1.0.0.zip",
+          "size": 2565
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 7,
+        "recent": 6,
+        "window_days": 14,
+        "as_of": "2026-10-31T10:27:04Z"
+      },
+      "first_release": "2026-10-17",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@dw3-disable-random-encounters",
+      "version": "1.0.1",
+      "id": "dw3-disable-random-encounters",
+      "title": "DW3 Disable Random Encounters",
+      "author": "Jack-The-Gamer",
+      "summary": "Press R to switch random battles off, and R again to switch them back on. A red sign in the top right corner shows while they are off.",
+      "categories": [
+        "GAMEPLAY",
+        "QOL"
+      ],
+      "tags": [
+        "encounters",
+        "battle",
+        "keyboard"
+      ],
+      "games": [
+        "dw3"
+      ],
+      "license": "MIT",
+      "engine": ">=1.4",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-disable-random-encounters",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@dw3-disable-random-encounters/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@dw3-disable-random-encounters/thumbnail.png",
+      "latest": {
+        "version": "1.0.1",
+        "tag": "dw3-disable-random-encounters-v1.0.1",
+        "prerelease": false,
+        "published_at": "2026-10-21T06:59:34Z",
+        "zip": {
+          "name": "dw3-disable-random-encounters-1.0.1.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/dw3-disable-random-encounters-v1.0.1/dw3-disable-random-encounters-1.0.1.zip",
+          "size": 5674
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 7,
+        "recent": 4,
+        "window_days": 10,
+        "as_of": "2026-10-31T10:27:04Z"
+      },
+      "first_release": "2026-10-21",
+      "last_release": "2026-10-21"
+    },
+    {
+      "folder": "Jack-The-Gamer@fast-forward",
+      "version": "1.1.0",
+      "id": "fast-forward",
+      "title": "Fast-Forward",
+      "author": "Jack-The-Gamer",
+      "summary": "Press L2 and R2 together to play at double speed, again for triple speed, and a third time for normal speed. The music keeps playing at its normal speed.",
+      "categories": [
+        "QOL"
+      ],
+      "tags": [
+        "speed",
+        "fast-forward",
+        "audio"
+      ],
+      "games": [
+        "any"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2.6",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@fast-forward",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@fast-forward/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@fast-forward/thumbnail.png",
+      "latest": {
+        "version": "1.1.0",
+        "tag": "fast-forward-v1.1.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T18:03:44Z",
+        "zip": {
+          "name": "fast-forward-1.1.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/fast-forward-v1.1.0/fast-forward-1.1.0.zip",
+          "size": 4253
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 10,
+        "recent": 8,
+        "window_days": 15,
+        "as_of": "2026-10-31T10:27:05Z"
+      },
+      "first_release": "2026-10-16",
+      "last_release": "2026-10-17"
+    },
+    {
+      "folder": "Jack-The-Gamer@save-states",
+      "version": "1.0.0",
+      "id": "save-states",
+      "title": "Save States",
+      "author": "Jack-The-Gamer",
+      "summary": "Press 1 to 5 to save the game exactly where you are, into one of five slots; Shift + 1 to 5 brings it back. Works in all three games.",
+      "categories": [
+        "QOL"
+      ],
+      "tags": [
+        "save states",
+        "keyboard"
+      ],
+      "games": [
+        "any"
+      ],
+      "license": "MIT",
+      "engine": ">=1.3",
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@save-states",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@save-states/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@save-states/thumbnail.png",
+      "latest": {
+        "version": "1.0.0",
+        "tag": "save-states-v1.0.0",
+        "prerelease": false,
+        "published_at": "2026-10-20T15:09:16Z",
+        "zip": {
+          "name": "save-states-1.0.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/save-states-v1.0.0/save-states-1.0.0.zip",
+          "size": 1839
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 7,
+        "recent": 6,
+        "window_days": 11,
+        "as_of": "2026-10-31T10:27:05Z"
+      },
+      "first_release": "2026-10-20",
+      "last_release": "2026-10-20"
+    },
+    {
+      "folder": "Jack-The-Gamer@turbo",
+      "version": "1.1.0",
+      "id": "turbo",
+      "title": "Turbo",
+      "author": "Jack-The-Gamer",
+      "summary": "Hold the turbo button (R2), then hold one or two other buttons: they are pressed and released rapidly for as long as you hold them. The game never sees the turbo button.",
+      "categories": [
+        "QOL"
+      ],
+      "tags": [
+        "turbo",
+        "input",
+        "dialogue"
+      ],
+      "games": [
+        "any"
+      ],
+      "license": "MIT",
+      "engine": ">=0.2",
+      "conflicts": [
+        "turbo-text"
+      ],
+      "github": "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index",
+      "repo": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@turbo",
+      "hosted": true,
+      "description_url": "data/mods/Jack-The-Gamer@turbo/description.md",
+      "thumbnail": "data/mods/Jack-The-Gamer@turbo/thumbnail.png",
+      "latest": {
+        "version": "1.1.0",
+        "tag": "turbo-v1.1.0",
+        "prerelease": false,
+        "published_at": "2026-10-17T18:03:47Z",
+        "zip": {
+          "name": "turbo-1.1.0.zip",
+          "url": "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/releases/download/turbo-v1.1.0/turbo-1.1.0.zip",
+          "size": 3065
+        }
+      },
+      "update_check": "ok",
+      "downloads": {
+        "total": 9,
+        "recent": 6,
+        "window_days": 15,
+        "as_of": "2026-10-31T10:27:05Z"
+      },
+      "first_release": "2026-10-16",
+      "last_release": "2026-10-17"
+    }
+  ]
+}
