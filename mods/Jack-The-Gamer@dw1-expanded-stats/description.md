@@ -18,6 +18,13 @@ To make room for the new row, Life, Happiness, Disc. and Vir. move up one row. T
 - Numbers show up to 999.
 - Only the status screen changes; the rest of the game plays exactly as before.
 
-Made for Digimon World (USA, SLUS-01032) and checked there. Before it changes anything, the mod checks that the status screen's code is exactly what it expects. On any other version it does nothing.
+**Japanese version**
+
+The mod also works on Digimon World (Japan, SLPS-01797), in Japanese to match the rest of the screen:
+
+- **つかれ** (tiredness) sits under のろい, written in the same lettering as ごきげん and しつけ.
+- **ミス** (care mistakes) and **バトル** (battles) sit after おもさ, in the bold kana of なまえ / タイプ / とし / おもさ. The Japanese screen shows numbers full-width and has a "G" after the weight, so these two boxes are wider and end in line with the タイプ box.
+
+Made for Digimon World (USA, SLUS-01032) and (Japan, SLPS-01797) and checked on both. Before it changes anything, the mod checks that the status screen's code is exactly what it expects. On any other version (such as the European release) it does nothing.
 
 Needs Re:Compiled 0.2.6 or newer.
