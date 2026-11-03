@@ -33,6 +33,7 @@ local IS_UI_BOX_AVAILABLE = 0x800BA1D4
 local CREATE_ANIMATED_UI_BOX = 0x800C3014 -- (id, ?, ?, &final, &start, NULL, render)
 local REMOVE_ANIMATED_UI_BOX = 0x800C31FC -- (id, &final)
 local RENDER_CHART_DETAIL = 0x800BA930
+local LOAD_IMAGE = 0x800948A8       -- LoadImage(RECT *, u_long *): queued VRAM upload
 
 local MENU_STATE = 0x80134D34       -- u8: 0 setting up, 1 shown, 2 cursor, 3 detail open
 local PLAYER_MENU_STATE = 0x80134D37 -- u8: 1 = the Chart page
@@ -104,7 +105,13 @@ end
 
 -- --- the layout ------------------------------------------------------------------------
 local layout = nil     -- built when the page first shows
-M.icons = {}           -- type -> {u, v, clut index} for Digimon the game has no box for
+-- Icons for Digimon the game has no box for: type -> {u, v, clut, tpage}
+-- (clut and tpage as GPU ids), and what to upload to VRAM when the chart
+-- opens: {RECT address, data address} pairs (the page clears its text area,
+-- where they live, when it sets up).
+M.icons = {}
+M.uploads = {}
+local dirty = true
 -- type -> chart section for Digimon whose section isn't their DIGIMON_DATA
 -- level: 6 is the Mega section (Digimon World has no level 6). A section
 -- with no Digimon isn't drawn, so the Mega one only shows once it's used.
@@ -136,7 +143,7 @@ local function build_layout(ctx, new_types)
     local level = M.stage[t] or ctx:read8(tables.entry("DIGIMON_DATA", t) + 29)
     if level >= 1 and level <= STAGES then
       local ic = M.icons[t] or {}
-      news[#news + 1] = { stage = level, d = { type = t, u = ic[1], v = ic[2], clut = ic[3] or 0, new = true } }
+      news[#news + 1] = { stage = level, d = { type = t, u = ic.u, v = ic.v, clutid = ic.clut, tpage = ic.tpage, clut = 0, new = true } }
     end
   end
 
@@ -253,6 +260,10 @@ local function draw(call, ctx, l)
   local colors = {}
   for i = 0, 4 do colors[i] = ctx:read16(EVO_CHART_VIEW_COLORS + 2 * i) end
   local sel = selected(l)
+  if dirty then
+    for _, up in ipairs(M.uploads) do call(LOAD_IMAGE, up[1], up[2]) end
+    dirty = false
+  end
   -- the cursor sprite (24x20 for a 16 box, from the chart texture)
   if state >= 2 and state <= 4 and sel then
     sprite(ctx, sel.x - 0xa0 - math.floor(4 * k + 0.5), sel.y - 0x78 - math.floor(k + 0.5),
@@ -268,7 +279,7 @@ local function draw(call, ctx, l)
         raised[d.type] = r
         if r ~= 0 then
           local shift = (it == sel and state > 1 and frames % 10 < 5) and 0x10 or 0
-          sprite(ctx, it.x - 0xa0, it.y - 0x78, s, s, d.u + shift, d.v, 0x10, 0x10, 0x18, colors[d.clut], 5)
+          sprite(ctx, it.x - 0xa0, it.y - 0x78, s, s, d.u + shift, d.v, 0x10, 0x10, d.tpage or 0x18, d.clutid or colors[d.clut], 5)
         end
       end
     end
@@ -363,7 +374,7 @@ function M.install(new_types)
     end
   end
   caller(RENDER_CHART, function(ctx)
-    if ctx:read8(MENU_STATE) == 0 then return nil end -- the game sets the page up
+    if ctx:read8(MENU_STATE) == 0 then dirty = true; return nil end -- the game sets the page up
     return runner(function(call, cx) draw(call, cx, layout) end)
   end, function(saved) return saved[31] end)
   caller(CHART_TICK, function(ctx)

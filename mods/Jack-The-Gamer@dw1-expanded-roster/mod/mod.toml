@@ -36,3 +36,10 @@ name = "Check the evolution pickers (for developers)"
 type = "bool"
 default = false
 description = "Compares the mod's evolution pickers with the game's own on random partner stats (in the field), and logs the result."
+
+[[option]]
+id = "test_raised"
+name = "Count new Digimon as raised (for developers)"
+type = "bool"
+default = false
+description = "Shows the new Digimon's icons on the Digivolution Chart as if you had raised them (a save has no room to record that yet)."

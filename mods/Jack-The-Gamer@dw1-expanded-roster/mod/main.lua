@@ -23,6 +23,7 @@ local backports = require("lib.backports")
 local dw3model = require("lib.dw3model")
 local convert = require("lib.convert")
 local chart = require("lib.chart")
+local icon = require("lib.icon")
 
 if dwrc.serial ~= "SLUS-01032" then
   dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
@@ -104,6 +105,7 @@ local textures = {}
 local DIGIMON_DATA = 0x8012CEB4      -- the game's own copy (USA: boneCount at +20)
 local DIGIMON_SKELETONS = 0x8011CE60 -- pointers to {s8 object, s8 parent}[boneCount]
 local built = {}                     -- the backports that were built (type -> entry)
+local icons = {}                     -- their chart icons (type -> {pixels, clut})
 
 local function fnv(s) -- a checksum to compare with research/tools/dw1convert.py
   local h = 0x811C9DC5
@@ -143,6 +145,8 @@ else
       files.add(b.file .. ".MMD", mmd)
       textures[b.type] = tim
       built[b.type] = b
+      local pixels, clut = icon.render(info.faces, info.texture, { head = b.icon_head or { 3, 4 }, head_scale = b.icon_head_scale, pivots = info.pivots, split = b.icon_split, split_factor = b.icon_split_factor })
+      icons[b.type] = { pixels = pixels, clut = clut }
       dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes (%.2f s; checksums %08X %08X)",
         b.name, dw3.title, info.verts, info.prims, #mmd, os.clock() - t1, fnv(mmd), fnv(tim)))
     end)
@@ -205,7 +209,33 @@ local function add_to_list(ctx, f, off, size, t, is_to)
   end
 end
 
+-- The chart icons: in the mod's RAM (tables.ICONS), uploaded to the chart's
+-- text area in VRAM (x 704, y 256: page 0x1B; the chart clears rows 12..211
+-- when it opens and writes text only above row 72): icon i at texel (i % 8
+-- * 32, 100 + i // 8 * 16), its CLUT in rows 200..211, 4 a row.
+local ICON_TPAGE = 0x1B
+local function setup_icons(ctx)
+  local types = {}
+  for t in pairs(icons) do types[#types + 1] = t end
+  table.sort(types)
+  for i, t in ipairs(types) do
+    local n = i - 1
+    if n >= 48 then dwrc.log("no room for more chart icons"); break end
+    local at = tables.ICONS + n * tables.ICON_BYTES
+    local u, v = (n % 8) * 32, 100 + (n // 8) * 16
+    local cx, cy = 704 + (n % 4) * 16, 256 + 200 + n // 4
+    ctx:write_bytes(at, icons[t].pixels)
+    ctx:write_bytes(at + 256, icons[t].clut)
+    ctx:write_bytes(at + 288, string.pack("<i2i2i2i2", 704 + u // 4, 256 + v, 8, 16))
+    ctx:write_bytes(at + 296, string.pack("<i2i2i2i2", cx, cy, 16, 1))
+    chart.icons[t] = { u = u, v = v, clut = (cy << 6) | (cx >> 4), tpage = ICON_TPAGE }
+    chart.uploads[#chart.uploads + 1] = { at + 288, at }
+    chart.uploads[#chart.uploads + 1] = { at + 296, at + 256 }
+  end
+end
+
 local function setup(ctx)
+  setup_icons(ctx)
   for t, b in pairs(built) do
     -- For now every table entry starts as the donor's (stats, care, voice,
     -- techniques); the Digimon's own values come next.
@@ -281,6 +311,7 @@ do
   for t, b in pairs(built) do
     new_types[#new_types + 1] = t
     chart.stage[t] = b.chart_stage -- 6 = the Mega section (none yet)
+    if dwrc.options.test_raised then limits.raised_new[t] = true end
   end
   if test_clone then new_types[#new_types + 1] = CLONE end
   table.sort(new_types)

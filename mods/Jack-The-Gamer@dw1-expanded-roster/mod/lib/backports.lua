@@ -35,6 +35,9 @@ M.list = {
     requirements = { digimon = 2, hp = -1, mp = -1, offense = 1, defense = -1, speed = 1, brain = -1,
       care = 0, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
     evolves_from = { 2 }, -- Koromon
+    -- Its chart icon (lib/icon.lua): the head (DW1 bones 3, 4) drawn bigger,
+    -- and the ears (DW3 bones 8, 9) moved apart so both show.
+    icon_head = { 3, 4 }, icon_split = { 8, 9 },
     -- Its own evolutions (Growlmon joins when it's built; only from Guilmon,
     -- not Agumon): Greymon, Tyrannomon, Airdramon.
     evolutions = { 5, 8, 7 },

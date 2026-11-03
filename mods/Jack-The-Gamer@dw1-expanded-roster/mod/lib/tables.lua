@@ -48,6 +48,12 @@ end
 M.STRINGS = at
 M.STRINGS_SIZE = 16 * (M.CAPACITY - 180)
 at = at + M.STRINGS_SIZE
+-- Room for the new Digimon's chart icons (lib/icon.lua), uploaded from here
+-- to VRAM when the chart opens: per type 256 bytes of pixels (two 16x16
+-- 4-bit frames), a 32-byte CLUT, and the two RECTs for LoadImage.
+M.ICONS = (at + 7) & ~7
+M.ICON_BYTES = 256 + 32 + 8 + 8
+at = M.ICONS + M.ICON_BYTES * (M.CAPACITY - 180)
 M.END = (at + 15) & ~15 -- the heap starts here after the move
 M.BYTES = M.END - M.HEAP_START
 

@@ -39,10 +39,15 @@ local HAS_DIGIMON_RAISED = 0x800FF824
 M.root_scale = {}
 local ROOT_SCALE_SET = 0x800A1094
 
+-- New types that count as raised (type -> true); none yet outside the
+-- developer option test_raised (a save has no room for them so far).
+M.raised_new = {}
+
 function M.install()
   dwrc.on_exec(HAS_DIGIMON_RAISED, function(ctx)
-    if (ctx:reg("a0") & 0xFFFF) < 180 then return false end
-    ctx:ret(0)
+    local t = ctx:reg("a0") & 0xFFFF
+    if t < 180 then return false end
+    ctx:ret(M.raised_new[t] and 1 or 0)
     return true
   end)
   dwrc.on_exec(ROOT_SCALE_SET, function(ctx)

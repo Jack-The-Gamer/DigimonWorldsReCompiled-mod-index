@@ -35,10 +35,11 @@ end
 local function hp10(ctx) return cdiv(ctx:read_s16(BASE + 0x10), 10) end
 local function mp10(ctx) return cdiv(ctx:read_s16(BASE + 0x12), 10) end
 
--- hasDigimonRaised(type) = isTriggerSet(0x200 + type); new types never are.
+-- hasDigimonRaised(type) = isTriggerSet(0x200 + type); new types as
+-- lib/limits.lua answers it.
 local function raised(ctx, t)
   t = t & 0xFFFF
-  if t >= 180 then return 0 end
+  if t >= 180 then return require("lib.limits").raised_new[t] and 1 or 0 end
   local trig = t + 0x200
   local byte = ctx:read8(ctx:read32(TRIGGER_BASE_PTR) + 245 + (trig >> 3))
   return (byte & (1 << (trig & 7))) ~= 0 and 1 or 0

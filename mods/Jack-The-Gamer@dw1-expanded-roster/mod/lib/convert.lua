@@ -259,6 +259,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   local objs = {}
   for o = 0, info.nobj - 1 do objs[o] = { verts = {}, normals = {}, prims = {} } end
   local clut_rows, clut_list = {}, {}
+  local faces = {} -- every polygon at the rest pose, for the chart icon (lib/icon.lua)
   for _, b in ipairs(order) do
     local target = mapping[b][1]
     local o = skel[target][1]
@@ -267,8 +268,10 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
     local m1, t1 = w1[target][1], w1[target][2]
     local out = objs[o]
     local vbase, nbase = #out.verts, #out.normals
+    local placed_verts = {}
     for _, v in ipairs(bone.verts) do
       local w = place(g, s, b, v)
+      placed_verts[#placed_verts + 1] = w
       local d = { w[1] - t1[1], w[2] - t1[2], w[3] - t1[3] }
       local loc = {}
       for i = 1, 3 do loc[i] = clamp16((m1[1][i] * d[1] + m1[2][i] * d[2] + m1[3][i] * d[3]) / 4096) end
@@ -292,6 +295,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       local idx, nn = {}, {}
       for k = 1, n do idx[k] = vbase + p.idx[k]; nn[k] = nbase + nrm[k] end
       out.prims[#out.prims + 1] = { n = n, uv = p.uv, clut = clut_rows[key], idx = idx, nrm = nn }
+      local pts = {}
+      for k = 1, n do pts[k] = placed_verts[p.idx[k] + 1] end
+      faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * 64 + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
     end
   end
   if #clut_list > 16 then error(#clut_list .. " CLUTs; Digimon World has room for 16") end
@@ -359,7 +365,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   local mmd = string.pack("<I4I4", 8, 8 + #tmd) .. tmd .. anims
   local verts, prims = 0, 0
   for o = 0, info.nobj - 1 do verts = verts + #objs[o].verts; prims = prims + #objs[o].prims end
-  return mmd, tim, { scale = s, verts = verts, prims = prims, cluts = #clut_list, bytes = #mmd }
+  local pivots = {}
+  for i = 0, nb - 1 do pivots[i] = w1[i][2] end
+  return mmd, tim, { scale = s, verts = verts, prims = prims, cluts = #clut_list, bytes = #mmd, faces = faces, texture = px, pivots = pivots }
 end
 
 return M
