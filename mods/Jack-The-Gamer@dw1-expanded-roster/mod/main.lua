@@ -22,6 +22,7 @@ local evolution = require("lib.evolution")
 local backports = require("lib.backports")
 local dw3model = require("lib.dw3model")
 local convert = require("lib.convert")
+local chart = require("lib.chart")
 
 if dwrc.serial ~= "SLUS-01032" then
   dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
@@ -275,6 +276,16 @@ end
 tables.install(dwrc.options.check_relocation, setup)
 limits.install()
 files.install()
+do
+  local new_types = {}
+  for t, b in pairs(built) do
+    new_types[#new_types + 1] = t
+    chart.stage[t] = b.chart_stage -- 6 = the Mega section (none yet)
+  end
+  if test_clone then new_types[#new_types + 1] = CLONE end
+  table.sort(new_types)
+  chart.install(new_types)
+end
 if dwrc.options.check_evolution then
   evolution.compare(0x800DD7AC, 200) -- from partnerTick, every frame in the field
 else

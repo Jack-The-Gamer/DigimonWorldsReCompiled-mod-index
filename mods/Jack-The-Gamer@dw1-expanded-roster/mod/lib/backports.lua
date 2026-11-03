@@ -35,8 +35,9 @@ M.list = {
     requirements = { digimon = 2, hp = -1, mp = -1, offense = 1, defense = -1, speed = 1, brain = -1,
       care = 0, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
     evolves_from = { 2 }, -- Koromon
-    -- Its own evolutions (Growlmon joins when it's built): Tyrannomon, Airdramon.
-    evolutions = { 8, 7 },
+    -- Its own evolutions (Growlmon joins when it's built; only from Guilmon,
+    -- not Agumon): Greymon, Tyrannomon, Airdramon.
+    evolutions = { 5, 8, 7 },
     -- The Digimon page's camera stays the donor's (RAISE_DATA viewX/Y/Z:
     -- Agumon's 550, 230, -1870 frames it whole; a more negative z comes
     -- closer and moves it left, a larger y moves it down). `view = {x, y, z}`
