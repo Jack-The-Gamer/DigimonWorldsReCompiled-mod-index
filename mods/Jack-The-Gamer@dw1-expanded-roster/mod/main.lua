@@ -246,6 +246,7 @@ local function setup(ctx)
   local types = {}
   for t in pairs(built) do types[#types + 1] = t end
   table.sort(types)
+  local next_move = 1 -- the next of tables.FREE_FINISHERS, in type order
   for _, t in ipairs(types) do
     local b = built[t]
     -- For now every table entry starts as the donor's (stats, care, voice,
@@ -260,6 +261,32 @@ local function setup(ctx)
     if b.radius then ctx:write16(data + 24, b.radius) end
     if b.attribute then ctx:write8(data + 28, b.attribute) end
     if b.specialties then ctx:write_bytes(data + 30, string.char(table.unpack(b.specialties))) end
+    -- Its own finisher: a finisher number no Digimon has, given the donor's
+    -- finisher's stats (power, MP, range...) and its own name, in place of
+    -- that one in its moves[] (DigimonPara +35, technique by animation
+    -- slot: the animation, and so the attack's look, stays the donor's)
+    if b.finisher then
+      local f = b.finisher
+      local slot = next_move
+      if slot > #tables.FREE_FINISHERS then
+        dwrc.log("no free finisher number: " .. b.name .. " keeps its donor's finisher")
+      else
+        next_move = next_move + 1
+        local id = tables.FREE_FINISHERS[slot]
+        local str = tables.MOVE_STRINGS + tables.MOVE_STRING_BYTES * (slot - 1)
+        ctx:write_bytes(str, f.name .. string.rep("\0", tables.MOVE_STRING_BYTES - #f.name))
+        ctx:write32(tables.MOVE_NAMES + 4 * id, str)
+        ctx:write_bytes(tables.MOVE_DATA + 16 * id, ctx:read_bytes(tables.MOVE_DATA + 16 * f.from, 16))
+        local found = false
+        for i = 0, 15 do
+          if ctx:read8(data + 35 + i) == f.from then
+            ctx:write8(data + 35 + i, id)
+            found = true
+          end
+        end
+        if not found then dwrc.log(string.format("%s has no technique %d to replace with %s", b.name, f.from, f.name)) end
+      end
+    end
     -- EvoStatsGains {hp, mp, off, def, speed, brains, targetDigimon}: the
     -- evolution target is an index here, and this names the Digimon
     local gains = tables.entry("EVOLUTION_STATS_GAINS", t)

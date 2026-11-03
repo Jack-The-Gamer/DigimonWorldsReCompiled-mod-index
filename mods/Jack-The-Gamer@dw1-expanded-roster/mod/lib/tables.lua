@@ -33,6 +33,15 @@ local DEFS = {
   { "EVOLUTION_PATHS",        0x8012B66C, 62,  11,   M.CAPACITY - 1, 0xFF },
 }
 
+-- Techniques stay where they are (MOVE_NAMES: char *[122], MOVE_DATA: Move
+-- [122] of 16 bytes). Finishers are recognised by number, 0x3A..0x70, in
+-- about 45 places (0x71..0x78 are the In-Training Bubbles), so a new
+-- Digimon's own finisher reuses one of the numbers no Digimon has; more
+-- finishers will need that range widened.
+M.MOVE_NAMES = 0x80126054
+M.MOVE_DATA = 0x8012623C
+M.FREE_FINISHERS = { 0x6E, 0x70 } -- Glacial Blast, High Electro Shocker: in no DigimonPara.moves[]
+
 -- The moved tables: name -> { old, size (old bytes), new, new_size, fill }.
 M.list = {}
 M.by_name = {}
@@ -48,6 +57,10 @@ end
 M.STRINGS = at
 M.STRINGS_SIZE = 16 * (M.CAPACITY - 180)
 at = at + M.STRINGS_SIZE
+-- Names of the new finishers (MOVE_NAMES points here), 24 bytes each.
+M.MOVE_STRING_BYTES = 24
+M.MOVE_STRINGS = at
+at = at + M.MOVE_STRING_BYTES * #M.FREE_FINISHERS
 -- Room for the new Digimon's chart icons (lib/icon.lua), uploaded from here
 -- to VRAM when the chart opens: per type 256 bytes of pixels (two 16x16
 -- 4-bit frames), a 32-byte CLUT, and the two RECTs for LoadImage.
@@ -103,6 +116,7 @@ function M.install(wipe, setup)
       if wipe then ctx:write_bytes(t.old, string.rep("\0", t.size)) end
     end
     ctx:write_bytes(M.STRINGS, string.rep("\0", M.STRINGS_SIZE))
+    ctx:write_bytes(M.MOVE_STRINGS, string.rep("\0", M.MOVE_STRING_BYTES * #M.FREE_FINISHERS))
     if setup then setup(ctx) end
     ctx:set_reg("a0", M.END)
     ctx:set_reg("a1", size - (M.END - start))

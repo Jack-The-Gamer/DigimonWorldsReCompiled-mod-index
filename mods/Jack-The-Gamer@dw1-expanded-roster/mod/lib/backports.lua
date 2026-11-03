@@ -23,8 +23,10 @@ M.list = {
     -- attribute 1 Data, 2 Vaccine, 3 Virus; specialties 0 Fire, 1 Battle,
     -- 2 Air, 3 Earth, 4 Ice, 5 Mech, 6 Filth, 255 none).
     attribute = 3, specialties = { 0, 255, 1 }, radius = 140,
-    -- Techniques: Agumon's for now (59 Pepper Breath, its fireball, stands
-    -- in for Pyro Sphere: Guilmon uses Agumon's animations).
+    -- Techniques: Agumon's; its finisher (59 Pepper Breath, a fireball, on
+    -- Agumon's animation) becomes Guilmon's own Pyro Sphere with the same
+    -- stats (lib/tables.lua: on an unused finisher number).
+    finisher = { name = "Pyro Sphere", from = 59 },
     -- Stats gained on evolving into it {HP, MP, Off, Def, Speed, Brains}.
     gains = { 900, 450, 110, 40, 70, 40 },
     -- Becoming it (EvoRequirements): a Koromon (2) whose highest stat is
@@ -65,6 +67,8 @@ M.list = {
     attribute = 3, specialties = { 0, 1, 255 }, radius = 230, -- Virus; Fire, Battle
     -- Greymon's gains (Agumon's Champion line)
     gains = { 2000, 1500, 200, 200, 200, 200 },
+    -- Greymon's techniques; its finisher (63 Mega Flame) as Exhaust Flame
+    finisher = { name = "Exhaust Flame", from = 63 },
     -- Becoming it (a Champion: every stat it names, then care/weight/...):
     -- Offense and Speed 100, at most 3 care mistakes (flags 0x10: "care" is
     -- a maximum), weight 30 +- 5, 30 techniques. Looser on care and
