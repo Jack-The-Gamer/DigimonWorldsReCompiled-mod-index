@@ -30,11 +30,28 @@ end
 -- Digimon reads as never raised instead of reading some other flag.
 local HAS_DIGIMON_RAISED = 0x800FF824
 
+-- A Digimon's size: initializeDigimonObject (0x800A0E68) gives the root
+-- bone a scale of 0x1000, or 0x1800 for type 0x71; both paths meet at
+-- 0x800A1094 with the type in s4 and the root PositionData in s1 (scale
+-- words at +96/+100/+104). The root's scale reaches every bone (their
+-- matrices are chained), so a new Digimon built on a smaller donor's
+-- skeleton grows evenly, joints included. type -> scale (4096 = 1).
+M.root_scale = {}
+local ROOT_SCALE_SET = 0x800A1094
+
 function M.install()
   dwrc.on_exec(HAS_DIGIMON_RAISED, function(ctx)
     if (ctx:reg("a0") & 0xFFFF) < 180 then return false end
     ctx:ret(0)
     return true
+  end)
+  dwrc.on_exec(ROOT_SCALE_SET, function(ctx)
+    local s = M.root_scale[ctx:reg("s4")]
+    if s then
+      local root = ctx:reg("s1")
+      ctx:write32(root + 96, s); ctx:write32(root + 100, s); ctx:write32(root + 104, s)
+    end
+    return false
   end)
 end
 
