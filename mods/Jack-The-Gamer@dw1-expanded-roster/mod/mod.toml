@@ -8,6 +8,7 @@ game = "dw1"
 serials = ["SLUS-01032"]
 script = "main.lua"
 engine = ">=1.6"
+uses_games = ["dw3"]
 categories = ["CONTENT", "GAMEPLAY"]
 tags = ["digivolution", "new digimon", "guilmon"]
 license = "MIT"
@@ -27,7 +28,7 @@ id = "test_clone"
 name = "Test Digimon (for developers)"
 type = "bool"
 default = false
-description = "Adds Digimon number 180, a copy of Agumon named Test Agumon, to test new Digimon numbers."
+description = "Adds Digimon number 199, a copy of Agumon named Test Agumon, to test new Digimon numbers."
 
 [[option]]
 id = "check_evolution"

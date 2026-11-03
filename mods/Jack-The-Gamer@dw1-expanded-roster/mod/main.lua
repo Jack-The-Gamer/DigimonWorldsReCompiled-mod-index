@@ -19,6 +19,9 @@ local tables = require("lib.tables")
 local limits = require("lib.limits")
 local files = require("lib.files")
 local evolution = require("lib.evolution")
+local backports = require("lib.backports")
+local dw3model = require("lib.dw3model")
+local convert = require("lib.convert")
 
 if dwrc.serial ~= "SLUS-01032" then
   dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
@@ -96,8 +99,59 @@ end
 -- after the game's 180. `textures[type]` = a TIM for a new type.
 local textures = {}
 
+-- --- the Digimon from Digimon World 2003 ----------------------------------------
+local DIGIMON_DATA = 0x8012CEB4      -- the game's own copy (USA: boneCount at +20)
+local DIGIMON_SKELETONS = 0x8011CE60 -- pointers to {s8 object, s8 parent}[boneCount]
+local built = {}                     -- the backports that were built (type -> entry)
+
+local function fnv(s) -- a checksum to compare with research/tools/dw1convert.py
+  local h = 0x811C9DC5
+  for i = 1, #s do h = ((h ~ s:byte(i)) * 0x01000193) & 0xFFFFFFFF end
+  return h
+end
+
+local dw3 = dwrc.discs.info("dw3")
+local dw3_table = dw3 and backports.DW3[dw3.serial]
+if not dw3 then
+  dwrc.log("no Digimon World 2003 disc in the library: the Digimon from it are left out")
+elseif not dw3_table then
+  dwrc.log("Digimon World 2003 " .. dw3.serial .. " isn't supported yet (only the European disc, SLES-03936): the Digimon from it are left out")
+else
+  local disc3 = iso.disc(function(lba, count) return dwrc.discs.read("dw3", lba, count) end)
+  local exe3 = disc3:read(dw3_table.exe)
+  local function file3(n)
+    local o = n * 4 + dw3_table.sectors - dw3_table.load + 0x800
+    local lba = string.unpack("<i4", exe3, o + 1)
+    local count = string.unpack("<I2", exe3, n * 2 + dw3_table.counts - dw3_table.load + 0x800 + 1)
+    return dwrc.discs.read("dw3", lba, count)
+  end
+  local alltim
+  for _, b in ipairs(backports.list) do
+    local src = b.source[dw3.serial]
+    local ok, err = pcall(function()
+      local t1 = os.clock()
+      local m3 = dw3model.read(file3(src.file), src.bones, src.motions)
+      local mats = dw3model.pose(m3, m3.idle_frame)
+      local skel, n = {}, bin.s32(exe, exe_off(DIGIMON_DATA + b.donor * 0x34 + 20))
+      local sk = bin.u32(exe, exe_off(DIGIMON_SKELETONS + 4 * b.donor))
+      for i = 0, n - 1 do skel[i] = { string.unpack("<i1i1", exe, exe_off(sk + 2 * i) + 1) }; skel[i][3] = nil end
+      alltim = alltim or read_game_file("ALLTIM.TIM")
+      local entry = alltim:sub(b.donor * TEXTURE_SIZE + 1, (b.donor + 1) * TEXTURE_SIZE)
+      local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.height)
+      if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
+      files.add(b.file .. ".MMD", mmd)
+      textures[b.type] = tim
+      built[b.type] = b
+      dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes (%.2f s; checksums %08X %08X)",
+        b.name, dw3.title, info.verts, info.prims, #mmd, os.clock() - t1, fnv(mmd), fnv(tim)))
+    end)
+    if not ok then dwrc.log(b.name .. " couldn't be built: " .. tostring(err)) end
+  end
+end
+
+-- Developer option: type 199, a copy of Agumon, for testing new type numbers.
 local test_clone = dwrc.options.test_clone
-local CLONE, CLONE_OF, CLONE_FILE = 180, 3, "XAGU" -- type 180: a copy of Agumon
+local CLONE, CLONE_OF, CLONE_FILE = 199, 3, "XAGU"
 if test_clone then
   local alltim = read_game_file("ALLTIM.TIM")
   textures[CLONE] = alltim:sub(CLONE_OF * TEXTURE_SIZE + 1, (CLONE_OF + 1) * TEXTURE_SIZE)
@@ -114,7 +168,25 @@ end
 
 dwrc.log(string.format("roster core ready: %d references moved, %d bytes at %08X..%08X (%.2f s)", total, tables.BYTES, tables.HEAP_START, tables.END, os.clock() - t0))
 
+-- A new type's 4-letter file name, in the moved tables' string room.
+local function set_file_name(ctx, t, name)
+  local at = tables.STRINGS + 16 * (t - 180)
+  ctx:write_bytes(at, name .. "\0")
+  ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", t), at)
+end
+
 local function setup(ctx)
+  for t, b in pairs(built) do
+    -- For now every table entry starts as the donor's (stats, care, voice,
+    -- techniques); the Digimon's own values come next.
+    tables.copy_entries(ctx, b.donor, t)
+    local data = tables.entry("DIGIMON_DATA", t) -- USA: name[20], ..., height +26, level +29
+    ctx:write_bytes(data, b.name .. string.rep("\0", 20 - #b.name))
+    ctx:write16(data + 26, b.height)
+    ctx:write8(data + 29, b.level)
+    set_file_name(ctx, t, b.file)
+    ctx:write16(tables.entry("EVOLUTION_STATS_GAINS", t) + 12, t) -- the evolution target names it
+  end
   if not test_clone then return end
   tables.copy_entries(ctx, CLONE_OF, CLONE)
   -- DigimonPara (USA): name[20] first; level at +29 (a Champion, so the
@@ -132,9 +204,7 @@ local function setup(ctx)
   local r = { CLONE_OF, 0, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1 }
   for i, v in ipairs(r) do ctx:write16(reqs + 2 * (i - 1), v & 0xFFFF) end
   ctx:write8(reqs + 26, 0)
-  local name_at = tables.STRINGS
-  ctx:write_bytes(name_at, CLONE_FILE .. "\0")
-  ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", CLONE), name_at)
+  set_file_name(ctx, CLONE, CLONE_FILE)
   -- EvoStatsGains {hp, mp, off, def, speed, brains, targetDigimon}: an
   -- evolution target is an index here, and this names the Digimon
   ctx:write16(tables.entry("EVOLUTION_STATS_GAINS", CLONE) + 12, CLONE)
