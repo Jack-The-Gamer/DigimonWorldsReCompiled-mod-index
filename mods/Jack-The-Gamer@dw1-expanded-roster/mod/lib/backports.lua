@@ -19,6 +19,27 @@ M.DW3 = {
 M.list = {
   {
     type = 180, name = "Guilmon", file = "GIRU", level = 3, height = 270,
+    -- Its entries start as the donor's; these replace them (DW1 values:
+    -- attribute 1 Data, 2 Vaccine, 3 Virus; specialties 0 Fire, 1 Battle,
+    -- 2 Air, 3 Earth, 4 Ice, 5 Mech, 6 Filth, 255 none).
+    attribute = 3, specialties = { 0, 255, 1 }, radius = 140,
+    -- Techniques: Agumon's for now (59 Pepper Breath, its fireball, stands
+    -- in for Pyro Sphere: Guilmon uses Agumon's animations).
+    -- Stats gained on evolving into it {HP, MP, Off, Def, Speed, Brains}.
+    gains = { 900, 450, 110, 40, 70, 40 },
+    -- Becoming it (EvoRequirements): a Koromon (2) whose highest stat is
+    -- Offense or Speed (1 = "this one is highest", -1 = don't care) at
+    -- weight 25 +- 5, any care mistakes. Agumon and Gabumon (also from
+    -- Koromon) want weight 15 +- 5; ties keep the earlier of Koromon's
+    -- evolutions, and Guilmon comes after them.
+    requirements = { digimon = 2, hp = -1, mp = -1, offense = 1, defense = -1, speed = 1, brain = -1,
+      care = 0, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    evolves_from = { 2 }, -- Koromon
+    -- Its own evolutions: the donor's (Agumon's Champions) until Growlmon.
+    -- The Digimon page's camera stays the donor's (RAISE_DATA viewX/Y/Z:
+    -- Agumon's 550, 230, -1870 frames it whole; a more negative z comes
+    -- closer and moves it left, a larger y moves it down). `view = {x, y, z}`
+    -- sets another.
     source = { ["SLES-03936"] = { file = 356, bones = 24, motions = 50 } }, -- M366GIRU
     donor = 3, donor_file = "AGUM.MMD", -- Agumon
     -- DW3 bone (1-based) -> { DW1 bone, kind [, DW3 child, DW1 child] }

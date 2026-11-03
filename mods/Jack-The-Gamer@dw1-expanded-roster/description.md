@@ -1,14 +1,15 @@
 # DW1 Expanded Roster
 
-**Work in progress.** The plan: Digimon from Digimon World 2003 join Digimon World, built from your own copy of Digimon World 2003 each time the game starts (nothing of either game comes with the mod). The first planned line is Guilmon, Growlmon and WarGrowlmon, with Koromon evolving into Guilmon.
+**Work in progress.** Digimon from Digimon World 2003 join Digimon World, built from your own copy of Digimon World 2003 each time the game starts (nothing of either game comes with the mod).
 
-**This version changes nothing you can see yet.** It prepares the game for new Digimon:
+**Guilmon** is the first. Raise a **Koromon** whose highest stat is **Offense or Speed** and keep it **well fed (weight 20 to 30)**, and it becomes Guilmon instead of Agumon or Gabumon. Guilmon is a Virus Rookie with the Fire and Battle specialties.
 
-- the game's Digimon tables move to a bigger home, with room for 200 Digimon instead of 180;
-- the game's limits on Digimon numbers are raised;
-- new files (models, textures) can be added to the game;
-- the game's evolution choices are worked out by the mod, exactly as the game does them, so Digimon can evolve into the new ones.
+For now Guilmon:
 
-**Needs** Re:Compiled 1.6 or newer and Digimon World (USA, SLUS-01032).
+- moves with Agumon's animations and uses Agumon's techniques (Pepper Breath for its fireball);
+- evolves into Agumon's Champions (Growlmon comes later);
+- keeps Agumon's care habits and voice.
 
-Checked on Digimon World (USA): with the mod, loading a save, the field, the menus and a battle play exactly as without it, and the mod's evolution choices matched the game's own in 8,400 checks.
+**Needs** Re:Compiled 1.6 or newer, Digimon World (USA, SLUS-01032), and **Digimon World 2003 (Europe, SLES-03936)** imported in the launcher. Without Digimon World 2003 the game plays as usual; the American and Japanese Digimon World 3 discs aren't supported yet.
+
+Checked on Digimon World (USA): loading a save, the field, the menus and a battle play exactly as without the mod; a Koromon at weight 25 with Offense highest becomes Guilmon, and the same Koromon at weight 15 still becomes Agumon.

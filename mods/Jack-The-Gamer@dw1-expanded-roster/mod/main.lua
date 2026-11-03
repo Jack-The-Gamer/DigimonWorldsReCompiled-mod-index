@@ -185,7 +185,46 @@ local function setup(ctx)
     ctx:write16(data + 26, b.height)
     ctx:write8(data + 29, b.level)
     set_file_name(ctx, t, b.file)
-    ctx:write16(tables.entry("EVOLUTION_STATS_GAINS", t) + 12, t) -- the evolution target names it
+    -- DigimonPara: radius +24, attribute +28, specialties +30..32
+    if b.radius then ctx:write16(data + 24, b.radius) end
+    if b.attribute then ctx:write8(data + 28, b.attribute) end
+    if b.specialties then ctx:write_bytes(data + 30, string.char(table.unpack(b.specialties))) end
+    -- EvoStatsGains {hp, mp, off, def, speed, brains, targetDigimon}: the
+    -- evolution target is an index here, and this names the Digimon
+    local gains = tables.entry("EVOLUTION_STATS_GAINS", t)
+    if b.gains then for i, v in ipairs(b.gains) do ctx:write16(gains + 2 * (i - 1), v) end end
+    ctx:write16(gains + 12, t)
+    -- EvoRequirements: 13 int16 then flags
+    if b.requirements then
+      local r, reqs = b.requirements, tables.entry("EVOLUTION_REQS", t)
+      for i, k in ipairs({ "digimon", "hp", "mp", "offense", "defense", "speed", "brain", "care", "weight", "discipline", "happiness", "battles", "techs" }) do
+        ctx:write16(reqs + 2 * (i - 1), r[k] & 0xFFFF)
+      end
+      ctx:write8(reqs + 26, r.flags)
+    end
+    -- RAISE_DATA: viewX/Y/Z at +22 (the Digimon page's camera)
+    if b.view then
+      local raise = tables.entry("RAISE_DATA", t)
+      for i, v in ipairs(b.view) do ctx:write16(raise + 22 + 2 * (i - 1), v & 0xFFFF) end
+    end
+    -- EvolutionPath {from[5], to[6]} (0xFF none): it comes from these, and
+    -- each of them gets it after its own evolutions (the pickers keep the
+    -- earlier target on a tie, so the game's own ones win ties)
+    if b.evolves_from then
+      local path = tables.entry("EVOLUTION_PATHS", t)
+      local from = {}
+      for i = 1, 5 do from[i] = b.evolves_from[i] or 0xFF end
+      ctx:write_bytes(path, string.char(table.unpack(from)))
+      for _, f in ipairs(b.evolves_from) do
+        local to = tables.entry("EVOLUTION_PATHS", f) + 5
+        local last = -1
+        for i = 0, 5 do if ctx:read8(to + i) ~= 0xFF then last = i end end
+        local slot = nil
+        for i = last + 1, 5 do if ctx:read8(to + i) == 0xFF then slot = i; break end end
+        if not slot then for i = 0, 5 do if ctx:read8(to + i) == 0xFF then slot = i; break end end end
+        if slot then ctx:write8(to + slot, t) else dwrc.log(b.name .. ": no free evolution slot in type " .. f) end
+      end
+    end
   end
   if not test_clone then return end
   tables.copy_entries(ctx, CLONE_OF, CLONE)
