@@ -2,14 +2,15 @@
 -- from the model it built (lib/convert.lua: the polygons at the rest pose,
 -- the texture and its CLUTs, all from the player's own disc), in the style
 -- of the game's icons: 16 x 16, a three-quarter view facing left, a dark
--- outline, a few bold colours, and a second frame (the upper body one
--- pixel lower, a breath: the chart blinks between the two on the selected
+-- outline, a few bold colours, and a second frame (drawn again a little
+-- squashed, a breath: the chart blinks between the two on the selected
 -- Digimon).
 --
 -- The model is drawn 4 times bigger with a depth test and gentle lighting
 -- (so its shape reads at that size), each 4 x 4 block becomes one pixel of
--- its most common colour, the colours are reduced to 14, and a 1-pixel
--- outline in the game's outline colour goes round it.
+-- its most common colour, the colours are reduced to 8, and a 1-pixel
+-- outline in the game's outline colour goes round the figure and between
+-- parts that overlap.
 
 local M = {}
 
@@ -20,7 +21,7 @@ local YAW, PITCH = math.rad(45), math.rad(15) -- turned to face left, seen a lit
 local SATURATION = 1.35              -- the game's icons are bold, flat colours
 local COLOURS = 8                    -- besides transparent and the outline (the game's use about 6-8)
 local INNER_EDGE = 0.1               -- a part this far in front of its neighbour (share of the height) gets an outline behind it
-local SALIENT = 0.12                 -- weight for colours that stand out in a block (eyes, dark markings, claws)
+local SQUASH = 0.93                  -- the second frame's height
 local LIGHT = { -0.45, -0.65, -0.62 } -- from the top left, towards the viewer
 do
   local l = math.sqrt(LIGHT[1] ^ 2 + LIGHT[2] ^ 2 + LIGHT[3] ^ 2)
@@ -35,9 +36,18 @@ local function view(p)
   return { -xr, y * cp - zr * sp, zr * cp + y * sp }
 end
 
--- One frame: { [y][x] = {r, g, b} } on a BOX*SS square; `squash` shrinks
--- the height towards the feet.
 local WHITE, GREY_SPREAD = 16, 6     -- white (or shaded white): every channel >= 16 (of 31), all within 6
+
+-- A model point's place in a frame's supersampled picture.
+local function screen(fit, squash, p)
+  local v = view(p)
+  local x = (v[1] - fit.x0) * fit.k + fit.dx
+  local y = fit.bottom - (fit.bottom - ((v[2] - fit.y0) * fit.k + fit.dy)) * squash
+  return { x, y, v[3] }
+end
+
+-- One frame: [y * W + x] = {r, g, b, depth, bone = DW1 bone} on a BOX*SS
+-- square; `squash` shrinks the height towards the feet.
 
 local function draw(faces, px, fit, squash, no_white)
   local W = BOX * SS
@@ -47,15 +57,9 @@ local function draw(faces, px, fit, squash, no_white)
     return (h >> ((u & 3) * 4)) & 15
   end
   local function clut(c, i) return string.unpack("<I2", px, (c + i) * 2 + 1) end
-  local function screen(p)
-    local v = view(p)
-    local x = (v[1] - fit.x0) * fit.k + fit.dx
-    local y = fit.bottom - (fit.bottom - ((v[2] - fit.y0) * fit.k + fit.dy)) * squash
-    return { x, y, v[3] }
-  end
   for _, f in ipairs(faces) do
     local s = {}
-    for k = 1, #f.pts do s[k] = screen(f.pts[k]) end
+    for k = 1, #f.pts do s[k] = screen(fit, squash, f.pts[k]) end
     -- lighting: the face's normal turned towards the viewer
     local a, b, c = s[1], s[2], s[3]
     local e1 = { b[1] - a[1], b[2] - a[2], (b[3] - a[3]) * fit.k }
@@ -101,7 +105,7 @@ local function draw(faces, px, fit, squash, no_white)
                   local function sat(x) return math.max(0, math.min(31, grey + (x - grey) * SATURATION)) end
                   local cr, cg, cb = sat(r), sat(g), sat(b)
                   local lo, hi = math.min(cr, cg, cb), math.max(cr, cg, cb)
-                  col[key] = { cr, cg, cb, z, drop = drop_white and lo >= WHITE and hi - lo <= GREY_SPREAD }
+                  col[key] = { cr, cg, cb, z, drop = drop_white and lo >= WHITE and hi - lo <= GREY_SPREAD, bone = f.bone }
                 end
               end
             end
@@ -119,7 +123,7 @@ local function shrink(col)
   local out = {}
   for iy = 0, BOX - 1 do
     for ix = 0, BOX - 1 do
-      local count, first, n, near, mean, kept, dropped = {}, {}, 0, math.huge, { 0, 0, 0 }, 0, nil
+      local count, n, near, best, bestn, dropped = {}, 0, math.huge, nil, 0, nil
       for y = iy * SS, iy * SS + SS - 1 do
         for x = ix * SS, ix * SS + SS - 1 do
           local c = col[y * W + x]
@@ -129,28 +133,17 @@ local function shrink(col)
             if c.drop then
               dropped = dropped or c
             else
-              kept = kept + 1
-              mean[1], mean[2], mean[3] = mean[1] + c[1], mean[2] + c[2], mean[3] + c[3]
               local k = (math.floor(c[1]) << 10) | (math.floor(c[2]) << 5) | math.floor(c[3])
               count[k] = (count[k] or 0) + 1
-              first[k] = first[k] or c
+              if count[k] > bestn then best, bestn = c, count[k] end
             end
           end
         end
       end
-      local best, bests = nil, -1
-      if kept == 0 and dropped then
-        best = { dropped[1] * 0.55, dropped[2] * 0.55, dropped[3] * 0.55 } -- only white there: a shade instead
-      elseif kept > 0 then
-        mean = { mean[1] / kept, mean[2] / kept, mean[3] / kept }
-        for k, cnt in pairs(count) do
-          local c = first[k]
-          local dist = math.sqrt((c[1] - mean[1]) ^ 2 + (c[2] - mean[2]) ^ 2 + (c[3] - mean[3]) ^ 2)
-          local sc = cnt * (1 + SALIENT * dist)
-          if sc > bests or (sc == bests and k < (best and best.k or math.huge)) then best, bests = { c[1], c[2], c[3], k = k }, sc end
-        end
+      if not best and dropped then -- only white there: a shade of it instead
+        best = { dropped[1] * 0.55, dropped[2] * 0.55, dropped[3] * 0.55, bone = dropped.bone }
       end
-      if n >= 7 then out[(iy + 1) * 16 + (ix + 1) + 1] = { best[1], best[2], best[3], near } end -- 1 pixel in from the top and left
+      if n >= 7 then out[(iy + 1) * 16 + (ix + 1) + 1] = { best[1], best[2], best[3], near, bone = best.bone } end -- 1 pixel in from the top and left
     end
   end
   return out
@@ -200,7 +193,9 @@ end
 -- moved apart sideways (split_factor: their distance from their middle
 -- across is multiplied), for parts that would hide each other in the
 -- three-quarter view, no_white = {DW1 bones} whose near-white colours are
--- left out (the block takes its other colours: e.g. teeth in a small face).
+-- left out (the block takes its other colours: e.g. teeth in a small face),
+-- head_from_second = true: the first frame's head (opts.head) is the
+-- second frame's, lifted to the first frame's height.
 function M.render(faces, px, opts)
   opts = opts or {}
   if opts.split and #opts.split > 1 then
@@ -268,7 +263,22 @@ function M.render(faces, px, opts)
     no_white = {}
     for _, b in ipairs(opts.no_white) do no_white[b] = true end
   end
-  local frames = { shrink(draw(faces, px, fit, 1.0, no_white)) }
+  local frames = { shrink(draw(faces, px, fit, 1.0, no_white)), shrink(draw(faces, px, fit, SQUASH, no_white)) }
+  if opts.head_from_second and opts.head and opts.pivots then
+    local is_head = {}
+    for _, b in ipairs(opts.head) do is_head[b] = true end
+    local pivot = opts.pivots[opts.head[1]]
+    local dy = math.floor((screen(fit, SQUASH, pivot)[2] - screen(fit, 1.0, pivot)[2]) / SS + 0.5)
+    local first = {}
+    for key, c in pairs(frames[1]) do if not is_head[c.bone] then first[key] = c end end
+    for key, c in pairs(frames[2]) do
+      if is_head[c.bone] then
+        local y, x = (key - 1) // 16, (key - 1) % 16
+        if y - dy >= 0 then first[(y - dy) * 16 + x + 1] = c end
+      end
+    end
+    frames[1] = first
+  end
   local cent = palette(frames, COLOURS)
   local colours = { 0, OUTLINE }
   for i, c in ipairs(cent) do
@@ -288,7 +298,7 @@ function M.render(faces, px, opts)
   -- part lies well in front of the one next to it (behind it, the outline)
   local edge = INNER_EDGE * (y1 - y0)
   local idx = {}
-  for f = 1, 1 do
+  for f = 1, 2 do
     local img, dep = {}, {}
     for y = 0, 15 do
       for x = 0, 15 do
@@ -324,16 +334,6 @@ function M.render(faces, px, opts)
     end
     idx[f] = out
   end
-  -- the second frame: rows 0..8 one lower (the upper body breathes), the legs still
-  local second = {}
-  for y = 0, 15 do
-    for x = 0, 15 do
-      if y == 0 then second[x] = 0
-      elseif y <= 9 then second[y * 16 + x] = idx[1][(y - 1) * 16 + x]
-      else second[y * 16 + x] = idx[1][y * 16 + x] end
-    end
-  end
-  idx[2] = second
   local rows = {}
   for y = 0, 15 do
     local bytes = {}

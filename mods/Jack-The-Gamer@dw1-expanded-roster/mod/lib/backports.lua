@@ -35,11 +35,10 @@ M.list = {
     requirements = { digimon = 2, hp = -1, mp = -1, offense = 1, defense = -1, speed = 1, brain = -1,
       care = 0, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
     evolves_from = { 2 }, -- Koromon
-    -- Its chart icon (lib/icon.lua): the head at its own size, so both ears
-    -- show as two points (a bigger head merges them into one), and no white
-    -- in the face: the head and jaw (DW1 bones 3, 4) and the upper body (2),
-    -- whose light patch under the jaw shows in the face at 16 pixels.
-    icon_head = { 3, 4 }, icon_head_scale = 1.0, icon_no_white = { 2, 3, 4 },
+    -- Its chart icon (lib/icon.lua): the head (DW1 bones 3, 4) at its own
+    -- size, so both ears show as two points, and the first frame's head
+    -- taken from the second frame (it reads better there).
+    icon_head = { 3, 4 }, icon_head_scale = 1.0, icon_head_from_second = true,
     -- Its own evolutions (Growlmon joins when it's built; only from Guilmon,
     -- not Agumon): Greymon, Tyrannomon, Airdramon.
     evolutions = { 5, 8, 7 },
