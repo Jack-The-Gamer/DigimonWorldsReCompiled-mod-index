@@ -175,6 +175,35 @@ local function set_file_name(ctx, t, name)
   ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", t), at)
 end
 
+-- EvolutionPath lists (from[5], to[6]; 0xFF none) are centred the way the
+-- game's are, since the Digivolution Chart draws slot i at position i: an
+-- odd count in 5 positions, an even one in 4 (from) or 6 (to).
+local function write_list(ctx, at, size, items)
+  local n = #items
+  local span = (n % 2 == 1) and 5 or (size == 5 and 4 or 6)
+  local start = (span - n) // 2
+  local bytes = {}
+  for i = 1, size do bytes[i] = 0xFF end
+  for i, v in ipairs(items) do bytes[start + i] = v end
+  ctx:write_bytes(at, string.char(table.unpack(bytes)))
+end
+
+-- Adds `t` after the existing entries of type f's list (offset 0 from[5],
+-- 5 to[6]); a "to" list that is full keeps it as an extra target the mod's
+-- evolution pickers try after the six (the chart can't show it yet).
+local function add_to_list(ctx, f, off, size, t, is_to)
+  local at = tables.entry("EVOLUTION_PATHS", f) + off
+  local items = {}
+  for i = 0, size - 1 do local v = ctx:read8(at + i); if v ~= 0xFF then items[#items + 1] = v end end
+  if #items < size then
+    items[#items + 1] = t
+    write_list(ctx, at, size, items)
+  elseif is_to then
+    evolution.extra[f] = evolution.extra[f] or {}
+    table.insert(evolution.extra[f], t)
+  end
+end
+
 local function setup(ctx)
   for t, b in pairs(built) do
     -- For now every table entry starts as the donor's (stats, care, voice,
@@ -211,19 +240,13 @@ local function setup(ctx)
     -- each of them gets it after its own evolutions (the pickers keep the
     -- earlier target on a tie, so the game's own ones win ties)
     if b.evolves_from then
-      local path = tables.entry("EVOLUTION_PATHS", t)
-      local from = {}
-      for i = 1, 5 do from[i] = b.evolves_from[i] or 0xFF end
-      ctx:write_bytes(path, string.char(table.unpack(from)))
-      for _, f in ipairs(b.evolves_from) do
-        local to = tables.entry("EVOLUTION_PATHS", f) + 5
-        local last = -1
-        for i = 0, 5 do if ctx:read8(to + i) ~= 0xFF then last = i end end
-        local slot = nil
-        for i = last + 1, 5 do if ctx:read8(to + i) == 0xFF then slot = i; break end end
-        if not slot then for i = 0, 5 do if ctx:read8(to + i) == 0xFF then slot = i; break end end end
-        if slot then ctx:write8(to + slot, t) else dwrc.log(b.name .. ": no free evolution slot in type " .. f) end
-      end
+      write_list(ctx, tables.entry("EVOLUTION_PATHS", t), 5, b.evolves_from)
+      for _, f in ipairs(b.evolves_from) do add_to_list(ctx, f, 5, 6, t, true) end
+    end
+    -- Its own evolutions replace the donor's; each target lists it as a source.
+    if b.evolutions then
+      write_list(ctx, tables.entry("EVOLUTION_PATHS", t) + 5, 6, b.evolutions)
+      for _, e in ipairs(b.evolutions) do add_to_list(ctx, e, 0, 5, t, false) end
     end
   end
   if not test_clone then return end

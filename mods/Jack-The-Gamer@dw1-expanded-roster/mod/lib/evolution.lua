@@ -112,11 +112,17 @@ local function score(ctx, current, target, max_cm, max_battles, best)
   return points
 end
 
--- The six targets of `current` (type - 1 row; 0xFF = none).
+-- Targets past a Digimon's six slots (type -> {types}), tried after them in
+-- this order: the game's EvolutionPath has room for six.
+M.extra = {}
+
+-- The targets of `current`: its six slots (type - 1 row; 0xFF = none), then
+-- any extra ones.
 local function targets(ctx, current)
   local a = tables.entry("EVOLUTION_PATHS", current) + 5 -- {from[5], to[6]}
   local out = {}
   for i = 0, 5 do out[#out + 1] = ctx:read8(a + i) end
+  for _, t in ipairs(M.extra[current] or {}) do out[#out + 1] = t end
   return out
 end
 
