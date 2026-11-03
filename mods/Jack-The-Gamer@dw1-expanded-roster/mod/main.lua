@@ -199,7 +199,12 @@ end
 local function add_to_list(ctx, f, off, size, t, is_to)
   local at = tables.entry("EVOLUTION_PATHS", f) + off
   local items = {}
-  for i = 0, size - 1 do local v = ctx:read8(at + i); if v ~= 0xFF then items[#items + 1] = v end end
+  for i = 0, size - 1 do
+    local v = ctx:read8(at + i)
+    if v == t then return end -- already there
+    if v ~= 0xFF then items[#items + 1] = v end
+  end
+  for _, v in ipairs(evolution.extra[f] or {}) do if v == t then return end end
   if #items < size then
     items[#items + 1] = t
     write_list(ctx, at, size, items)
@@ -236,7 +241,13 @@ end
 
 local function setup(ctx)
   setup_icons(ctx)
-  for t, b in pairs(built) do
+  -- In type order: a backport may evolve from another one (Growlmon from
+  -- Guilmon), and each one's entries start as a copy of its donor's.
+  local types = {}
+  for t in pairs(built) do types[#types + 1] = t end
+  table.sort(types)
+  for _, t in ipairs(types) do
+    local b = built[t]
     -- For now every table entry starts as the donor's (stats, care, voice,
     -- techniques); the Digimon's own values come next.
     tables.copy_entries(ctx, b.donor, t)

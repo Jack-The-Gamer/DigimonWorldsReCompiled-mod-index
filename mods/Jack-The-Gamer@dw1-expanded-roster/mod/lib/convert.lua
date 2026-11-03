@@ -149,6 +149,222 @@ end
 -- m3: lib.dw3model's model; mats3: its pose; skel: {[bone] = {obj, parent}}
 -- (0-based bones); donor_mmd: the donor's MMD; tim_entry: the donor's
 -- ALLTIM entry (its TIM headers are reused).
+-- --- Slimming a model to fit the partner's buffer (dw1convert.simplify) -----
+-- Vertex and normal indices are 0-based, as in the TMD.
+
+local PERIMETER = { [3] = { 0, 1, 2 }, [4] = { 0, 1, 3, 2 } } -- corners in order round the edge
+
+local function prim_bytes(p) return p.n == 4 and 36 or 28 end
+
+local function obj_bytes(o)
+  local n = 8 * (#o.verts + #o.normals)
+  for _, p in ipairs(o.prims) do n = n + prim_bytes(p) end
+  return n
+end
+
+local function face_normal(V, idx)
+  local a, b, c = V[idx[1] + 1], V[idx[2] + 1], V[idx[3] + 1]
+  local u = { b[1] - a[1], b[2] - a[2], b[3] - a[3] }
+  local w = { c[1] - a[1], c[2] - a[2], c[3] - a[3] }
+  return { u[2] * w[3] - u[3] * w[2], u[3] * w[1] - u[1] * w[3], u[1] * w[2] - u[2] * w[1] }
+end
+
+-- Facing within 30 degrees (cos^2 >= 3/4), in doubles (the products don't
+-- fit an integer), in the prototype's order.
+local function flat_enough(na, nb)
+  local a1, a2, a3 = na[1] + 0.0, na[2] + 0.0, na[3] + 0.0
+  local b1, b2, b3 = nb[1] + 0.0, nb[2] + 0.0, nb[3] + 0.0
+  local d = a1 * b1 + a2 * b2 + a3 * b3
+  return d > 0 and d * d * 4.0 >= 3.0 * (a1 * a1 + a2 * a2 + a3 * a3) * (b1 * b1 + b2 * b2 + b3 * b3)
+end
+
+local function same_uv(a, b) return a[1] == b[1] and a[2] == b[2] end
+
+-- Two triangles sharing an edge (the same texture coordinates and normals
+-- on it, the same CLUT, facing within 30 degrees) become one quad: the GPU
+-- draws a quad as exactly those two triangles.
+local function pair_triangles(V, prims)
+  local tris = {}
+  for k, p in ipairs(prims) do if p.n == 3 then tris[#tris + 1] = k end end
+  local used, merged = {}, {}
+  for at, ka in ipairs(tris) do
+    if not used[ka] then
+      local A = prims[ka]
+      for j = at + 1, #tris do
+        local kb = tris[j]
+        if not used[kb] then
+          local B, q = prims[kb], nil
+          if B.clut == A.clut then
+            for r = 0, 2 do
+              local x, y = (r + 1) % 3, (r + 2) % 3
+              for t = 0, 2 do
+                local bx, by = (t + 1) % 3, t
+                if B.idx[by + 1] == A.idx[y + 1] and B.idx[bx + 1] == A.idx[x + 1] and same_uv(B.uv[bx + 1], A.uv[x + 1]) and same_uv(B.uv[by + 1], A.uv[y + 1])
+                    and B.nrm[bx + 1] == A.nrm[x + 1] and B.nrm[by + 1] == A.nrm[y + 1] then
+                  if flat_enough(face_normal(V, A.idx), face_normal(V, B.idx)) then
+                    local z = (t + 2) % 3
+                    q = { n = 4, clut = A.clut, uv = { A.uv[r + 1], A.uv[x + 1], A.uv[y + 1], B.uv[z + 1] },
+                      idx = { A.idx[r + 1], A.idx[x + 1], A.idx[y + 1], B.idx[z + 1] }, nrm = { A.nrm[r + 1], A.nrm[x + 1], A.nrm[y + 1], B.nrm[z + 1] } }
+                  end
+                  break
+                end
+              end
+              if q then break end
+            end
+          end
+          if q then
+            used[ka], used[kb], merged[ka] = true, true, q
+            break
+          end
+        end
+      end
+    end
+  end
+  local out = {}
+  for k, p in ipairs(prims) do
+    if merged[k] then out[#out + 1] = merged[k] elseif not used[k] then out[#out + 1] = p end
+  end
+  return out
+end
+
+-- The polygons with their corners renumbered: corners that meet are lost (a
+-- quad with one gone becomes a triangle, corners in their order round the
+-- edge so it faces the same way; anything less is dropped). Every corner
+-- keeps its own texture coordinates and normal.
+local function remap(prims, vmap, nmap)
+  local out = {}
+  for _, p in ipairs(prims) do
+    local idx, nrm = {}, {}
+    for k = 1, p.n do idx[k], nrm[k] = vmap[p.idx[k]], nmap[p.nrm[k]] end
+    local keep, seen = {}, {}
+    for _, c in ipairs(PERIMETER[p.n]) do
+      if not seen[idx[c + 1]] then
+        seen[idx[c + 1]] = true
+        keep[#keep + 1] = c
+      end
+    end
+    if #keep == 4 then
+      out[#out + 1] = { n = 4, uv = p.uv, clut = p.clut, idx = idx, nrm = nrm }
+    elseif #keep == 3 then
+      local uv, i3, n3 = {}, {}, {}
+      for k, c in ipairs(keep) do uv[k], i3[k], n3[k] = p.uv[c + 1], idx[c + 1], nrm[c + 1] end
+      out[#out + 1] = { n = 3, uv = uv, clut = p.clut, idx = i3, nrm = n3 }
+    end
+  end
+  return out
+end
+
+local function used_sorted(prims, field)
+  local set, list = {}, {}
+  for _, p in ipairs(prims) do
+    for _, i in ipairs(p[field]) do
+      if not set[i] then
+        set[i] = true
+        list[#list + 1] = i
+      end
+    end
+  end
+  table.sort(list)
+  return list
+end
+
+-- Only the vertices and normals the polygons use, in order; the triangles paired.
+local function compact(o)
+  local prims = pair_triangles(o.verts, o.prims)
+  local vused, nused = used_sorted(prims, "idx"), used_sorted(prims, "nrm")
+  if #vused == 0 and #o.verts > 0 then vused = { 0 } end -- an object keeps a vertex
+  if #nused == 0 and #o.normals > 0 then nused = { 0 } end
+  local vmap, nmap, verts, normals = {}, {}, {}, {}
+  for k, i in ipairs(vused) do vmap[i], verts[k] = k - 1, o.verts[i + 1] end
+  for k, i in ipairs(nused) do nmap[i], normals[k] = k - 1, o.normals[i + 1] end
+  local out = {}
+  for k, p in ipairs(prims) do
+    local idx, nrm = {}, {}
+    for c = 1, p.n do idx[c], nrm[c] = vmap[p.idx[c]], nmap[p.nrm[c]] end
+    out[k] = { n = p.n, uv = p.uv, clut = p.clut, idx = idx, nrm = nrm }
+  end
+  return { verts = verts, normals = normals, prims = out }
+end
+
+local NORMAL_COS = 16541266 -- cos(10 degrees) * 4096 * 4096, rounded down
+
+-- The objects (0-based) slimmed until their TMD is at most `budget` bytes,
+-- and how many edges that took. Free first: normals within 10 degrees
+-- shared, vertices at the same place shared, triangle pairs as quads. Then
+-- the shortest edge in the model collapses to its middle (an integer point),
+-- again and again: detail goes where the mesh is densest.
+local function simplify(objs, nobj, budget)
+  local work = {}
+  for oi = 0, nobj - 1 do
+    local o = objs[oi]
+    local reps, nmap = {}, {}
+    for i, n in ipairs(o.normals) do
+      local found
+      for k, r in ipairs(reps) do
+        if r[1] * n[1] + r[2] * n[2] + r[3] * n[3] >= NORMAL_COS then
+          found = k - 1
+          break
+        end
+      end
+      if not found then
+        found = #reps
+        reps[#reps + 1] = { n[1], n[2], n[3] }
+      end
+      nmap[i - 1] = found
+    end
+    local place, vmap, verts = {}, {}, {}
+    for i, v in ipairs(o.verts) do
+      local key = v[1] .. "," .. v[2] .. "," .. v[3]
+      if not place[key] then
+        place[key] = #verts
+        verts[#verts + 1] = { v[1], v[2], v[3] }
+      end
+      vmap[i - 1] = place[key]
+    end
+    work[oi] = { verts = verts, normals = reps, prims = remap(o.prims, vmap, nmap) }
+  end
+  local sizes = {}
+  for oi = 0, nobj - 1 do sizes[oi] = obj_bytes(compact(work[oi])) end
+  local function total()
+    local n = 12 + 28 * nobj
+    for oi = 0, nobj - 1 do n = n + sizes[oi] end
+    return n
+  end
+  local collapsed = 0
+  while total() > budget do
+    local bd, bo, blo, bhi
+    for oi = 0, nobj - 1 do
+      local V = work[oi].verts
+      for _, p in ipairs(work[oi].prims) do
+        local ring = PERIMETER[p.n]
+        for k = 1, #ring do
+          local a, b = p.idx[ring[k] + 1], p.idx[ring[k % #ring + 1] + 1]
+          local lo, hi = math.min(a, b), math.max(a, b)
+          local va, vb = V[a + 1], V[b + 1]
+          local dx, dy, dz = va[1] - vb[1], va[2] - vb[2], va[3] - vb[3]
+          local d = dx * dx + dy * dy + dz * dz
+          if not bd or d < bd or (d == bd and (oi < bo or (oi == bo and (lo < blo or (lo == blo and hi < bhi))))) then
+            bd, bo, blo, bhi = d, oi, lo, hi
+          end
+        end
+      end
+    end
+    if not bd then error("the model doesn't fit the partner buffer") end
+    local o = work[bo]
+    local A, B = o.verts[blo + 1], o.verts[bhi + 1]
+    o.verts[blo + 1] = { (A[1] + B[1]) // 2, (A[2] + B[2]) // 2, (A[3] + B[3]) // 2 }
+    local vmap, nmap = {}, {}
+    for i = 0, #o.verts - 1 do vmap[i] = (i == bhi) and blo or i end
+    for i = 0, #o.normals - 1 do nmap[i] = i end
+    o.prims = remap(o.prims, vmap, nmap)
+    sizes[bo] = obj_bytes(compact(o))
+    collapsed = collapsed + 1
+  end
+  local out = {}
+  for oi = 0, nobj - 1 do out[oi] = compact(work[oi]) end
+  return out, collapsed
+end
+
 function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)
@@ -316,7 +532,12 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   local tim = tim_entry:sub(1, 20) .. table.concat(clut) .. tim_entry:sub(8 + 524 + 1, 8 + 524 + 12) .. px:sub(1, 128 * 128)
   tim = tim .. string.rep("\0", 0x4800 - #tim)
 
-  -- TMD
+  -- TMD, slimmed when it doesn't fit the partner's buffer (0x18800 bytes)
+  -- next to the donor's animations
+  local budget = 0x18800 - 8 - (#donor_mmd - info.anim_base)
+  local size, collapsed = 12 + 28 * info.nobj, -1
+  for o = 0, info.nobj - 1 do size = size + obj_bytes(objs[o]) end
+  if size > budget then objs, collapsed = simplify(objs, info.nobj, budget) end
   local body, tab = {}, {}
   local at = 28 * info.nobj
   for o = 0, info.nobj - 1 do
@@ -367,7 +588,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   for o = 0, info.nobj - 1 do verts = verts + #objs[o].verts; prims = prims + #objs[o].prims end
   local pivots = {}
   for i = 0, nb - 1 do pivots[i] = w1[i][2] end
-  return mmd, tim, { scale = s, verts = verts, prims = prims, cluts = #clut_list, bytes = #mmd, faces = faces, texture = px, pivots = pivots }
+  return mmd, tim, { scale = s, collapsed = collapsed, verts = verts, prims = prims, cluts = #clut_list, bytes = #mmd, faces = faces, texture = px, pivots = pivots }
 end
 
 return M

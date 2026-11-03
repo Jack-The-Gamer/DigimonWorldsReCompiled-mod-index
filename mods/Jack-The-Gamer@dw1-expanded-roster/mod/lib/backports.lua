@@ -39,9 +39,9 @@ M.list = {
     -- size, so both ears show as two points, and the first frame's head
     -- taken from the second frame (it reads better there).
     icon_head = { 3, 4 }, icon_head_scale = 1.0, icon_head_from_second = true,
-    -- Its own evolutions (Growlmon joins when it's built; only from Guilmon,
-    -- not Agumon): Greymon, Tyrannomon, Airdramon.
-    evolutions = { 5, 8, 7 },
+    -- Its own evolutions: Growlmon (only from Guilmon, not Agumon), Greymon,
+    -- Tyrannomon, Airdramon. Ties keep the earlier one.
+    evolutions = { 181, 5, 8, 7 },
     -- The Digimon page's camera stays the donor's (RAISE_DATA viewX/Y/Z:
     -- Agumon's 550, 230, -1870 frames it whole; a more negative z comes
     -- closer and moves it left, a larger y moves it down). `view = {x, y, z}`
@@ -58,6 +58,37 @@ M.list = {
       [13] = { 13, "core" }, [22] = { 13, "follow" }, [23] = { 13, "follow" }, [24] = { 13, "follow" }, -- pelvis, tail -> hips
       [14] = { 15, "limb", 15, 16 }, [15] = { 16, "limb", 17, 17 }, [16] = { 16, "follow" }, [17] = { 17, "leaf" }, -- right leg
       [18] = { 19, "limb", 19, 20 }, [19] = { 20, "limb", 21, 21 }, [20] = { 20, "follow" }, [21] = { 21, "leaf" }, -- left leg
+    },
+  },
+  {
+    type = 181, name = "Growlmon", file = "GRAW", level = 4, height = 410,
+    attribute = 3, specialties = { 0, 1, 255 }, radius = 230, -- Virus; Fire, Battle
+    -- Greymon's gains (Agumon's Champion line)
+    gains = { 2000, 1500, 200, 200, 200, 200 },
+    -- Becoming it (a Champion: every stat it names, then care/weight/...):
+    -- Offense and Speed 100, at most 3 care mistakes (flags 0x10: "care" is
+    -- a maximum), weight 30 +- 5, 30 techniques. Looser on care and
+    -- discipline than Greymon (100 in all four stats, 1 mistake, discipline
+    -- 90), which Guilmon can also become.
+    requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = -1,
+      care = 3, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
+    evolves_from = { 180 }, -- Guilmon
+    icon_head = { 4, 5 }, -- Greymon's head and jaw
+    -- Until WarGrowlmon is built: Greymon's own (MetalGreymon, SkullGreymon).
+    evolutions = { 12, 26 },
+    source = { ["SLES-03936"] = { file = 625, bones = 50, motions = 0 } }, -- M367GRAW
+    donor = 5, donor_file = "GREY.MMD", -- Greymon
+    -- Its model is bigger than Greymon's: lib/convert.lua slims it to fit
+    -- the partner buffer (shortest edges first).
+    mapping = {
+      [1] = { 2, "core" },                                                         -- upper body -> torso
+      [6] = { 3, "core" }, [7] = { 4, "core" }, [8] = { 5, "core" },               -- neck, head, jaw
+      [2] = { 7, "limb", 3, 8 }, [3] = { 8, "limb", 5, 9 }, [4] = { 8, "follow" }, [5] = { 9, "leaf" }, -- right arm, elbow blade
+      [9] = { 11, "limb", 10, 12 }, [10] = { 12, "limb", 12, 13 }, [11] = { 12, "follow" }, [12] = { 13, "leaf" }, -- left arm
+      [13] = { 14, "core" },                                                       -- pelvis
+      [14] = { 15, "limb", 15, 16 }, [15] = { 16, "limb", 16, 17 }, [16] = { 17, "leaf" }, -- tail
+      [17] = { 23, "limb", 18, 24 }, [18] = { 24, "limb", 20, 25 }, [19] = { 24, "follow" }, [20] = { 25, "leaf" }, -- left leg
+      [21] = { 19, "limb", 22, 20 }, [22] = { 20, "limb", 24, 21 }, [23] = { 20, "follow" }, [24] = { 21, "leaf" }, -- right leg
     },
   },
 }
