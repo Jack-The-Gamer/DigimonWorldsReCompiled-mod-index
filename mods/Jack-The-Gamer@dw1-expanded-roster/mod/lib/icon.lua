@@ -37,7 +37,9 @@ end
 
 -- One frame: { [y][x] = {r, g, b} } on a BOX*SS square; `squash` shrinks
 -- the height towards the feet.
-local function draw(faces, px, fit, squash)
+local WHITE, GREY_SPREAD = 16, 6     -- white (or shaded white): every channel >= 16 (of 31), all within 6
+
+local function draw(faces, px, fit, squash, no_white)
   local W = BOX * SS
   local col, depth = {}, {}
   local function texel(u, v)
@@ -66,6 +68,7 @@ local function draw(faces, px, fit, squash)
       local d = (n[1] * LIGHT[1] + n[2] * LIGHT[2] + n[3] * LIGHT[3]) / nl
       light = 0.85 + 0.25 * d
     end
+    local drop_white = no_white and no_white[f.bone]
     local tris = { { 1, 2, 3 } }
     if #f.pts == 4 then tris[2] = { 2, 4, 3 } end
     for _, t in ipairs(tris) do
@@ -96,7 +99,9 @@ local function draw(faces, px, fit, squash)
                   local r, g, b = (c & 31) * light, ((c >> 5) & 31) * light, ((c >> 10) & 31) * light
                   local grey = (r + g + b) / 3
                   local function sat(x) return math.max(0, math.min(31, grey + (x - grey) * SATURATION)) end
-                  col[key] = { sat(r), sat(g), sat(b), z }
+                  local cr, cg, cb = sat(r), sat(g), sat(b)
+                  local lo, hi = math.min(cr, cg, cb), math.max(cr, cg, cb)
+                  col[key] = { cr, cg, cb, z, drop = drop_white and lo >= WHITE and hi - lo <= GREY_SPREAD }
                 end
               end
             end
@@ -114,23 +119,30 @@ local function shrink(col)
   local out = {}
   for iy = 0, BOX - 1 do
     for ix = 0, BOX - 1 do
-      local count, first, n, near, mean = {}, {}, 0, math.huge, { 0, 0, 0 }
+      local count, first, n, near, mean, kept, dropped = {}, {}, 0, math.huge, { 0, 0, 0 }, 0, nil
       for y = iy * SS, iy * SS + SS - 1 do
         for x = ix * SS, ix * SS + SS - 1 do
           local c = col[y * W + x]
           if c then
             n = n + 1
             near = math.min(near, c[4])
-            mean[1], mean[2], mean[3] = mean[1] + c[1], mean[2] + c[2], mean[3] + c[3]
-            local k = (math.floor(c[1]) << 10) | (math.floor(c[2]) << 5) | math.floor(c[3])
-            count[k] = (count[k] or 0) + 1
-            first[k] = first[k] or c
+            if c.drop then
+              dropped = dropped or c
+            else
+              kept = kept + 1
+              mean[1], mean[2], mean[3] = mean[1] + c[1], mean[2] + c[2], mean[3] + c[3]
+              local k = (math.floor(c[1]) << 10) | (math.floor(c[2]) << 5) | math.floor(c[3])
+              count[k] = (count[k] or 0) + 1
+              first[k] = first[k] or c
+            end
           end
         end
       end
       local best, bests = nil, -1
-      if n > 0 then
-        mean = { mean[1] / n, mean[2] / n, mean[3] / n }
+      if kept == 0 and dropped then
+        best = { dropped[1] * 0.55, dropped[2] * 0.55, dropped[3] * 0.55 } -- only white there: a shade instead
+      elseif kept > 0 then
+        mean = { mean[1] / kept, mean[2] / kept, mean[3] / kept }
         for k, cnt in pairs(count) do
           local c = first[k]
           local dist = math.sqrt((c[1] - mean[1]) ^ 2 + (c[2] - mean[2]) ^ 2 + (c[3] - mean[3]) ^ 2)
@@ -187,7 +199,8 @@ end
 -- donor's bone pivots (lib/convert.lua info.pivots), split = {DW3 bones}
 -- moved apart sideways (split_factor: their distance from their middle
 -- across is multiplied), for parts that would hide each other in the
--- three-quarter view (Guilmon's ears).
+-- three-quarter view, no_white = {DW1 bones} whose near-white colours are
+-- left out (the block takes its other colours: e.g. teeth in a small face).
 function M.render(faces, px, opts)
   opts = opts or {}
   if opts.split and #opts.split > 1 then
@@ -250,7 +263,12 @@ function M.render(faces, px, opts)
   local W = BOX * SS
   local k = (W - 1) / (y1 - y0)
   local fit = { x0 = mid, y0 = y0, k = k, dx = W / 2, dy = W - 1 - (y1 - y0) * k, bottom = W - 1 }
-  local frames = { shrink(draw(faces, px, fit, 1.0)) }
+  local no_white
+  if opts.no_white then
+    no_white = {}
+    for _, b in ipairs(opts.no_white) do no_white[b] = true end
+  end
+  local frames = { shrink(draw(faces, px, fit, 1.0, no_white)) }
   local cent = palette(frames, COLOURS)
   local colours = { 0, OUTLINE }
   for i, c in ipairs(cent) do
