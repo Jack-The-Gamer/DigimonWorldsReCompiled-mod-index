@@ -48,6 +48,8 @@ local DRAW_LINE_3P = 0x800E3D14     -- (color, x1, y1, x2, y2, x3, y3, depth, 0)
 local DRAW_LINE_2P = 0x800E3E7C     -- (color, x1, y1, x2, y2, depth, 0)
 local DRAW_CHART_STRINGS = 0x800C0718 -- drawEvoChartStrings(int8_t type)
 local RENDER_STRING = 0x800E5B50     -- (colour, x, y, w, h, u, v, depth, 0): text from the page's text area
+local DRAW_STRING = 0x8010CF24       -- drawString(str, x, y): text into the page's text area
+local MEGA_TEXT_V = 0x48             -- "Mega" goes there (the US page writes nothing in rows 72..99)
 local RENDER_INSET_BOX = 0x800BE734  -- (x, y, w, h, depth): the page's sunken frames (screen pixels)
 local MENU_SUB_STATE = 0x80134D35    -- u8 (2: the detail page's name is drawn every frame)
 local ASCII_TO_SJIS = 0x800F18C8     -- (char): what drawString (0x8010CF24) does per letter...
@@ -144,12 +146,16 @@ local function build_layout(ctx, new_types)
   -- every chart Digimon by stage, with its place in the game's arrangement
   local stages = {}
   for st = 1, STAGES do stages[st] = {} end
+  local moved = {} -- the game's Digimon in another section (the Megas): placed like new ones
   for i = 0, 60 do
     local b = EVO_CHART_BOXES + 8 * i
     local level = ctx:read8(tables.entry("DIGIMON_DATA", i + 1) + 29)
-    if level >= 1 and level <= 5 then
+    local d = { type = i + 1, px = ctx:read_s16(b), py = ctx:read_s16(b + 2), u = ctx:read8(b + 4), v = ctx:read8(b + 5), clut = ctx:read8(b + 6) }
+    if M.stage[i + 1] then
+      moved[#moved + 1] = { stage = M.stage[i + 1], d = d }
+    elseif level >= 1 and level <= 5 then
       local s = stages[level]
-      s[#s + 1] = { type = i + 1, px = ctx:read_s16(b), py = ctx:read_s16(b + 2), u = ctx:read8(b + 4), v = ctx:read8(b + 5), clut = ctx:read8(b + 6) }
+      s[#s + 1] = d
     end
   end
   for st = 1, STAGES do
@@ -161,7 +167,7 @@ local function build_layout(ctx, new_types)
     for c, x in ipairs(cols) do col_of[x] = c - 1 end
     for _, d in ipairs(s) do d.c, d.r = col_of[d.px], (d.py - 0x2b) // 0x13 end
   end
-  local news = {}
+  local news = moved
   for _, t in ipairs(new_types) do
     local level = M.stage[t] or ctx:read8(tables.entry("DIGIMON_DATA", t) + 29)
     if level >= 1 and level <= STAGES then
@@ -460,6 +466,7 @@ end
 -- The width in pixels of the text at `at`, as drawString lays it out (the
 -- letters' own advances; ' and . are its two special cases), or nil.
 local name_widths = {}
+local mega_width = nil
 local function text_width(call, ctx, at)
   local w, i = 0, 0
   while i < 20 do
@@ -519,8 +526,17 @@ local function draw_detail(call, ctx, t)
   -- "Tree", the stage and the name
   call(RENDER_STRING, 3, -0x14, -0x4f, 0x24, 0xc, 0, 0x18, 4, 0)
   local data = tables.entry("DIGIMON_DATA", t)
-  local st = STAGE_TEXT[ctx:read8(data + 29)]
-  if st then call(RENDER_STRING, 0, -(st[1] // 2), STAGE_Y - 120, st[1], 0xc, st[2], st[3], 4, 0) end
+  local stage = M.stage[t] or ctx:read8(data + 29)
+  local st = STAGE_TEXT[stage]
+  if stage == 6 then
+    -- the game has no "Mega": drawn into the text area's free rows
+    ctx:write_bytes(tables.TEXT, "Mega ")
+    call(DRAW_STRING, tables.TEXT, 0, MEGA_TEXT_V)
+    mega_width = mega_width or text_width(call, ctx, tables.TEXT) or 0x30
+    call(RENDER_STRING, 0, -(mega_width // 2), STAGE_Y - 120, mega_width, 0xc, 0, MEGA_TEXT_V, 4, 0)
+  elseif st then
+    call(RENDER_STRING, 0, -(st[1] // 2), STAGE_Y - 120, st[1], 0xc, st[2], st[3], 4, 0)
+  end
   if not name_widths[t] then name_widths[t] = text_width(call, ctx, data) or 0x78 end
   local w = math.min(name_widths[t], 0x78)
   call(RENDER_STRING, 0, -(w // 2), NAME_Y - 120, w, 0xc, 0, 0x30, 4, 0)  -- the sunken frames

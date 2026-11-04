@@ -76,6 +76,21 @@ at = at + M.MOVE_STRING_BYTES * M.NEW_FINISHERS
 M.ICONS = (at + 7) & ~7
 M.ICON_BYTES = 256 + 32 + 8 + 8
 at = M.ICONS + M.ICON_BYTES * (M.CAPACITY - 180)
+-- A few bytes for text the mod draws (lib/chart.lua: "Mega").
+M.TEXT = at
+at = at + 16
+-- The evolution scene's shard buffer (lib/limits.lua: EVL_setScratchTop):
+-- 6 bytes per vertex and per polygon of the Digimon evolving away. The
+-- game's (EVL_D_80066274, 0x153C bytes) holds 906; the backports need up to
+-- ~1400.
+M.EVL_SCRATCH = (at + 3) & ~3
+M.EVL_SCRATCH_SIZE = 0x3000
+at = M.EVL_SCRATCH + M.EVL_SCRATCH_SIZE
+-- Translated effect start points (lib/limits.lua: borrow), 12 bytes each:
+-- {type, bone, x, y, z} and -1.
+M.BORROW = at
+M.BORROW_SLOTS = 32
+at = at + 12 * M.BORROW_SLOTS
 M.END = (at + 15) & ~15 -- the heap starts here after the move
 M.BYTES = M.END - M.HEAP_START
 

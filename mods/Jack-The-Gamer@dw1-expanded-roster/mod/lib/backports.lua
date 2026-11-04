@@ -1,4 +1,5 @@
--- The Digimon brought over from Digimon World 2003 and Digimon World 2,
+-- The Digimon brought over from Digimon World 2003 and Digimon World 2 (and
+-- Digimon World's own NPC-only ones, `game = "dw1"`: lib/dw1source.lua),
 -- built while the mod loads from the player's own discs (nothing of any of
 -- the games ships with the mod). Each one: its new type number and name, its
 -- game (`game`, "dw3" if not given) and where its model is on that disc, the
@@ -305,6 +306,186 @@ M.list = {
       [17] = { 23, "limb", 18, 24, true }, [18] = { 24, "leaf" }, [19] = { 25, "core" },         -- right leg
       [14] = { 27, "limb", 15, 28, true }, [15] = { 28, "leaf" }, [16] = { 29, "core" },         -- left leg
     },
+  },
+  -- --- the Kabuterimon and Birdramon lines --------------------------------------------
+  {
+    -- Digimon World's own Tentomon (type 111, an NPC: its model has no eating,
+    -- sleeping or training motions) on Kabuterimon's skeleton (the same
+    -- four-armed beetle rig), at its own size (`model_height`: the mesh's
+    -- height at rest, antennae included; `height` is DIGIMON_DATA's, as the NPC's).
+    type = 188, name = "Tentomon", file = "TNTO", level = 3, height = 220, model_height = 277, game = "dw1",
+    attribute = 1, specialties = { 3, 255, 255 }, radius = 140, -- Data; Earth (as the NPC)
+    -- Kabuterimon's techniques; its finisher (93 Electro Shocker: animation,
+    -- effect) as Super Shocker at a Rookie's power (Kunemon's Electric
+    -- Thread is 94, Electro Shocker 170). Electro Shocker gathers in front
+    -- (bone 0: 200 up, 340 forward for Kabuterimon) from the four hands
+    -- (Kabuterimon's hand bones 7, 13, 10, 16 stay empty here): Tentomon's
+    -- in front of its claws, then its four claw tips (bones 6, 12, 9, 15, in
+    -- bone space), in that order.
+    finisher = { name = "Super Shocker", from = 93, power = 95,
+      origin = { { 0, 0, -80, -220 }, { 6, 30, 64, -20 }, { 12, 98, -36, 119 }, { 9, 26, 54, 43 }, { 15, 98, -36, -119 } } },
+    gains = { 800, 700, 100, 60, 50, 50 },
+    -- A Tanemon (44) whose highest stat is Offense, at weight 20 +- 5 (Palmon
+    -- and Betamon, before it, want MP/Speed/Brains or HP/MP/Defense at 15).
+    requirements = { digimon = 44, hp = -1, mp = -1, offense = 1, defense = -1, speed = -1, brain = -1,
+      care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    evolves_from = { 44 },     -- Tanemon
+    evolutions = { 19, 51 },   -- Kabuterimon, Kuwagamon
+    -- A Rookie's care (meals, sleep, weight, food, training, Digimon page
+    -- camera) from Kunemon (32), not Kabuterimon's
+    raise_from = 32,
+    icon_head = { 3 },         -- Kabuterimon's head bone
+    source = { ["SLUS-01032"] = { type = 111, file = "TENT.MMD" } },
+    donor = 19, donor_file = "KABU.MMD", -- Kabuterimon
+    -- DW1 bone -> Kabuterimon bone: shell and body on its body (its walk
+    -- nods the head bone hard: on it, the shell rocked), the head on its
+    -- head; 2-bone arms and legs on its 3-bone ones (hands, pelvis, wings
+    -- and feet bones stay empty)
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 2, "follow" }, [4] = { 2, "follow" }, [5] = { 2, "follow" }, [6] = { 2, "follow" }, [7] = { 2, "follow" }, -- shell, body
+      [8] = { 3, "core" }, [9] = { 3, "follow" }, [10] = { 3, "follow" },                         -- head, mandibles
+      [11] = { 3, "follow" }, [12] = { 3, "follow" }, [13] = { 3, "follow" }, [14] = { 3, "follow" }, -- antennae
+      [15] = { 11, "core" }, [16] = { 12, "core" }, [17] = { 14, "core" }, [18] = { 15, "core" }, -- upper arms (claws forward)
+      [19] = { 5, "core" }, [20] = { 6, "core" }, [21] = { 8, "core" }, [22] = { 9, "core" },      -- lower arms
+      [23] = { 22, "limb", 24, 23, true }, [24] = { 23, "core" },                                 -- right leg (+x): thigh, foot
+      [25] = { 25, "limb", 26, 26, true }, [26] = { 26, "core" },                                 -- left leg
+    },
+  },
+  {
+    type = 189, name = "MegaKabuterimon", file = "MKAB", level = 5, height = 460, game = "dw2",
+    attribute = 2, specialties = { 3, 1, 255 }, radius = 280, -- Vaccine; Earth, Battle
+    -- HerculesKabuterimon's techniques; its finisher (93 Electro Shocker) as
+    -- Horn Buster at an Ultimate's power
+    finisher = { name = "Horn Buster", from = 93, power = 225 },
+    gains = { 5000, 4000, 500, 600, 400, 400 },
+    -- HP 500, Offense 400, Defense 500, Speed 300, at most 5 care mistakes,
+    -- weight 55, 30 battles, 35 techniques (Okuwamon: Offense and Speed)
+    requirements = { digimon = -1, hp = 500, mp = -1, offense = 400, defense = 500, speed = 300, brain = -1,
+      care = 5, weight = 55, discipline = -1, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
+    evolves_from = { 19, 51 },  -- Kabuterimon, Kuwagamon
+    evolutions = { 60 },        -- HerculesKabuterimon (a Mega)
+    icon_head = { 3, 4 },
+    source = { ["SLUS-01193"] = { model = 115, anim = 28 } }, -- DW2 Digimon 181
+    donor = 60, donor_file = "HKAB.MMD", -- HerculesKabuterimon (its wing bones stay empty)
+    mapping = {
+      [8] = { 2, "core" },                                                                       -- body
+      [21] = { 3, "core" }, [22] = { 4, "core" },                                                -- head, horn
+      [12] = { 9, "core" }, [13] = { 10, "core" }, [14] = { 11, "core" },                        -- upper arm (+x)
+      [9] = { 12, "core" }, [10] = { 13, "core" }, [11] = { 14, "core" },                        -- upper arm (-x)
+      [18] = { 5, "core" }, [19] = { 6, "core" }, [20] = { 6, "follow" },                        -- lower arm (+x)
+      [15] = { 7, "core" }, [16] = { 8, "core" }, [17] = { 8, "follow" },                        -- lower arm (-x)
+      [1] = { 19, "core" },                                                                      -- hips
+      [2] = { 20, "limb", 3, 21, true }, [3] = { 21, "leaf" }, [4] = { 22, "core" },             -- leg (+x)
+      [5] = { 23, "limb", 6, 24, true }, [6] = { 24, "leaf" }, [7] = { 25, "core" },             -- leg (-x)
+    },
+  },
+  {
+    type = 190, name = "Okuwamon", file = "OKWA", level = 5, height = 430,
+    attribute = 3, specialties = { 3, 1, 2 }, radius = 280, -- Virus; Earth, Battle, Air
+    -- Centarumon's skeleton and motions (four legs and two arms, like it) with
+    -- HerculesKabuterimon's techniques (`techniques`): each plays one of
+    -- Centarumon's technique motions (`motions`: HerculesKabuterimon's slot k
+    -- -> Centarumon's slot, a list from slot 0: Prominence Beam and Red
+    -- Inferno on their own, Megaton Punch, Buster Dive and the claws on Dynamite
+    -- Kick and Counter, Green Trap on Magma Bomb, the powders from the mouth on
+    -- Spit Fire and Fire Tower, Bug on Heat Laser, Charm Perfume on Meltdown,
+    -- Mass Morph and Muscle Charge on Muscle Charge). Where an effect starts
+    -- from HerculesKabuterimon's bones and doesn't list Centarumon, its start
+    -- point moves to the matching part (`bones`: its bone -> {bone, x, y, z},
+    -- the part's place in bone space at rest; lib/limits.lua: borrow).
+    techniques = { from = 60, motions = { 3, 5, 7, 8, 7, 9, 8, 7, 2, 0, 4, 6, 1, 9, 8 },
+      bones = { [2] = { 3, 66, -1, 72 }, [3] = { 4, -41, 1, -230 }, [4] = { 4, -41, 1, -230 },
+        [6] = { 7, 92, -51, -130 }, [11] = { 7, 92, -51, -130 }, [8] = { 9, 142, 0, -296 }, [14] = { 9, 142, 0, -296 } } },
+    -- Its finisher as Double Scissor Claw: Electro Shocker's stats at an
+    -- Ultimate's power, Counter's strike with a dash (`lunge`: 450 forward over
+    -- frames 4..11; Counter's root keys move nothing, so the dash isn't
+    -- overridden) and Kuwagamon's Scissor Claw (0x64) striking where Kuwagamon's
+    -- does (bone 0, 140 up, 425 forward)
+    finisher = { name = "Double Scissor Claw", from = 93, power = 230, lunge = { frame = 4, frames = 7, distance = 450 },
+      effect = 0x64, origin = { 0, 0, -140, -425 } },
+    gains = { 4500, 4500, 600, 400, 600, 400 },
+    -- HP 400, MP 300, Offense 500, Defense 300, Speed 500, at most 10 care
+    -- mistakes, weight 45, 30 battles, 30 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 300, speed = 500, brain = -1,
+      care = 10, weight = 45, discipline = -1, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
+    evolves_from = { 19, 51 },  -- Kabuterimon, Kuwagamon
+    evolutions = { 60 },        -- HerculesKabuterimon (a Mega)
+    raise_from = 60,            -- an Ultimate's care (Centarumon is a Champion)
+    icon_head = { 4 },
+    source = { ["SLES-03936"] = { file = 832, bones = 58, motions = 0 } }, -- M226OKWA (enemy fighter 0xE2)
+    donor = 36, donor_file = "CENT.MMD", -- Centarumon
+    -- abdomen on the horse body (the front legs' parent), chest on the human
+    -- torso; legs and arms keep Okuwamon's own stance (turned to Centarumon's
+    -- narrow legs, its splayed legs became one column)
+    mapping = {
+      [1] = { 2, "core" },                                                                       -- abdomen
+      [14] = { 3, "core" }, [21] = { 3, "follow" }, [22] = { 3, "follow" }, [27] = { 3, "follow" }, [28] = { 3, "follow" }, -- chest, wings
+      [23] = { 4, "core" }, [24] = { 4, "follow" }, [25] = { 4, "follow" }, [26] = { 4, "follow" }, -- head, mouth, pincers
+      [15] = { 5, "core" }, [16] = { 6, "core" }, [17] = { 7, "core" },                          -- arm (+x)
+      [18] = { 8, "core" }, [19] = { 9, "core" }, [20] = { 9, "follow" },                        -- arm (-x; Centarumon's has 2 bones)
+      [11] = { 10, "core" }, [12] = { 11, "core" }, [13] = { 12, "core" },                       -- front leg (+x)
+      [2] = { 13, "core" }, [3] = { 14, "core" }, [4] = { 15, "core" },                          -- front leg (-x)
+      [8] = { 19, "core" }, [9] = { 20, "core" }, [10] = { 22, "core" },                         -- back leg (+x; 4 bones there)
+      [5] = { 23, "core" }, [6] = { 24, "core" }, [7] = { 26, "core" },                          -- back leg (-x)
+    },
+  },
+  {
+    type = 191, name = "Garudamon", file = "GRDA", level = 5, height = 470, game = "dw2",
+    attribute = 2, specialties = { 0, 2, 1 }, radius = 260, -- Vaccine; Fire, Air, Battle
+    -- Andromon's techniques; its finisher (102 Spiral Sword: stats, motion) as
+    -- Wing Blade with Birdramon's Meteor Wing (0x5E), whose four start points
+    -- (Birdramon's wings) are its wing tips (on the chest, bone 2) and hands
+    -- (7, 11): those parts' centres at rest, in bone space
+    finisher = { name = "Wing Blade", from = 102, effect = 0x5E,
+      origin = { { 2, 134, -65, -216 }, { 2, 164, -6, 183 }, { 7, -25, -31, -6 }, { 11, 2, -40, 1 } } },
+    gains = { 5000, 5000, 500, 450, 550, 500 },
+    -- HP 400, MP 300, Offense 400, Defense 300, Speed 400, Brains 300, at most
+    -- 5 care mistakes, weight 40, discipline 90, 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 400, defense = 300, speed = 400, brain = 300,
+      care = 5, weight = 40, discipline = 90, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
+    evolves_from = { 21, 20, 50 }, -- Birdramon, Angemon, Kokatorimon
+    evolutions = { 59 },           -- Phoenixmon (a Mega)
+    icon_head = { 3 },             -- Andromon has no jaw
+    source = { ["SLUS-01193"] = { model = 226, anim = 225 } }, -- DW2 Digimon 187
+    donor = 40, donor_file = "ANDR.MMD", -- Andromon (as Paildramon)
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 2, "follow" }, [13] = { 2, "follow" }, [14] = { 2, "follow" }, -- chest, wings
+      [4] = { 3, "core" }, [5] = { 3, "follow" }, [6] = { 3, "follow" }, [7] = { 3, "follow" }, [8] = { 3, "follow" }, [9] = { 3, "follow" }, -- head
+      [15] = { 5, "core" }, [16] = { 6, "core" }, [17] = { 7, "core" },                          -- arm (+x)
+      [10] = { 9, "core" }, [11] = { 10, "core" }, [12] = { 11, "core" },                        -- arm (-x)
+      [18] = { 12, "core" }, [23] = { 12, "follow" },                                            -- hips, tail feathers
+      [19] = { 14, "limb", 20, 15, true }, [20] = { 15, "leaf" }, [21] = { 15, "follow" }, [22] = { 16, "core" }, -- leg (+x)
+      [24] = { 18, "limb", 25, 19, true }, [25] = { 19, "leaf" }, [26] = { 19, "follow" }, [27] = { 20, "core" }, -- leg (-x)
+    },
+  },
+}
+
+-- The game's own Digimon that change: HerculesKabuterimon and Phoenixmon become
+-- Megas (the chart's sixth section; DIGIMON_DATA keeps level 5, which so much
+-- of the game reads that a level 6 isn't safe). Each is taken off every other
+-- Digimon's targets (Kabuterimon, Kuwagamon, Shellmon; Birdramon, Angemon,
+-- Airdramon, Kokatorimon, Unimon), comes from `evolves_from` only, has no
+-- targets (Phoenixmon's sixth slot holds a stray 0), and gets Mega
+-- requirements and gains. An Ultimate becomes a Mega like a Champion becomes
+-- an Ultimate (lib/evolution.lua: M.MEGA_HOURS).
+M.changes = {
+  {
+    type = 60, name = "HerculesKabuterimon", chart_stage = 6,
+    evolves_from = { 189, 190 }, -- MegaKabuterimon, Okuwamon
+    -- HP 700, MP 400, Offense 600, Defense 700, Speed 500, at most 5 care
+    -- mistakes, weight 60, 50 battles, 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 400, offense = 600, defense = 700, speed = 500, brain = -1,
+      care = 5, weight = 60, discipline = -1, happiness = -1, battles = 50, techs = 45, flags = 0x10 },
+    gains = { 7000, 6000, 700, 800, 600, 500 },
+  },
+  {
+    type = 59, name = "Phoenixmon", chart_stage = 6,
+    evolves_from = { 191, 55 }, -- Garudamon, Piximon
+    -- HP 600, MP 700, Offense 500, Defense 500, Speed 700, Brains 700, at most
+    -- 3 care mistakes, weight 35, discipline 100, 45 techniques
+    requirements = { digimon = -1, hp = 600, mp = 700, offense = 500, defense = 500, speed = 700, brain = 700,
+      care = 3, weight = 35, discipline = 100, happiness = -1, battles = -1, techs = 45, flags = 0x10 },
+    gains = { 7000, 8000, 600, 500, 800, 800 },
   },
 }
 

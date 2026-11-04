@@ -26,6 +26,7 @@ local evolution = require("lib.evolution")
 local backports = require("lib.backports")
 local dw3model = require("lib.dw3model")
 local dw2model = require("lib.dw2model")
+local dw1source = require("lib.dw1source")
 local convert = require("lib.convert")
 local chart = require("lib.chart")
 local icon = require("lib.icon")
@@ -122,8 +123,9 @@ local function fnv(s) -- a checksum to compare with research/tools/dw1convert.py
 end
 
 -- The other games' discs the backports come from: game -> {info, file(n)}
--- (files by number through each executable's own file table).
-local sources = {}
+-- (files by number through each executable's own file table); "dw1" is this
+-- disc (an NPC-only Digimon's own model on a partner's skeleton).
+local sources = { dw1 = { info = { serial = dwrc.serial, title = "Digimon World" } } }
 do
   local dw3 = dwrc.discs.info("dw3")
   local t3 = dw3 and backports.DW3[dw3.serial]
@@ -165,24 +167,42 @@ do
     if spec then
       local ok, err = pcall(function()
         local t1 = os.clock()
+        local function skeleton(t)
+          local out, count = {}, bin.s32(exe, exe_off(DIGIMON_DATA + t * 0x34 + 20))
+          local sk = bin.u32(exe, exe_off(DIGIMON_SKELETONS + 4 * t))
+          for i = 0, count - 1 do out[i] = { string.unpack("<i1i1", exe, exe_off(sk + 2 * i) + 1) }; out[i][3] = nil end
+          return out
+        end
+        local skel = skeleton(b.donor)
+        alltim = alltim or read_game_file("ALLTIM.TIM")
         local m3, mats
-        if game == "dw2" then
+        if game == "dw1" then
+          local mmd1, skel1 = read_game_file(spec.file), skeleton(spec.type)
+          m3 = dw1source.read(mmd1, skel1, alltim:sub(spec.type * TEXTURE_SIZE + 1, (spec.type + 1) * TEXTURE_SIZE))
+          mats = dw1source.pose(mmd1, skel1)
+        elseif game == "dw2" then
           m3 = dw2model.read(src.file(spec.model))
           mats = dw2model.pose(m3, src.file(spec.anim), 0, 0)
         else
           m3 = dw3model.read(src.file(spec.file), spec.bones, spec.motions)
           mats = dw3model.pose(m3, m3.idle_frame)
         end
-        local skel, n = {}, bin.s32(exe, exe_off(DIGIMON_DATA + b.donor * 0x34 + 20))
-        local sk = bin.u32(exe, exe_off(DIGIMON_SKELETONS + 4 * b.donor))
-        for i = 0, n - 1 do skel[i] = { string.unpack("<i1i1", exe, exe_off(sk + 2 * i) + 1) }; skel[i][3] = nil end
-        alltim = alltim or read_game_file("ALLTIM.TIM")
         local entry = alltim:sub(b.donor * TEXTURE_SIZE + 1, (b.donor + 1) * TEXTURE_SIZE)
         -- a finisher playing another of the donor's motions (finisher.anim):
         -- technique slot k is animation 0x2E + k
         local alias
         local f = b.finisher
-        if f and f.anim then
+        if b.techniques then
+          -- another Digimon's techniques, each on one of the donor's technique
+          -- motions (slot k plays animation 0x2E + k); the finisher's with its dash
+          alias = {}
+          local data = DIGIMON_DATA + b.techniques.from * 0x34
+          for k, m in ipairs(b.techniques.motions) do
+            local slot, l = k - 1, nil
+            if f and f.lunge and exe:byte(exe_off(data + 35 + slot) + 1) == f.from then l = f.lunge end
+            alias[0x2E + slot] = l and { 0x2E + m, l.frame, l.frames, l.distance } or 0x2E + m
+          end
+        elseif f and f.anim then
           local data, from_k, anim_k = DIGIMON_DATA + b.donor * 0x34, nil, nil
           for k = 0, 15 do
             local m = exe:byte(exe_off(data + 35 + k) + 1)
@@ -193,8 +213,12 @@ do
           if from_k and anim_k then alias = { [0x2E + from_k] = l and { 0x2E + anim_k, l.frame, l.frames, l.distance } or 0x2E + anim_k }
           else dwrc.log(string.format("%s: its donor has no technique %d or %d; %s keeps its own motion", b.name, f.from, f.anim, f.name)) end
         end
-        local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.height, alias)
+        local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.model_height or b.height, alias)
         if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
+        -- the evolution scene shatters it (lib/limits.lua: 6 bytes a vertex and a polygon)
+        if 6 * (info.verts + info.prims) > tables.EVL_SCRATCH_SIZE then
+          error(string.format("its %d vertices and %d polygons don't fit the evolution scene's shard buffer", info.verts, info.prims))
+        end
         files.add(b.file .. ".MMD", mmd)
         textures[b.type] = tim
         built[b.type] = b
@@ -217,6 +241,10 @@ local ORIGINAL_DIGIMON_TYPES = 0x8012A84C -- s16 per type, -1 = itself
 for t, b in pairs(built) do
   local o = string.unpack("<i2", exe, exe_off(ORIGINAL_DIGIMON_TYPES + 2 * b.donor) + 1)
   limits.original_type[t] = o >= 0 and o or b.donor -- battle effects treat it as its donor
+  if b.techniques then
+    local f = string.unpack("<i2", exe, exe_off(ORIGINAL_DIGIMON_TYPES + 2 * b.techniques.from) + 1)
+    limits.borrow[t] = { type = f >= 0 and f or b.techniques.from, bones = b.techniques.bones or {} }
+  end
 end
 do
   local types = {}
@@ -364,6 +392,48 @@ do
   end
 end
 
+-- The game's own Digimon that change (backports.changes: HerculesKabuterimon
+-- and Phoenixmon as Megas): taken off every other Digimon's targets, coming
+-- only from their own list (and on those Digimon's targets), with no targets
+-- of their own. A change waits for at least one of its new sources.
+local changed = {}
+do
+  local function list_of(r, off, size)
+    local items = {}
+    for i = 1, size do if r[off + i] ~= 0xFF then items[#items + 1] = r[off + i] end end
+    return items
+  end
+  local types = {}
+  for t = 1, 62 do types[#types + 1] = t end
+  for t in pairs(built) do types[#types + 1] = t end
+  for _, c in ipairs(backports.changes) do
+    local from = {}
+    for _, f in ipairs(c.evolves_from) do if f < 180 or built[f] then from[#from + 1] = f end end
+    local new_source = false
+    for _, f in ipairs(from) do if f >= 180 then new_source = true end end
+    if not new_source then
+      dwrc.log(c.name .. " stays an Ultimate: none of the Digimon it would come from were built")
+    else
+      changed[#changed + 1] = c
+      for _, t in ipairs(types) do
+        if t ~= c.type then
+          local r, hit = row(t), false
+          local items = list_of(r, 5, 6)
+          for i = #items, 1, -1 do if items[i] == c.type then table.remove(items, i); hit = true end end
+          if hit then write_list(r, 5, 6, items) end
+          local more = evolution.extra[t]
+          for i = #(more or {}), 1, -1 do if more[i] == c.type then table.remove(more, i) end end
+          if more and #more == 0 then evolution.extra[t] = nil end
+        end
+      end
+      set_list(c.type, 0, 5, from, false)
+      set_list(c.type, 5, 6, {}, true)
+      for _, f in ipairs(from) do add_to_list(f, 5, 6, c.type, true) end
+      chart.stage[c.type] = c.chart_stage
+    end
+  end
+end
+
 -- The chart icons: in the mod's RAM (tables.ICONS), uploaded to the chart's
 -- text area in VRAM (x 704, y 256: page 0x1B; the chart clears rows 12..211
 -- when it opens and writes text only above row 72): icon i at texel (i % 8
@@ -395,6 +465,20 @@ local function setup_icons(ctx)
   for _, w in ipairs(icon_writes) do ctx:write_bytes(w[1], w[2]) end
 end
 
+-- A Digimon's stat gains (EvoStatsGains {hp, mp, off, def, speed, brains})
+-- and requirements (EvoRequirements: 13 int16 then flags), when given.
+local function write_evolution(ctx, t, b)
+  local gains = tables.entry("EVOLUTION_STATS_GAINS", t)
+  if b.gains then for i, v in ipairs(b.gains) do ctx:write16(gains + 2 * (i - 1), v) end end
+  if b.requirements then
+    local r, reqs = b.requirements, tables.entry("EVOLUTION_REQS", t)
+    for i, k in ipairs({ "digimon", "hp", "mp", "offense", "defense", "speed", "brain", "care", "weight", "discipline", "happiness", "battles", "techs" }) do
+      ctx:write16(reqs + 2 * (i - 1), r[k] & 0xFFFF)
+    end
+    ctx:write8(reqs + 26, r.flags)
+  end
+end
+
 local function setup(ctx)
   setup_icons(ctx)
   -- In type order: a backport may evolve from another one (Growlmon from
@@ -407,6 +491,18 @@ local function setup(ctx)
     -- For now every table entry starts as the donor's (stats, care, voice,
     -- techniques); the Digimon's own values come next.
     tables.copy_entries(ctx, b.donor, t)
+    -- another Digimon's techniques (DigimonPara.moves[16] at +35; their
+    -- motions are aliased in the model, their start points translated by
+    -- lib/limits.lua)
+    if b.techniques then
+      ctx:write_bytes(tables.entry("DIGIMON_DATA", t) + 35, ctx:read_bytes(tables.entry("DIGIMON_DATA", b.techniques.from) + 35, 16))
+    end
+    -- RaiseData (meals, sleep, poop, favourite food, training, default
+    -- weight, the Digimon page's camera) from another Digimon: a Rookie on a
+    -- Champion's skeleton cares like a Rookie
+    if b.raise_from then
+      ctx:write_bytes(tables.entry("RAISE_DATA", t), ctx:read_bytes(tables.entry("RAISE_DATA", b.raise_from), 0x1C))
+    end
     local data = tables.entry("DIGIMON_DATA", t) -- USA: name[20], ..., height +26, level +29
     ctx:write_bytes(data, b.name .. string.rep("\0", 20 - #b.name))
     ctx:write16(data + 26, b.height)
@@ -426,6 +522,9 @@ local function setup(ctx)
       ctx:write_bytes(str, f.name .. string.rep("\0", tables.MOVE_STRING_BYTES - #f.name))
       ctx:write32(tables.entry("MOVE_NAMES", id), str)
       ctx:write_bytes(tables.entry("MOVE_DATA", id), ctx:read_bytes(tables.entry("MOVE_DATA", f.from), 16))
+      -- Move {s32 distance, s16 power, ...}: its own power (a Rookie's or an
+      -- Ultimate's on a donor finisher of another level)
+      if f.power then ctx:write16(tables.entry("MOVE_DATA", id) + 4, f.power) end
       local found = false
       for i = 0, 15 do
         if ctx:read8(data + 35 + i) == f.from then
@@ -437,23 +536,16 @@ local function setup(ctx)
     end
     -- EvoStatsGains {hp, mp, off, def, speed, brains, targetDigimon}: the
     -- evolution target is an index here, and this names the Digimon
-    local gains = tables.entry("EVOLUTION_STATS_GAINS", t)
-    if b.gains then for i, v in ipairs(b.gains) do ctx:write16(gains + 2 * (i - 1), v) end end
-    ctx:write16(gains + 12, t)
-    -- EvoRequirements: 13 int16 then flags
-    if b.requirements then
-      local r, reqs = b.requirements, tables.entry("EVOLUTION_REQS", t)
-      for i, k in ipairs({ "digimon", "hp", "mp", "offense", "defense", "speed", "brain", "care", "weight", "discipline", "happiness", "battles", "techs" }) do
-        ctx:write16(reqs + 2 * (i - 1), r[k] & 0xFFFF)
-      end
-      ctx:write8(reqs + 26, r.flags)
-    end
+    ctx:write16(tables.entry("EVOLUTION_STATS_GAINS", t) + 12, t)
+    write_evolution(ctx, t, b)
     -- RAISE_DATA: viewX/Y/Z at +22 (the Digimon page's camera)
     if b.view then
       local raise = tables.entry("RAISE_DATA", t)
       for i, v in ipairs(b.view) do ctx:write16(raise + 22 + 2 * (i - 1), v & 0xFFFF) end
     end
   end
+  -- the game's Digimon that change (backports.changes: the Megas)
+  for _, c in ipairs(changed) do write_evolution(ctx, c.type, c) end
   -- the evolution lists worked out above
   for t, r in pairs(rows) do ctx:write_bytes(tables.entry("EVOLUTION_PATHS", t), string.char(table.unpack(r))) end
   if not test_clone then return end
@@ -498,3 +590,4 @@ if dwrc.options.check_evolution then
 else
   evolution.install()
 end
+evolution.install_megas() -- Ultimates become Megas (lib/evolution.lua)

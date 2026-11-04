@@ -15,6 +15,19 @@ local M = {}
 M.IN_TRAINING = 0x800E2598 -- getInTrainingEvolutionTarget(type) -> int16
 M.ROOKIE = 0x800E2BB4      -- getRookieEvolutionTarget(type)
 M.CHAMPION = 0x800E2F08    -- getChampionEvolutionTarget(type)
+-- tickConditions (0x800A8F38) picks a target by level at every clock tick
+-- once the map has been up 25 frames ("isInDaytimeTransition" only checks
+-- that): Fresh at evoTimer 6, In-Training 24, Rookie 72, Champion 144 (the
+-- hours since the last evolution); none for Ultimates. 0x800A9254 is where
+-- its level checks meet again (only reached with the partner idle and the
+-- tamer free; s0 = level, s1 = evoTimer): an Ultimate with Mega targets
+-- picks one there the Champion's way once its evoTimer reaches MEGA_HOURS. A Mega keeps DIGIMON_DATA level
+-- 5 and has no targets. (The evolution then keeps evoTimer, as it does
+-- between Digimon of one level, and adds 96 hours of life, as for any
+-- Ultimate.)
+M.ULTIMATE_CHECK = 0x800A9254
+M.MEGA_HOURS = 144
+local EVOLUTION_TARGET = 0x80134E50 -- int16, -1 = none
 
 local PARTNER_ENTITY = 0x801557A8
 local BASE = PARTNER_ENTITY + 0x38    -- BaseStats {off, def, speed, brain, movesPrio[4], moves[4], hp, mp}
@@ -184,6 +197,22 @@ end
 
 function M.champion(ctx, current)
   return by_stats(ctx, current)
+end
+
+-- An Ultimate's Mega: as a Champion's Ultimate (every stat it names, then
+-- the highest average).
+function M.ultimate(ctx, current)
+  return by_stats(ctx, current)
+end
+
+function M.install_megas()
+  dwrc.on_exec(M.ULTIMATE_CHECK, function(ctx)
+    if ctx:reg("s0") == 5 and s16(ctx:reg("s1")) >= M.MEGA_HOURS then
+      local t = M.ultimate(ctx, ctx:read32(PARTNER_ENTITY))
+      if t ~= -1 then ctx:write16(EVOLUTION_TARGET, t) end
+    end
+    return false
+  end)
 end
 
 local PICKERS = { [M.IN_TRAINING] = M.in_training, [M.ROOKIE] = M.rookie, [M.CHAMPION] = M.champion }

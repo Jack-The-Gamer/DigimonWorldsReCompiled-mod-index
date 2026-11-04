@@ -222,7 +222,7 @@ local function pair_triangles(V, prims)
         local kb = tris[j]
         if not used[kb] then
           local B, q = prims[kb], nil
-          if B.clut == A.clut then
+          if B.clut == A.clut and B.blend == A.blend then
             for r = 0, 2 do
               local x, y = (r + 1) % 3, (r + 2) % 3
               for t = 0, 2 do
@@ -231,7 +231,7 @@ local function pair_triangles(V, prims)
                     and B.nrm[bx + 1] == A.nrm[x + 1] and B.nrm[by + 1] == A.nrm[y + 1] then
                   if flat_enough(face_normal(V, A.idx), face_normal(V, B.idx)) then
                     local z = (t + 2) % 3
-                    q = { n = 4, clut = A.clut, uv = { A.uv[r + 1], A.uv[x + 1], A.uv[y + 1], B.uv[z + 1] },
+                    q = { n = 4, clut = A.clut, blend = A.blend, uv = { A.uv[r + 1], A.uv[x + 1], A.uv[y + 1], B.uv[z + 1] },
                       idx = { A.idx[r + 1], A.idx[x + 1], A.idx[y + 1], B.idx[z + 1] }, nrm = { A.nrm[r + 1], A.nrm[x + 1], A.nrm[y + 1], B.nrm[z + 1] } }
                   end
                   break
@@ -272,11 +272,11 @@ local function remap(prims, vmap, nmap)
       end
     end
     if #keep == 4 then
-      out[#out + 1] = { n = 4, uv = p.uv, clut = p.clut, idx = idx, nrm = nrm }
+      out[#out + 1] = { n = 4, uv = p.uv, clut = p.clut, blend = p.blend, idx = idx, nrm = nrm }
     elseif #keep == 3 then
       local uv, i3, n3 = {}, {}, {}
       for k, c in ipairs(keep) do uv[k], i3[k], n3[k] = p.uv[c + 1], idx[c + 1], nrm[c + 1] end
-      out[#out + 1] = { n = 3, uv = uv, clut = p.clut, idx = i3, nrm = n3 }
+      out[#out + 1] = { n = 3, uv = uv, clut = p.clut, blend = p.blend, idx = i3, nrm = n3 }
     end
   end
   return out
@@ -309,7 +309,7 @@ local function compact(o)
   for k, p in ipairs(prims) do
     local idx, nrm = {}, {}
     for c = 1, p.n do idx[c], nrm[c] = vmap[p.idx[c]], nmap[p.nrm[c]] end
-    out[k] = { n = p.n, uv = p.uv, clut = p.clut, idx = idx, nrm = nrm }
+    out[k] = { n = p.n, uv = p.uv, clut = p.clut, blend = p.blend, idx = idx, nrm = nrm }
   end
   return { verts = verts, normals = normals, prims = out }
 end
@@ -530,6 +530,21 @@ end
 -- table plays the other one (a finisher with another of the donor's motions;
 -- technique slot k is animation 0x2E + k); or {animation, frame, frames,
 -- distance}: a copy of it with that forward travel (add_root_motion).
+-- A DW1 model's bones at an animation's start pose (lib/dw1source.lua): per
+-- bone {matrix (4096 = 1, with scale), location}, chained to the parents.
+function M.dw1_pose(mmd, skel, anim)
+  local nb = #skel + 1
+  local info = donor_info(mmd)
+  local pose = start_pose(mmd, info, anim or 0, nb)
+  local w = { [0] = { IDENT4096, { 0, 0, 0 } } }
+  for i = 1, nb - 1 do
+    local par = skel[i][2]
+    local m, t = local_matrix(pose[i][1], pose[i][2], pose[i][3])
+    w[i] = { chain(w[par][1], w[par][2], m, t) }
+  end
+  return w
+end
+
 function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)
@@ -676,7 +691,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       if not p.gouraud then nrm = {}; for k = 1, n do nrm[k] = p.nrm[1] end end
       local idx, nn = {}, {}
       for k = 1, n do idx[k] = vbase + p.idx[k]; nn[k] = nbase + nrm[k] end
-      out.prims[#out.prims + 1] = { n = n, uv = p.uv, clut = clut_rows[key], idx = idx, nrm = nn }
+      out.prims[#out.prims + 1] = { n = n, uv = p.uv, clut = clut_rows[key], blend = p.blend, idx = idx, nrm = nn }
       local pts = {}
       for k = 1, n do pts[k] = placed_verts[p.idx[k] + 1] end
       faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * m3.tims[1].w + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
@@ -704,12 +719,69 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   local tim = tim_entry:sub(1, 20) .. table.concat(clut) .. tim_entry:sub(8 + 524 + 1, 8 + 524 + 12) .. pixels
   tim = tim .. string.rep("\0", 0x4800 - #tim)
 
+  -- the donor's animations with the new bone locations in every start pose,
+  -- then the aliases (before the TMD: it gets whatever room they leave)
+  local anims = donor_mmd:sub(info.anim_base + 1)
+  local edits = {}
+  for a = 0, #info.anims do
+    local off = info.anims[a]
+    if off and off ~= 0 then
+      local fc = string.unpack("<I2", anims, off + 1)
+      local step = fc & 0x8000 ~= 0 and 18 or 12
+      for i, loc in pairs(new_loc) do edits[off + 2 + (i - 1) * step + step - 6] = string.pack("<i2i2i2", loc[1], loc[2], loc[3]) end
+    end
+  end
+  local parts, pos = {}, 0
+  for _, o in ipairs(sorted_keys(edits)) do
+    parts[#parts + 1] = anims:sub(pos + 1, o)
+    parts[#parts + 1] = edits[o]
+    pos = o + 6
+  end
+  parts[#parts + 1] = anims:sub(pos + 1)
+  anims = table.concat(parts)
+  -- An alias past the table's end (techniques from another Digimon with more
+  -- of them than the donor has slots): the table grows, everything after it
+  -- moves down.
+  local count, offs = #info.anims + 1, {}
+  for a = 0, count - 1 do offs[a] = info.anims[a] end
+  local need = count
+  for dst in pairs(anim_alias or {}) do need = math.max(need, dst + 1) end
+  if need > count then
+    local delta, words = 4 * (need - count), {}
+    for a = 0, need - 1 do
+      local o = offs[a] or 0
+      if o ~= 0 then o = o + delta end
+      offs[a] = o
+      words[#words + 1] = string.pack("<I4", o)
+    end
+    anims = table.concat(words) .. anims:sub(4 * count + 1)
+  end
+  for _, dst in ipairs(sorted_keys(anim_alias or {})) do
+    local src = anim_alias[dst]
+    local off
+    if type(src) == "table" then
+      local start, stop = offs[src[1]], #anims
+      for a = 0, need - 1 do
+        local o = offs[a]
+        if o and o > start and o < stop then stop = o end
+      end
+      local blob = add_root_motion(anims:sub(start + 1, stop), nb, src[2], src[3], src[4])
+      anims = anims .. string.rep("\0", (4 - #anims % 4) % 4)
+      off = #anims
+      anims = anims .. blob
+    else
+      off = offs[src]
+    end
+    anims = anims:sub(1, 4 * dst) .. string.pack("<I4", off) .. anims:sub(4 * dst + 5)
+  end
+
+
   -- TMD, slimmed when it doesn't fit the partner's buffer (0x18800 bytes)
-  -- next to the donor's animations
+  -- next to the animations (built first: the TMD gets whatever room they leave)
   -- A donor object nothing maps to (MetalGreymon's small side parts under
   -- WarGrowlmon) still needs a mesh: the game crashes on an empty one. It
   -- gets one vertex at its pivot and a triangle of zero size (draws nothing).
-  local budget = 0x18800 - 8 - (#donor_mmd - info.anim_base)
+  local budget = 0x18800 - 8 - #anims
   local empty = {}
   for o = 0, info.nobj - 1 do if #objs[o].prims == 0 then empty[#empty + 1] = o end end
   budget = budget - (8 + 8 + 28) * #empty
@@ -730,11 +802,15 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
     for _, p in ipairs(ob.prims) do
       local uv = p.uv
       local cba = 0x7A00 + (p.clut << 6)
-      local words = { uv[1][1] | uv[1][2] << 8 | cba << 16, uv[2][1] | uv[2][2] << 8 | 0x5 << 16, uv[3][1] | uv[3][2] << 8 }
+      -- a semi-transparent polygon (blend: its blend mode) keeps it: TMD mode
+      -- bit 2 and the tsb's bits 5-6 (updateTMDTextureData leaves those)
+      local tsb = p.blend and (0x5 | p.blend << 5) or 0x5
+      local words = { uv[1][1] | uv[1][2] << 8 | cba << 16, uv[2][1] | uv[2][2] << 8 | tsb << 16, uv[3][1] | uv[3][2] << 8 }
       if p.n == 4 then words[#words + 1] = uv[4][1] | uv[4][2] << 8 end
       for k = 1, p.n do words[#words + 1] = p.nrm[k] | p.idx[k] << 16 end
       local olen, mode = 9, 0x34
       if p.n == 4 then olen, mode = 12, 0x3C end
+      if p.blend then mode = mode | 2 end
       pb[#pb + 1] = string.pack("<I1I1I1I1", olen, #words, 0, mode)
       for _, w in ipairs(words) do pb[#pb + 1] = string.pack("<I4", w) end
     end
@@ -744,44 +820,6 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
     at = at + #vb + #nbs + #pb
   end
   local tmd = string.pack("<I4I4I4", 0x41, 0, info.nobj) .. table.concat(tab) .. table.concat(body)
-
-  -- the donor's animations with the new bone locations in every start pose
-  local anims = donor_mmd:sub(info.anim_base + 1)
-  local edits = {}
-  for a = 0, #info.anims do
-    local off = info.anims[a]
-    if off and off ~= 0 then
-      local fc = string.unpack("<I2", anims, off + 1)
-      local step = fc & 0x8000 ~= 0 and 18 or 12
-      for i, loc in pairs(new_loc) do edits[off + 2 + (i - 1) * step + step - 6] = string.pack("<i2i2i2", loc[1], loc[2], loc[3]) end
-    end
-  end
-  local parts, pos = {}, 0
-  for _, o in ipairs(sorted_keys(edits)) do
-    parts[#parts + 1] = anims:sub(pos + 1, o)
-    parts[#parts + 1] = edits[o]
-    pos = o + 6
-  end
-  parts[#parts + 1] = anims:sub(pos + 1)
-  anims = table.concat(parts)
-  for _, dst in ipairs(sorted_keys(anim_alias or {})) do
-    local src = anim_alias[dst]
-    local off
-    if type(src) == "table" then
-      local start, stop = info.anims[src[1]], #anims
-      for a = 0, #info.anims do
-        local o = info.anims[a]
-        if o and o > start and o < stop then stop = o end
-      end
-      local blob = add_root_motion(anims:sub(start + 1, stop), nb, src[2], src[3], src[4])
-      anims = anims .. string.rep(" ", (4 - #anims % 4) % 4)
-      off = #anims
-      anims = anims .. blob
-    else
-      off = info.anims[src]
-    end
-    anims = anims:sub(1, 4 * dst) .. string.pack("<I4", off) .. anims:sub(4 * dst + 5)
-  end
 
   local mmd = string.pack("<I4I4", 8, 8 + #tmd) .. tmd .. anims
   local verts, prims = 0, 0

@@ -59,11 +59,18 @@ local FINISHER_CHECKS = {
   { "EVL_REL.BIN", 0x80063A0C, 0x2C810071 }, -- EVL_applyEvolution
 }
 -- The generic attack, technique 0x79 (`tech = 0x79` in getAttackTech:
--- addiu v0, zero, 0x79), moves with the Bubbles past the finishers.
+-- addiu v0, zero, 0x79), moves with the Bubbles past the finishers. A
+-- flattened Digimon attacks with it too (BTL/STD_tickFlatState and
+-- VS__tickDigimonFlat pass 0x79 to tickRangedAttack: addiu a3, zero, 0x79);
+-- missed at first, which left those reaching technique 0x79, a new
+-- finisher's number since there are nine of them.
 local GENERIC_ATTACK = {
   { "BTL_REL.BIN", 0x8005B7B8, 0x24020079 },
   { "STD_REL.BIN", 0x800638AC, 0x24020079 },
   { "VS_REL.BIN",  0x8005B530, 0x24020079 },
+  { "BTL_REL.BIN", 0x800596DC, 0x24070079 }, -- BTL_tickFlatState
+  { "STD_REL.BIN", 0x8006133C, 0x24070079 }, -- STD_tickFlatState
+  { "SLUS_010.32", 0x800F53D0, 0x24070079 }, -- VS__tickDigimonFlat
 }
 -- drawMoveName (Battle Mode slots) draws names of techniques < 0x79.
 local NAME_CHECK = { "SLUS_010.32", 0x8010FC0C, 0x28410079 }
@@ -170,8 +177,41 @@ local SETUP_LOADED_EFE = {
 }
 local code_words = {} -- file -> { addr -> its first 4 words (from the disc) }
 
+-- The evolution scene (EVL_REL.BIN at 0x80060000) breaks the old model into
+-- shards: EVL_buildShardSet writes 6 bytes per vertex and per polygon of
+-- each object, one after another from the scratch top EVL_initEvoSequence
+-- sets with EVL_setScratchTop(EVL_D_80066274), a 0x153C-byte buffer (906
+-- of them; MetalGreymon has 815). Past it lie the scene's flash data and
+-- its random bone order: a bigger model (Guilmon has 1141) reads garbage
+-- bones and the scene hangs. The scratch moves to tables.EVL_SCRATCH.
+local EVL_SET_SCRATCH_TOP = 0x800601B0
+
+-- A Digimon using another one's techniques on its donor's skeleton (type ->
+-- {type = the other's original type, bones = {its bone -> {bone, x, y, z}}}).
+-- checkTechCompatibility pops an effect's start-point list ({type, bone, x,
+-- y, z} s16, 10 bytes each, a negative type ends it) and looks the user's
+-- original type up in it, else stops the effect. When the list has no entry
+-- for the user's own original type but one for the other Digimon, the word
+-- it pops (the top of EFE_DATA_STACK) is pointed at a private one-entry
+-- list: that entry with the bone translated (bone 0, the entity, stays as it
+-- is; a bone without a translation keeps its number and offset).
+M.borrow = {}
+local CHECK_TECH = { { "BTL_REL.BIN", 0x8006D8FC }, { "STD_REL.BIN", 0x80075ED8 }, { "VS_REL.BIN", 0x8006BFA8 } }
+local EFE_DATA_STACK = 0x80134CC8     -- int32 * (pop: *--ptr)
+local EFE_SCRIPT_CONTEXT = 0x80134CE8 -- EfeSubEffect * (sourceEntity at +16)
+
 -- Called with every code file's words while the mod loads (main.lua).
 function M.note_code(file, base, words)
+  for _, h in ipairs(CHECK_TECH) do
+    if h[1] == file then
+      local i = (h[2] - base) // 4 + 1
+      code_words[h[2]] = { words[i], words[i + 1], words[i + 2], words[i + 3] }
+    end
+  end
+  if file == "EVL_REL.BIN" then
+    local i = (EVL_SET_SCRATCH_TOP - base) // 4 + 1
+    code_words[EVL_SET_SCRATCH_TOP] = { words[i], words[i + 1], words[i + 2], words[i + 3] }
+  end
   for _, h in ipairs(SETUP_LOADED_EFE) do
     if h[1] == file then
       local i = (h[2] - base) // 4 + 1
@@ -237,6 +277,38 @@ function M.install()
       return false
     end)
   end
+  for _, h in ipairs(CHECK_TECH) do
+    local addr = h[2]
+    dwrc.on_exec(addr, function(ctx)
+      if not next(M.borrow) or not is_here(ctx, addr) then return false end
+      local user = ctx:read32(ctx:read32(EFE_SCRIPT_CONTEXT) + 16)
+      local t = user ~= 0 and ctx:read32(user)
+      local b = t and M.borrow[t]
+      if not b then return false end
+      local top = ctx:read32(EFE_DATA_STACK) - 4
+      local list = ctx:read32(top)
+      local own = M.original_type[t] or t
+      local found
+      for k = 0, 15 do
+        local ty = ctx:read_s16(list + 10 * k)
+        if ty < 0 then break end
+        if ty == own then return false end
+        if ty == b.type and not found then found = list + 10 * k end
+      end
+      if not found then return false end
+      local bone, x, y, z = ctx:read_s16(found + 2), ctx:read_s16(found + 4), ctx:read_s16(found + 6), ctx:read_s16(found + 8)
+      local to = bone ~= 0 and b.bones[bone]
+      if to then bone, x, y, z = to[1], to[2], to[3], to[4] end
+      local slot = tables.BORROW + 12 * ((list >> 1) % tables.BORROW_SLOTS)
+      ctx:write_bytes(slot, string.pack("<i2i2i2i2i2i2", own, bone, x, y, z, -1))
+      ctx:write32(top, slot)
+      return false
+    end)
+  end
+  dwrc.on_exec(EVL_SET_SCRATCH_TOP, function(ctx)
+    if is_here(ctx, EVL_SET_SCRATCH_TOP) then ctx:set_reg("a0", tables.EVL_SCRATCH) end
+    return false
+  end)
   dwrc.on_exec(ROOT_SCALE_SET, function(ctx)
     local s = M.root_scale[ctx:reg("s4")]
     if s then
