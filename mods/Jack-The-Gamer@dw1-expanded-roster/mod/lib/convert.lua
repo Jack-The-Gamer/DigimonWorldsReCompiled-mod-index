@@ -132,6 +132,34 @@ local function rot_between(a, b)
   return r
 end
 
+-- The turn taking direction a to b that also keeps a second axis the same
+-- way round: of x, y and z, the one least parallel to a and b (first on a
+-- tie), made perpendicular to each. A limb turned by it keeps its outer side
+-- outward; the smallest turn leaves that roll to chance (it crossed
+-- WarGrowlmon's legs). Same float steps as dw1convert.rot_frame.
+local function rot_frame(a, b)
+  a, b = norm(a), norm(b)
+  local refs = { { 1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 1.0 } }
+  local ref, best = refs[1], nil
+  for _, r in ipairs(refs) do
+    local c = math.max(math.abs(a[1] * r[1] + a[2] * r[2] + a[3] * r[3]), math.abs(b[1] * r[1] + b[2] * r[2] + b[3] * r[3]))
+    if best == nil or c < best then ref, best = r, c end
+  end
+  local function frame(u)
+    local d = u[1] * ref[1] + u[2] * ref[2] + u[3] * ref[3]
+    local v = norm({ ref[1] - d * u[1], ref[2] - d * u[2], ref[3] - d * u[3] })
+    local w = { u[2] * v[3] - u[3] * v[2], u[3] * v[1] - u[1] * v[3], u[1] * v[2] - u[2] * v[1] }
+    return { u, v, w }
+  end
+  local f3, f1 = frame(a), frame(b)
+  local r = {}
+  for i = 1, 3 do
+    r[i] = {}
+    for j = 1, 3 do r[i][j] = f1[1][i] * f3[1][j] + f1[2][i] * f3[2][j] + f1[3][i] * f3[3][j] end
+  end
+  return r
+end
+
 local function point(M3, v)
   local w = {}
   for i = 1, 3 do w[i] = M3[i][1] * v[1] + M3[i][2] * v[2] + M3[i][3] * v[3] + M3[i][4] end
@@ -394,7 +422,8 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
         local r
         if kind == "limb" then
           local c3b, c1b = e[3], e[4]
-          r = rot_between({ o3[c3b][1] - o3[b][1], o3[c3b][2] - o3[b][2], o3[c3b][3] - o3[b][3] },
+          local turn = e[5] and rot_frame or rot_between -- 5th field: keep the roll
+          r = turn({ o3[c3b][1] - o3[b][1], o3[c3b][2] - o3[b][2], o3[c3b][3] - o3[b][3] },
             { o1[c1b][1] - o1[target][1], o1[c1b][2] - o1[target][2], o1[c1b][3] - o1[target][3] })
         elseif kind == "leaf" then
           r = group[parent][3]

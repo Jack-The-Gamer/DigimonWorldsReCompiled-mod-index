@@ -109,9 +109,9 @@ M.list = {
     evolves_from = { 181, 5, 8 }, -- Growlmon, Greymon, Tyrannomon
     -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw: stats
     -- and animation) as WarGrowlmon's Atomic Blaster, with the effect of
-    -- Whamon's Blasting Spout (0x5A) fired from the chest: the torso (bone
+    -- Vademon's Abduction Beam (0x43) fired from the chest: the torso (bone
     -- 2), in its own space 95 forward of the pivot.
-    finisher = { name = "Atomic Blaster", from = 79, effect = 0x5A, origin = { 2, 95, -15, 0 } },
+    finisher = { name = "Atomic Blaster", from = 79, effect = 0x43, origin = { 2, 95, -15, 0 } },
     icon_head = { 4, 5 }, -- MetalGreymon's head and jaw
     source = { ["SLES-03936"] = { file = 1103, bones = 54, motions = 0 } }, -- M368MGRW
     donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (its small parts 15 and 17 stay empty)
@@ -119,12 +119,19 @@ M.list = {
     mapping = {
       [13] = { 2, "core" }, [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 2, "follow" }, [17] = { 2, "follow" }, -- upper body, the strands on its back
       [18] = { 3, "core" }, [19] = { 4, "core" }, [20] = { 5, "core" },               -- neck, head, jaw
-      [21] = { 7, "limb", 22, 8 }, [22] = { 8, "limb", 23, 9 }, [23] = { 9, "leaf" },  -- right arm, forearm blade
-      [24] = { 11, "limb", 25, 12 }, [25] = { 12, "limb", 26, 13 }, [26] = { 13, "leaf" }, -- left arm
+      -- Arms keep WarGrowlmon's own stance (cannons down at the sides):
+      -- turned to MetalGreymon's forward claws, the forearm blades stuck out
+      -- across the body. Thighs are turned to MetalGreymon's (legs swing up
+      -- to 98 degrees walking) keeping their roll (5th field: the smallest
+      -- turn crossed the legs); shins and feet keep their angle to the thigh
+      -- (MetalGreymon's shins slant inward and put the feet together).
+      [21] = { 7, "core" }, [22] = { 8, "core" }, [23] = { 9, "core" },               -- right arm, forearm blade
+      [24] = { 11, "core" }, [25] = { 12, "core" }, [26] = { 13, "core" },            -- left arm
       [1] = { 18, "core" },                                                           -- pelvis -> hips
       [2] = { 19, "limb", 3, 20 }, [3] = { 20, "limb", 4, 21 }, [4] = { 21, "leaf" },  -- tail
-      [5] = { 23, "limb", 6, 24 }, [6] = { 24, "limb", 8, 25 }, [7] = { 24, "follow" }, [8] = { 25, "leaf" }, -- right leg
-      [9] = { 27, "limb", 10, 28 }, [10] = { 28, "limb", 12, 29 }, [11] = { 28, "follow" }, [12] = { 29, "leaf" }, -- left leg
+      -- feet: not turned with the thigh, so they stay flat on the ground
+      [5] = { 23, "limb", 6, 24, true }, [6] = { 24, "leaf" }, [7] = { 24, "follow" }, [8] = { 25, "core" }, -- right leg
+      [9] = { 27, "limb", 10, 28, true }, [10] = { 28, "leaf" }, [11] = { 28, "follow" }, [12] = { 29, "core" }, -- left leg
     },
   },
 }
