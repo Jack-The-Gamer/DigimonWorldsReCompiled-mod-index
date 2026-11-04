@@ -117,6 +117,28 @@ M.efe_source = {}
 -- type -> original type.
 M.original_type = {}
 local GET_ORIGINAL_TYPE = 0x800D9A3C
+
+-- A new finisher can use another Digimon's effect from a point of its own
+-- (technique -> {type, bone, x, y, z}): in its private copy of the effect
+-- file, the {type, bone, x, y, z} list (s16 each, a type of -1 ends it)
+-- gets that type's entry (or its first one) set to start there; bone is a
+-- skeleton index, x y z are in that bone's space.
+M.efe_origin = {}
+
+-- The first plausible {type, bone, x, y, z} list in an effect file's data.
+local function find_origin_list(data)
+  for i = 1, #data - 20, 2 do
+    local ok, n, at = true, 0, i
+    while true do
+      local ty, bone, x, y, z = string.unpack("<i2i2i2i2i2", data, at)
+      if ty == -1 then break end
+      if ty < 0 or ty >= 256 or bone < 0 or bone >= 40 or math.abs(x) > 2000 or math.abs(y) > 2000 or math.abs(z) > 2000 then ok = false; break end
+      n, at = n + 1, at + 10
+      if n > 12 or at + 10 > #data then ok = false; break end
+    end
+    if ok and n > 0 then return i - 1, n end
+  end
+end
 for old, new in pairs(tables.MOVED_MOVES) do M.efe_source[new] = old end -- the Bubbles, the generic attack
 local GET_EFEDAT_ENTRY = 0x800AEFF4
 -- The three battle overlays load at the same address (0x80052AE0): each
@@ -174,7 +196,23 @@ function M.install()
       local src = M.efe_source[want - 0x100]
       if not src then return false end
       local mmd = ctx:read32(ctx:read32(load + 16) + 12)
-      if ctx:read32(mmd + 48) == src + 0x100 then ctx:write32(mmd + 48, want) end
+      if ctx:read32(mmd + 48) ~= src + 0x100 then return false end -- renamed already
+      ctx:write32(mmd + 48, want)
+      local o = M.efe_origin[want - 0x100]
+      if o then
+        local size = ctx:read32(mmd + 36) -- dataEnd (from the data, +0x34)
+        local data = ctx:read_bytes(mmd + 0x34, math.min(size, 0x10000))
+        local at, n = find_origin_list(data)
+        if not at then
+          dwrc.log(string.format("effect %X: no origin list found", src))
+        else
+          local pick = at
+          for k = 0, n - 1 do
+            if string.unpack("<i2", data, at + 10 * k + 1) == o.type then pick = at + 10 * k end
+          end
+          ctx:write_bytes(mmd + 0x34 + pick, string.pack("<i2i2i2i2i2", o.type, o.bone, o.x, o.y, o.z))
+        end
+      end
       return false
     end)
   end

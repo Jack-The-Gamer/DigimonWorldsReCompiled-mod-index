@@ -178,8 +178,14 @@ do
     elseif #b.finisher.name >= tables.MOVE_STRING_BYTES then
       dwrc.log(b.name .. "'s finisher name is too long: " .. b.finisher.name)
     else
+      local f = b.finisher
       finisher_id[t] = next_id
-      limits.efe_source[next_id] = b.finisher.from
+      -- its look: the donor finisher's effect, or another one (f.effect),
+      -- started from f.origin {bone, x, y, z} if given
+      limits.efe_source[next_id] = f.effect or f.from
+      if f.origin then
+        limits.efe_origin[next_id] = { type = limits.original_type[t], bone = f.origin[1], x = f.origin[2], y = f.origin[3], z = f.origin[4] }
+      end
       next_id = next_id + 1
     end
   end

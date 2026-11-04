@@ -534,10 +534,20 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
 
   -- TMD, slimmed when it doesn't fit the partner's buffer (0x18800 bytes)
   -- next to the donor's animations
+  -- A donor object nothing maps to (MetalGreymon's small side parts under
+  -- WarGrowlmon) still needs a mesh: the game crashes on an empty one. It
+  -- gets one vertex at its pivot and a triangle of zero size (draws nothing).
   local budget = 0x18800 - 8 - (#donor_mmd - info.anim_base)
+  local empty = {}
+  for o = 0, info.nobj - 1 do if #objs[o].prims == 0 then empty[#empty + 1] = o end end
+  budget = budget - (8 + 8 + 28) * #empty
   local size, collapsed = 12 + 28 * info.nobj, -1
   for o = 0, info.nobj - 1 do size = size + obj_bytes(objs[o]) end
   if size > budget then objs, collapsed = simplify(objs, info.nobj, budget) end
+  for _, o in ipairs(empty) do
+    objs[o] = { verts = { { 0, 0, 0 } }, normals = { { 0, -4096, 0 } },
+      prims = { { n = 3, uv = { { 0, 0 }, { 0, 0 }, { 0, 0 } }, clut = 0, idx = { 0, 0, 0 }, nrm = { 0, 0, 0 } } } }
+  end
   local body, tab = {}, {}
   local at = 28 * info.nobj
   for o = 0, info.nobj - 1 do

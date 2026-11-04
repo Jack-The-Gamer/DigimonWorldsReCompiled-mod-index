@@ -78,8 +78,8 @@ M.list = {
       care = 3, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
     evolves_from = { 180 }, -- Guilmon
     icon_head = { 4, 5 }, -- Greymon's head and jaw
-    -- Until WarGrowlmon is built: Greymon's own (MetalGreymon, SkullGreymon).
-    evolutions = { 12, 26 },
+    -- WarGrowlmon, or SkullGreymon (Greymon's other Ultimate)
+    evolutions = { 182, 26 },
     source = { ["SLES-03936"] = { file = 625, bones = 50, motions = 0 } }, -- M367GRAW
     donor = 5, donor_file = "GREY.MMD", -- Greymon
     -- Its model is bigger than Greymon's: lib/convert.lua slims it to fit
@@ -93,6 +93,38 @@ M.list = {
       [14] = { 15, "limb", 15, 16 }, [15] = { 16, "limb", 16, 17 }, [16] = { 17, "leaf" }, -- tail
       [17] = { 23, "limb", 18, 24 }, [18] = { 24, "limb", 20, 25 }, [19] = { 24, "follow" }, [20] = { 25, "leaf" }, -- left leg
       [21] = { 19, "limb", 22, 20 }, [22] = { 20, "limb", 24, 21 }, [23] = { 20, "follow" }, [24] = { 21, "leaf" }, -- right leg
+    },
+  },
+  {
+    type = 182, name = "WarGrowlmon", file = "WGRW", level = 5, height = 460,
+    attribute = 3, specialties = { 0, 5, 1 }, radius = 280, -- Virus; Fire, Mech, Battle
+    -- MetalGreymon's gains
+    gains = { 5000, 5000, 500, 500, 500, 500 },
+    -- Becoming it (Ultimate; as MetalGreymon's, with Offense and Speed
+    -- first): HP 400, MP 300, Off 500, Def 300, Speed 500, Brains 300, at
+    -- most 10 care mistakes (flags 0x10), weight 65, discipline 80, 30
+    -- battles, 30 techniques.
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 300, speed = 500, brain = 300,
+      care = 10, weight = 65, discipline = 80, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
+    evolves_from = { 181, 5, 8 }, -- Growlmon, Greymon, Tyrannomon
+    -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw: stats
+    -- and animation) as WarGrowlmon's Atomic Blaster, with the effect of
+    -- Whamon's Blasting Spout (0x5A) fired from the chest: the torso (bone
+    -- 2), in its own space 95 forward of the pivot.
+    finisher = { name = "Atomic Blaster", from = 79, effect = 0x5A, origin = { 2, 95, -15, 0 } },
+    icon_head = { 4, 5 }, -- MetalGreymon's head and jaw
+    source = { ["SLES-03936"] = { file = 1103, bones = 54, motions = 0 } }, -- M368MGRW
+    donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (its small parts 15 and 17 stay empty)
+    -- 980 polygons: slimmed to fit next to MetalGreymon's animations
+    mapping = {
+      [13] = { 2, "core" }, [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 2, "follow" }, [17] = { 2, "follow" }, -- upper body, the strands on its back
+      [18] = { 3, "core" }, [19] = { 4, "core" }, [20] = { 5, "core" },               -- neck, head, jaw
+      [21] = { 7, "limb", 22, 8 }, [22] = { 8, "limb", 23, 9 }, [23] = { 9, "leaf" },  -- right arm, forearm blade
+      [24] = { 11, "limb", 25, 12 }, [25] = { 12, "limb", 26, 13 }, [26] = { 13, "leaf" }, -- left arm
+      [1] = { 18, "core" },                                                           -- pelvis -> hips
+      [2] = { 19, "limb", 3, 20 }, [3] = { 20, "limb", 4, 21 }, [4] = { 21, "leaf" },  -- tail
+      [5] = { 23, "limb", 6, 24 }, [6] = { 24, "limb", 8, 25 }, [7] = { 24, "follow" }, [8] = { 25, "leaf" }, -- right leg
+      [9] = { 27, "limb", 10, 28 }, [10] = { 28, "limb", 12, 29 }, [11] = { 28, "follow" }, [12] = { 29, "leaf" }, -- left leg
     },
   },
 }
