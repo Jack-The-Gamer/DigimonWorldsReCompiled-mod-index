@@ -393,6 +393,95 @@ local function simplify(objs, nobj, budget)
   return out, collapsed
 end
 
+-- The parts of a source texture the polygons use, packed into Digimon
+-- World's 256 x 128 texels (as research/tools/dw1convert.py's pack_texture):
+-- every polygon's UV box (inclusive), boxes that overlap merged into islands
+-- (in polygon order: a new box takes in every island it touches, again until
+-- none), islands placed on shelves tallest first (then widest, then by source
+-- v, u), at full size if they fit, else all scaled by k/20 (k from 19 down
+-- to 10; nearest texel). Gives each polygon new UVs; returns the 64 x 128
+-- halfwords. tim: {w = halfwords a row, px}.
+local function pack_texture(objs, nobj, tim)
+  local w0, src = tim.w, tim.px
+  local function texel(u, v)
+    return (string.unpack("<I2", src, (v * w0 + (u >> 2)) * 2 + 1) >> ((u & 3) * 4)) & 15
+  end
+  local islands = {} -- {u0, v0, u1, v1, prims}
+  for o = 0, nobj - 1 do
+    for _, p in ipairs(objs[o].prims) do
+      local r = { 255, 255, 0, 0, { p } }
+      for _, uv in ipairs(p.uv) do
+        r[1], r[2] = math.min(r[1], uv[1]), math.min(r[2], uv[2])
+        r[3], r[4] = math.max(r[3], uv[1]), math.max(r[4], uv[2])
+      end
+      while true do
+        local hit = {}
+        for k, s in ipairs(islands) do
+          if s[1] <= r[3] and r[1] <= s[3] and s[2] <= r[4] and r[2] <= s[4] then hit[#hit + 1] = k end
+        end
+        if #hit == 0 then break end
+        for h = #hit, 1, -1 do
+          local s = table.remove(islands, hit[h])
+          local members = {}
+          for _, q in ipairs(s[5]) do members[#members + 1] = q end
+          for _, q in ipairs(r[5]) do members[#members + 1] = q end
+          r = { math.min(r[1], s[1]), math.min(r[2], s[2]), math.max(r[3], s[3]), math.max(r[4], s[4]), members }
+        end
+      end
+      islands[#islands + 1] = r
+    end
+  end
+  local order = {}
+  for k = 1, #islands do order[k] = k end
+  table.sort(order, function(a, b)
+    local A, B = islands[a], islands[b]
+    if A[4] - A[2] ~= B[4] - B[2] then return A[4] - A[2] > B[4] - B[2] end
+    if A[3] - A[1] ~= B[3] - B[1] then return A[3] - A[1] > B[3] - B[1] end
+    if A[2] ~= B[2] then return A[2] < B[2] end
+    return A[1] < B[1]
+  end)
+  local place, fit
+  for k = 20, 10, -1 do
+    place = {}
+    local x, y, shelf = 0, 0, 0
+    for _, i in ipairs(order) do
+      local s = islands[i]
+      local w, h = math.max(1, (s[3] - s[1] + 1) * k // 20), math.max(1, (s[4] - s[2] + 1) * k // 20)
+      if x + w > 256 then x, y, shelf = 0, y + shelf, 0 end
+      place[i] = { x, y, w, h }
+      x, shelf = x + w, math.max(shelf, h)
+    end
+    if y + shelf <= 128 then fit = k; break end
+  end
+  if not fit then error("its texture doesn't fit in 256 x 128 even at half size") end
+  local out = {}
+  for i = 1, 256 * 128 do out[i] = 0 end
+  for i, pl in pairs(place) do
+    local x, y, w, h = pl[1], pl[2], pl[3], pl[4]
+    local u0, v0, u1, v1 = islands[i][1], islands[i][2], islands[i][3], islands[i][4]
+    local sw, sh = u1 - u0 + 1, v1 - v0 + 1
+    for yy = 0, h - 1 do
+      local sv = v0 + yy * sh // h
+      for xx = 0, w - 1 do out[(y + yy) * 256 + x + xx + 1] = texel(u0 + xx * sw // w, sv) end
+    end
+    for _, p in ipairs(islands[i][5]) do
+      local uv = {}
+      for c, t in ipairs(p.uv) do uv[c] = { x + (t[1] - u0) * w // sw, y + (t[2] - v0) * h // sh } end
+      p.uv = uv
+    end
+  end
+  local rows = {}
+  for r = 0, 127 do
+    local hw = {}
+    for c = 0, 63 do
+      local b = r * 256 + 4 * c
+      hw[c + 1] = string.pack("<I2", out[b + 1] | out[b + 2] << 4 | out[b + 3] << 8 | out[b + 4] << 12)
+    end
+    rows[r + 1] = table.concat(hw)
+  end
+  return table.concat(rows), { islands = #islands, scale = fit }
+end
+
 function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)
@@ -542,23 +631,29 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       out.prims[#out.prims + 1] = { n = n, uv = p.uv, clut = clut_rows[key], idx = idx, nrm = nn }
       local pts = {}
       for k = 1, n do pts[k] = placed_verts[p.idx[k] + 1] end
-      faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * 64 + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
+      faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * m3.tims[1].w + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
     end
   end
   if #clut_list > 16 then error(#clut_list .. " CLUTs; Digimon World has room for 16") end
 
-  -- texture: 256x128 texels, CLUT rows 0..15
-  local px = m3.tims[1].px
+  -- texture: 256x128 texels, CLUT rows 0..15 (the source's rows as they are
+  -- when it's 256 wide and uses only the first 128, else packed)
+  local px, tw = m3.tims[1].px, m3.tims[1].w
   local vmax = 0
   for o = 0, info.nobj - 1 do for _, p in ipairs(objs[o].prims) do for _, uv in ipairs(p.uv) do vmax = math.max(vmax, uv[2]) end end end
-  if vmax >= 128 then error("the texture uses rows up to " .. vmax .. ": Digimon World has 128 (repacking not done yet)") end
+  local pixels, packed
+  if vmax < 128 and tw == 64 then
+    pixels = px:sub(1, 128 * 128)
+  else
+    pixels, packed = pack_texture(objs, info.nobj, m3.tims[1])
+  end
   local clut = {}
   for row = 0, 15 do clut[row + 1] = string.rep("\0", 32) end
   for row, c in ipairs(clut_list) do
-    local at = (c[2] * 64 + c[1]) * 2
+    local at = (c[2] * tw + c[1]) * 2
     clut[row] = px:sub(at + 1, at + 32)
   end
-  local tim = tim_entry:sub(1, 20) .. table.concat(clut) .. tim_entry:sub(8 + 524 + 1, 8 + 524 + 12) .. px:sub(1, 128 * 128)
+  local tim = tim_entry:sub(1, 20) .. table.concat(clut) .. tim_entry:sub(8 + 524 + 1, 8 + 524 + 12) .. pixels
   tim = tim .. string.rep("\0", 0x4800 - #tim)
 
   -- TMD, slimmed when it doesn't fit the partner's buffer (0x18800 bytes)
@@ -627,7 +722,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   for o = 0, info.nobj - 1 do verts = verts + #objs[o].verts; prims = prims + #objs[o].prims end
   local pivots = {}
   for i = 0, nb - 1 do pivots[i] = w1[i][2] end
-  return mmd, tim, { scale = s, collapsed = collapsed, verts = verts, prims = prims, cluts = #clut_list, bytes = #mmd, faces = faces, texture = px, pivots = pivots }
+  return mmd, tim, { scale = s, collapsed = collapsed, verts = verts, prims = prims, cluts = #clut_list, bytes = #mmd, faces = faces, texture = px, texture_w = tw, packed = packed, pivots = pivots }
 end
 
 return M

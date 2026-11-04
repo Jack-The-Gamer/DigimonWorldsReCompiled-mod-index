@@ -49,11 +49,11 @@ end
 -- One frame: [y * W + x] = {r, g, b, depth, bone = DW1 bone} on a BOX*SS
 -- square; `squash` shrinks the height towards the feet.
 
-local function draw(faces, px, fit, squash, no_white)
+local function draw(faces, px, fit, squash, no_white, tw)
   local W = BOX * SS
   local col, depth = {}, {}
   local function texel(u, v)
-    local h = string.unpack("<I2", px, (v * 64 + (u >> 2)) * 2 + 1)
+    local h = string.unpack("<I2", px, (v * tw + (u >> 2)) * 2 + 1)
     return (h >> ((u & 3) * 4)) & 15
   end
   local function clut(c, i) return string.unpack("<I2", px, (c + i) * 2 + 1) end
@@ -195,7 +195,8 @@ end
 -- three-quarter view, no_white = {DW1 bones} whose near-white colours are
 -- left out (the block takes its other colours: e.g. teeth in a small face),
 -- head_from_second = true: the first frame's head (opts.head) is the
--- second frame's, lifted to the first frame's height.
+-- second frame's, lifted to the first frame's height; width = the texture's
+-- halfwords a row (lib/convert.lua info.texture_w; 64 if not given).
 function M.render(faces, px, opts)
   opts = opts or {}
   if opts.split and #opts.split > 1 then
@@ -263,7 +264,8 @@ function M.render(faces, px, opts)
     no_white = {}
     for _, b in ipairs(opts.no_white) do no_white[b] = true end
   end
-  local frames = { shrink(draw(faces, px, fit, 1.0, no_white)), shrink(draw(faces, px, fit, SQUASH, no_white)) }
+  local tw = opts.width or 64
+  local frames = { shrink(draw(faces, px, fit, 1.0, no_white, tw)), shrink(draw(faces, px, fit, SQUASH, no_white, tw)) }
   if opts.head_from_second and opts.head and opts.pivots then
     local is_head = {}
     for _, b in ipairs(opts.head) do is_head[b] = true end

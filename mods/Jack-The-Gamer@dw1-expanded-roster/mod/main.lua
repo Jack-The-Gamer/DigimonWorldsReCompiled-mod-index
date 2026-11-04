@@ -11,7 +11,8 @@
 -- the mod loads (Re:Compiled 1.6: dwrc.disc); the player's disc is never
 -- changed and the mod ships nothing of the game's.
 -- The new Digimon (lib/backports.lua) are built from the player's Digimon
--- World 2003 disc while the mod loads (lib/dw3model.lua, lib/convert.lua),
+-- World 2003 and Digimon World 2 discs while the mod loads (lib/dw3model.lua,
+-- lib/dw2model.lua, lib/convert.lua),
 -- with their chart icons (lib/icon.lua), finishers (lib/limits.lua) and
 -- evolutions (lib/evolution.lua, lib/chart.lua).
 
@@ -24,6 +25,7 @@ local files = require("lib.files")
 local evolution = require("lib.evolution")
 local backports = require("lib.backports")
 local dw3model = require("lib.dw3model")
+local dw2model = require("lib.dw2model")
 local convert = require("lib.convert")
 local chart = require("lib.chart")
 local icon = require("lib.icon")
@@ -107,7 +109,7 @@ for name in pairs(extra) do error("patches for " .. name .. ", which isn't one o
 -- after the game's 180. `textures[type]` = a TIM for a new type.
 local textures = {}
 
--- --- the Digimon from Digimon World 2003 ----------------------------------------
+-- --- the Digimon from Digimon World 2003 and Digimon World 2 ---------------------
 local DIGIMON_DATA = 0x8012CEB4      -- the game's own copy (USA: boneCount at +20)
 local DIGIMON_SKELETONS = 0x8011CE60 -- pointers to {s8 object, s8 parent}[boneCount]
 local built = {}                     -- the backports that were built (type -> entry)
@@ -119,44 +121,76 @@ local function fnv(s) -- a checksum to compare with research/tools/dw1convert.py
   return h
 end
 
-local dw3 = dwrc.discs.info("dw3")
-local dw3_table = dw3 and backports.DW3[dw3.serial]
-if not dw3 then
-  dwrc.log("no Digimon World 2003 disc in the library: the Digimon from it are left out")
-elseif not dw3_table then
-  dwrc.log("Digimon World 2003 " .. dw3.serial .. " isn't supported yet (only the European disc, SLES-03936): the Digimon from it are left out")
-else
-  local disc3 = iso.disc(function(lba, count) return dwrc.discs.read("dw3", lba, count) end)
-  local exe3 = disc3:read(dw3_table.exe)
-  local function file3(n)
-    local o = n * 4 + dw3_table.sectors - dw3_table.load + 0x800
-    local lba = string.unpack("<i4", exe3, o + 1)
-    local count = string.unpack("<I2", exe3, n * 2 + dw3_table.counts - dw3_table.load + 0x800 + 1)
-    return dwrc.discs.read("dw3", lba, count)
+-- The other games' discs the backports come from: game -> {info, file(n)}
+-- (files by number through each executable's own file table).
+local sources = {}
+do
+  local dw3 = dwrc.discs.info("dw3")
+  local t3 = dw3 and backports.DW3[dw3.serial]
+  if not dw3 then
+    dwrc.log("no Digimon World 2003 disc in the library: the Digimon from it are left out")
+  elseif not t3 then
+    dwrc.log("Digimon World 2003 " .. dw3.serial .. " isn't supported yet (only the European disc, SLES-03936): the Digimon from it are left out")
+  else
+    local exe3 = iso.disc(function(lba, count) return dwrc.discs.read("dw3", lba, count) end):read(t3.exe)
+    sources.dw3 = { info = dw3, file = function(n)
+      local lba = string.unpack("<i4", exe3, n * 4 + t3.sectors - t3.load + 0x800 + 1)
+      local count = string.unpack("<I2", exe3, n * 2 + t3.counts - t3.load + 0x800 + 1)
+      return dwrc.discs.read("dw3", lba, count)
+    end }
   end
+  local dw2 = dwrc.discs.info("dw2")
+  local t2 = dw2 and backports.DW2[dw2.serial]
+  if not dw2 then
+    dwrc.log("no Digimon World 2 disc in the library: the Digimon from it are left out")
+  elseif not t2 then
+    dwrc.log("Digimon World 2 " .. dw2.serial .. " isn't supported yet (only the American disc, SLUS-01193): the Digimon from it are left out")
+  else
+    local exe2 = iso.disc(function(lba, count) return dwrc.discs.read("dw2", lba, count) end):read(t2.exe)
+    sources.dw2 = { info = dw2, file = function(n)
+      local lba = string.unpack("<i4", exe2, t2.lba + 4 * n + 1)
+      local count = string.unpack("<I2", exe2, t2.sectors + 2 * n + 1)
+      return dwrc.discs.read("dw2", lba, count)
+    end }
+  end
+end
+
+do
   local alltim
   for _, b in ipairs(backports.list) do
-    local src = b.source[dw3.serial]
-    local ok, err = pcall(function()
-      local t1 = os.clock()
-      local m3 = dw3model.read(file3(src.file), src.bones, src.motions)
-      local mats = dw3model.pose(m3, m3.idle_frame)
-      local skel, n = {}, bin.s32(exe, exe_off(DIGIMON_DATA + b.donor * 0x34 + 20))
-      local sk = bin.u32(exe, exe_off(DIGIMON_SKELETONS + 4 * b.donor))
-      for i = 0, n - 1 do skel[i] = { string.unpack("<i1i1", exe, exe_off(sk + 2 * i) + 1) }; skel[i][3] = nil end
-      alltim = alltim or read_game_file("ALLTIM.TIM")
-      local entry = alltim:sub(b.donor * TEXTURE_SIZE + 1, (b.donor + 1) * TEXTURE_SIZE)
-      local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.height)
-      if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
-      files.add(b.file .. ".MMD", mmd)
-      textures[b.type] = tim
-      built[b.type] = b
-      local pixels, clut = icon.render(info.faces, info.texture, { head = b.icon_head or { 3, 4 }, head_scale = b.icon_head_scale, pivots = info.pivots, split = b.icon_split, split_factor = b.icon_split_factor, no_white = b.icon_no_white, head_from_second = b.icon_head_from_second })
-      icons[b.type] = { pixels = pixels, clut = clut }
-      dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes (%.2f s; checksums %08X %08X)",
-        b.name, dw3.title, info.verts, info.prims, #mmd, os.clock() - t1, fnv(mmd), fnv(tim)))
-    end)
-    if not ok then dwrc.log(b.name .. " couldn't be built: " .. tostring(err)) end
+    local game = b.game or "dw3"
+    local src = sources[game]
+    local spec = src and b.source[src.info.serial]
+    if src and not spec then dwrc.log(b.name .. " isn't known on " .. src.info.title .. " yet: left out") end
+    if spec then
+      local ok, err = pcall(function()
+        local t1 = os.clock()
+        local m3, mats
+        if game == "dw2" then
+          m3 = dw2model.read(src.file(spec.model))
+          mats = dw2model.pose(m3, src.file(spec.anim), 0, 0)
+        else
+          m3 = dw3model.read(src.file(spec.file), spec.bones, spec.motions)
+          mats = dw3model.pose(m3, m3.idle_frame)
+        end
+        local skel, n = {}, bin.s32(exe, exe_off(DIGIMON_DATA + b.donor * 0x34 + 20))
+        local sk = bin.u32(exe, exe_off(DIGIMON_SKELETONS + 4 * b.donor))
+        for i = 0, n - 1 do skel[i] = { string.unpack("<i1i1", exe, exe_off(sk + 2 * i) + 1) }; skel[i][3] = nil end
+        alltim = alltim or read_game_file("ALLTIM.TIM")
+        local entry = alltim:sub(b.donor * TEXTURE_SIZE + 1, (b.donor + 1) * TEXTURE_SIZE)
+        local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.height)
+        if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
+        files.add(b.file .. ".MMD", mmd)
+        textures[b.type] = tim
+        built[b.type] = b
+        local pixels, clut = icon.render(info.faces, info.texture, { head = b.icon_head or { 3, 4 }, head_scale = b.icon_head_scale, pivots = info.pivots, split = b.icon_split, split_factor = b.icon_split_factor, no_white = b.icon_no_white, head_from_second = b.icon_head_from_second, width = info.texture_w })
+        icons[b.type] = { pixels = pixels, clut = clut }
+        dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes%s (%.2f s; checksums %08X %08X)",
+          b.name, src.info.title, info.verts, info.prims, #mmd, info.packed and string.format(", texture packed at %d%%", info.packed.scale * 5) or "",
+          os.clock() - t1, fnv(mmd), fnv(tim)))
+      end)
+      if not ok then dwrc.log(b.name .. " couldn't be built: " .. tostring(err)) end
+    end
   end
 end
 

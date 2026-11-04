@@ -1,12 +1,15 @@
--- The Digimon brought over from Digimon World 2003, built while the mod loads
--- from the player's own disc of it (nothing of either game ships with the
--- mod). Each one: its new type number and name, where its battle model is on
--- the DW2003 disc, the DW1 Digimon whose skeleton and animations it uses
--- (the donor), how the bones map (see lib/convert.lua), and its height.
+-- The Digimon brought over from Digimon World 2003 and Digimon World 2,
+-- built while the mod loads from the player's own discs (nothing of any of
+-- the games ships with the mod). Each one: its new type number and name, its
+-- game (`game`, "dw3" if not given) and where its model is on that disc, the
+-- DW1 Digimon whose skeleton and animations it uses (the donor), how the
+-- bones map (see lib/convert.lua), and its height.
 --
 -- Only the European DW2003 (SLES-03936) is known so far: the model's file
 -- number and its bone/motion entries differ on the American and Japanese
--- discs (find them through the fighter table, SMDLDATA.PRO).
+-- discs (find them through the fighter table, SMDLDATA.PRO). Likewise only
+-- the American DW2 (SLUS-01193): its Digimon records (data files 0xCB9..
+-- 0xCBB, research/tools/dw2disc.py) give the model and animation files.
 
 local M = {}
 
@@ -14,6 +17,12 @@ local M = {}
 -- sector count of each file by number).
 M.DW3 = {
   ["SLES-03936"] = { exe = "SLES_039.36", load = 0x80010000, sectors = 0x80044F6C, counts = 0x800474A4, files = 2382 },
+}
+
+-- Digimon World 2 (USA): the executable's file table, by offset in the file
+-- (Cd_FileLba s32 first sector, Cd_FileSectors u16 count; 0xE5B files).
+M.DW2 = {
+  ["SLUS-01193"] = { exe = "SLUS_011.93", lba = 0x33F94, sectors = 0x37900 },
 }
 
 M.list = {
@@ -134,6 +143,137 @@ M.list = {
       -- feet: not turned with the thigh, so they stay flat on the ground
       [5] = { 23, "limb", 6, 24, true }, [6] = { 24, "leaf" }, [7] = { 24, "follow" }, [8] = { 25, "core" }, -- right leg
       [9] = { 27, "limb", 10, 28, true }, [10] = { 28, "leaf" }, [11] = { 28, "follow" }, [12] = { 29, "core" }, -- left leg
+    },
+  },
+  -- --- the Veemon line (DW2003) and the Veedramon line (DW2) ----------------------
+  {
+    type = 183, name = "Veemon", file = "VMON", level = 3, height = 260,
+    attribute = 2, -- Vaccine
+    -- Gabumon's techniques and gains; its finisher (99 Blue Blaster) as Vee Headbutt
+    finisher = { name = "Vee Headbutt", from = 99 },
+    gains = { 800, 500, 100, 70, 80, 50 },
+    -- Becoming it: a Tsunomon (16) whose highest stat is Offense or Brains, at
+    -- weight 20 +- 5, any care mistakes (Elecmon, before it, wants HP, Offense
+    -- or Speed at weight 15).
+    requirements = { digimon = 16, hp = -1, mp = -1, offense = 1, defense = -1, speed = -1, brain = 1,
+      care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    evolves_from = { 16 }, -- Tsunomon
+    evolutions = { 184, 185, 5, 7 }, -- ExVeemon, Veedramon, Greymon, Airdramon
+    source = { ["SLES-03936"] = { file = 526, bones = 44, motions = 0 } }, -- M145VMON (fighter 0x91)
+    donor = 17, donor_file = "GABU.MMD", -- Gabumon (Agumon's skeleton)
+    mapping = {
+      [13] = { 2, "core" }, [20] = { 3, "core" }, [21] = { 4, "core" },                          -- chest, head, jaw
+      [14] = { 6, "limb", 15, 7 }, [15] = { 7, "limb", 16, 8 }, [16] = { 8, "leaf" },          -- right arm
+      [17] = { 10, "limb", 18, 11 }, [18] = { 11, "limb", 19, 12 }, [19] = { 12, "leaf" },     -- left arm
+      [1] = { 13, "core" }, [2] = { 13, "follow" }, [3] = { 13, "follow" }, [4] = { 13, "follow" }, -- pelvis, tail -> hips
+      -- feet not turned with the shin (its battle crouch tipped them toes-down)
+      [5] = { 15, "limb", 6, 16 }, [6] = { 16, "limb", 8, 17 }, [7] = { 16, "follow" }, [8] = { 17, "core" },     -- right leg
+      [9] = { 19, "limb", 10, 20 }, [10] = { 20, "limb", 12, 21 }, [11] = { 20, "follow" }, [12] = { 21, "core" }, -- left leg
+    },
+  },
+  {
+    type = 184, name = "ExVeemon", file = "EXVM", level = 4, height = 420,
+    attribute = 2,
+    -- Leomon's techniques and gains; its finisher (91 Fist of the Beast King) as Vee Laser
+    finisher = { name = "Vee Laser", from = 91 },
+    gains = { 1500, 1500, 250, 150, 200, 200 },
+    -- Offense and Speed 100, at most 3 care mistakes (flags 0x10), weight 25,
+    -- 10 battles, 30 techniques
+    requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = -1,
+      care = 3, weight = 25, discipline = -1, happiness = -1, battles = 10, techs = 30, flags = 0x10 },
+    evolves_from = { 183 }, -- Veemon
+    evolutions = { 186, 40 }, -- Paildramon, Andromon
+    source = { ["SLES-03936"] = { file = 575, bones = 54, motions = 0 } }, -- M259EXVM (fighter 0x103)
+    donor = 48, donor_file = "LEOM.MMD", -- Leomon (a tail, 4-bone legs)
+    mapping = {
+      [13] = { 2, "core" }, [20] = { 2, "follow" }, [21] = { 2, "follow" }, [25] = { 2, "follow" }, [26] = { 2, "follow" }, -- chest, wings
+      [17] = { 3, "core" }, [18] = { 3, "follow" }, [19] = { 4, "core" },                        -- neck + head, jaw
+      -- arms and legs keep ExVeemon's own wide stance (turned onto Leomon's
+      -- straight column legs and close arms, it looked squashed)
+      [14] = { 5, "core" }, [15] = { 6, "core" }, [16] = { 7, "core" },                         -- right arm
+      [22] = { 8, "core" }, [23] = { 9, "core" }, [24] = { 10, "core" },                        -- left arm
+      [1] = { 11, "core" },                                                                     -- pelvis -> hips
+      [10] = { 12, "limb", 11, 13 }, [11] = { 13, "limb", 12, 14 }, [12] = { 14, "leaf" },      -- tail
+      [2] = { 15, "core" }, [3] = { 16, "core" }, [4] = { 17, "core" }, [5] = { 18, "core" },  -- right leg
+      [6] = { 19, "core" }, [7] = { 20, "core" }, [8] = { 21, "core" }, [9] = { 22, "core" },  -- left leg
+    },
+  },
+  {
+    type = 185, name = "Veedramon", file = "VDRA", level = 4, height = 400, game = "dw2",
+    attribute = 2,
+    -- Greymon's techniques and gains; its finisher (63 Mega Flame) as V-Breath Arrow
+    finisher = { name = "V-Breath Arrow", from = 63 },
+    gains = { 2000, 1500, 200, 200, 200, 200 },
+    -- Offense and Defense 100, Brains 80, at most 3 care mistakes, weight 30,
+    -- discipline 70, 30 techniques
+    requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = 100, speed = -1, brain = 80,
+      care = 3, weight = 30, discipline = 70, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
+    evolves_from = { 183 }, -- Veemon
+    evolutions = { 187, 12 }, -- AeroVeedramon, MetalGreymon
+    icon_head = { 4, 5 },     -- Greymon's head and jaw
+    source = { ["SLUS-01193"] = { model = 135, anim = 26 } }, -- DW2 Digimon 128 (its first animation file)
+    donor = 5, donor_file = "GREY.MMD", -- Greymon
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" }, [3] = { 4, "core" }, [4] = { 5, "core" },       -- chest, neck, head, jaw
+      [5] = { 7, "limb", 6, 8 }, [6] = { 8, "limb", 7, 9 }, [7] = { 9, "leaf" },                -- right arm
+      [8] = { 11, "limb", 9, 12 }, [9] = { 12, "limb", 10, 13 }, [10] = { 13, "leaf" },         -- left arm
+      [11] = { 14, "core" },                                                                    -- pelvis
+      [12] = { 15, "limb", 13, 16 }, [13] = { 16, "limb", 14, 17 }, [14] = { 17, "leaf" },      -- tail
+      -- feet not turned with the shin (they tipped toes-up)
+      [15] = { 19, "limb", 16, 20 }, [16] = { 20, "limb", 17, 21 }, [17] = { 21, "core" },      -- right leg
+      [18] = { 23, "limb", 19, 24 }, [19] = { 24, "limb", 20, 25 }, [20] = { 25, "core" },      -- left leg
+    },
+  },
+  {
+    type = 186, name = "Paildramon", file = "PLDR", level = 5, height = 470,
+    attribute = 2,
+    -- Andromon's techniques and gains; its finisher (102 Spiral Sword) as Desperado Blaster
+    finisher = { name = "Desperado Blaster", from = 102 },
+    gains = { 4500, 5000, 500, 450, 550, 500 },
+    -- HP 300, MP 200, Offense 400, Defense 300, Speed 400, Brains 300, at most
+    -- 8 care mistakes, weight 50, discipline 90, 30 battles, 35 techniques
+    requirements = { digimon = -1, hp = 300, mp = 200, offense = 400, defense = 300, speed = 400, brain = 300,
+      care = 8, weight = 50, discipline = 90, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
+    evolves_from = { 184 }, -- ExVeemon
+    icon_head = { 3 },      -- Andromon has no jaw
+    source = { ["SLES-03936"] = { file = 601, bones = 54, motions = 0 } }, -- M254PLDR (fighter 0xFE)
+    donor = 40, donor_file = "ANDR.MMD", -- Andromon (no tail or jaw)
+    -- 948 polygons: slimmed to fit next to Andromon's animations. Its hip
+    -- cannons (13, 15) ride the hips; 14 and 16 are folded to a point at rest
+    -- (hidden) and left out.
+    mapping = {
+      [17] = { 2, "core" }, [25] = { 2, "follow" }, [26] = { 2, "follow" }, [27] = { 2, "follow" }, [28] = { 2, "follow" }, -- chest, wings
+      [21] = { 3, "core" },                                                                     -- head
+      [18] = { 5, "limb", 19, 6 }, [19] = { 6, "limb", 20, 7 }, [20] = { 7, "leaf" },          -- right arm
+      [22] = { 9, "limb", 23, 10 }, [23] = { 10, "limb", 24, 11 }, [24] = { 11, "leaf" },      -- left arm
+      [1] = { 12, "core" }, [10] = { 12, "follow" }, [11] = { 12, "follow" }, [12] = { 12, "follow" }, [13] = { 12, "follow" }, [15] = { 12, "follow" }, -- hips, tail, cannons
+      [2] = { 14, "limb", 3, 15 }, [3] = { 15, "limb", 5, 16 }, [4] = { 15, "follow" }, [5] = { 16, "leaf" },      -- right leg
+      [6] = { 18, "limb", 7, 19 }, [7] = { 19, "limb", 9, 20 }, [8] = { 19, "follow" }, [9] = { 20, "leaf" },      -- left leg
+    },
+  },
+  {
+    type = 187, name = "AeroVeedramon", file = "AVDR", level = 5, height = 470, game = "dw2",
+    attribute = 2,
+    -- MetalGreymon's techniques and gains; its finisher (79 Giga Scissor Claw) as Dragon Impulse
+    finisher = { name = "Dragon Impulse", from = 79 },
+    gains = { 5000, 5000, 500, 500, 500, 500 },
+    -- HP 400, MP 300, Offense 500, Defense 400, Speed 400, Brains 300, at most
+    -- 10 care mistakes, weight 60, discipline 90, 30 battles, 30 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 400, speed = 400, brain = 300,
+      care = 10, weight = 60, discipline = 90, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
+    evolves_from = { 185 }, -- Veedramon
+    icon_head = { 4, 5 },   -- MetalGreymon's head and jaw
+    source = { ["SLUS-01193"] = { model = 114, anim = 27 } }, -- DW2 Digimon 180
+    donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (as WarGrowlmon: arms keep their own stance, feet flat)
+    mapping = {
+      [1] = { 2, "core" }, [8] = { 2, "follow" }, [9] = { 2, "follow" },                         -- chest, wings
+      [2] = { 3, "core" }, [3] = { 4, "core" }, [4] = { 5, "core" },                             -- neck, head, jaw
+      [5] = { 7, "core" }, [6] = { 8, "core" }, [7] = { 9, "core" },                             -- right arm
+      [10] = { 11, "core" }, [11] = { 12, "core" }, [12] = { 13, "core" },                       -- left arm
+      [13] = { 18, "core" },                                                                     -- pelvis -> hips
+      [20] = { 19, "limb", 21, 20 }, [21] = { 20, "limb", 22, 21 }, [22] = { 21, "leaf" },       -- tail
+      [17] = { 23, "limb", 18, 24, true }, [18] = { 24, "leaf" }, [19] = { 25, "core" },         -- right leg
+      [14] = { 27, "limb", 15, 28, true }, [15] = { 28, "leaf" }, [16] = { 29, "core" },         -- left leg
     },
   },
 }
