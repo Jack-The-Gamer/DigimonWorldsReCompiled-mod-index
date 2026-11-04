@@ -61,14 +61,17 @@ M.list = {
     donor = 3, donor_file = "AGUM.MMD", -- Agumon
     -- DW3 bone (1-based) -> { DW1 bone, kind [, DW3 child, DW1 child] }
     mapping = {
+      -- hybrid (as WarGrowlmon): arms keep their own stance; thighs turned to the
+      -- donor's keeping their roll, so its walk swings them the right way; shins
+      -- keep their bend to the thigh; feet flat
       [1] = { 2, "core" },                                                         -- upper body -> torso
-      [2] = { 6, "limb", 3, 7 }, [3] = { 7, "limb", 4, 8 }, [4] = { 8, "leaf" },  -- right arm
-      [10] = { 10, "limb", 11, 11 }, [11] = { 11, "limb", 12, 12 }, [12] = { 12, "leaf" }, -- left arm
+      [2] = { 6, "core" }, [3] = { 7, "core" }, [4] = { 8, "core" },  -- right arm
+      [10] = { 10, "core" }, [11] = { 11, "core" }, [12] = { 12, "core" }, -- left arm
       [5] = { 3, "core" }, [6] = { 3, "follow" }, [8] = { 3, "follow" }, [9] = { 3, "follow" }, -- neck, head, ears -> head
       [7] = { 4, "core" },                                                         -- jaw -> jaw
       [13] = { 13, "core" }, [22] = { 13, "follow" }, [23] = { 13, "follow" }, [24] = { 13, "follow" }, -- pelvis, tail -> hips
-      [14] = { 15, "limb", 15, 16 }, [15] = { 16, "limb", 17, 17 }, [16] = { 16, "follow" }, [17] = { 17, "leaf" }, -- right leg
-      [18] = { 19, "limb", 19, 20 }, [19] = { 20, "limb", 21, 21 }, [20] = { 20, "follow" }, [21] = { 21, "leaf" }, -- left leg
+      [14] = { 15, "limb", 15, 16, true }, [15] = { 16, "leaf" }, [16] = { 16, "follow" }, [17] = { 17, "core" }, -- right leg
+      [18] = { 19, "limb", 19, 20, true }, [19] = { 20, "leaf" }, [20] = { 20, "follow" }, [21] = { 21, "core" }, -- left leg
     },
   },
   {
@@ -96,14 +99,17 @@ M.list = {
     -- Its model is bigger than Greymon's: lib/convert.lua slims it to fit
     -- the partner buffer (shortest edges first).
     mapping = {
+      -- hybrid (as WarGrowlmon): arms keep their own stance; thighs turned to the
+      -- donor's keeping their roll, so its walk swings them the right way; shins
+      -- keep their bend to the thigh; feet flat
       [1] = { 2, "core" },                                                         -- upper body -> torso
       [6] = { 3, "core" }, [7] = { 4, "core" }, [8] = { 5, "core" },               -- neck, head, jaw
-      [2] = { 7, "limb", 3, 8 }, [3] = { 8, "limb", 5, 9 }, [4] = { 8, "follow" }, [5] = { 9, "leaf" }, -- right arm, elbow blade
-      [9] = { 11, "limb", 10, 12 }, [10] = { 12, "limb", 12, 13 }, [11] = { 12, "follow" }, [12] = { 13, "leaf" }, -- left arm
+      [2] = { 7, "core" }, [3] = { 8, "core" }, [4] = { 8, "follow" }, [5] = { 9, "core" }, -- right arm, elbow blade
+      [9] = { 11, "core" }, [10] = { 12, "core" }, [11] = { 12, "follow" }, [12] = { 13, "core" }, -- left arm
       [13] = { 14, "core" },                                                       -- pelvis
       [14] = { 15, "limb", 15, 16 }, [15] = { 16, "limb", 16, 17 }, [16] = { 17, "leaf" }, -- tail
-      [17] = { 23, "limb", 18, 24 }, [18] = { 24, "limb", 20, 25 }, [19] = { 24, "follow" }, [20] = { 25, "leaf" }, -- left leg
-      [21] = { 19, "limb", 22, 20 }, [22] = { 20, "limb", 24, 21 }, [23] = { 20, "follow" }, [24] = { 21, "leaf" }, -- right leg
+      [17] = { 23, "limb", 18, 24, true }, [18] = { 24, "leaf" }, [19] = { 24, "follow" }, [20] = { 25, "core" }, -- left leg
+      [21] = { 19, "limb", 22, 20, true }, [22] = { 20, "leaf" }, [23] = { 20, "follow" }, [24] = { 21, "core" }, -- right leg
     },
   },
   {
@@ -169,13 +175,15 @@ M.list = {
     source = { ["SLES-03936"] = { file = 526, bones = 44, motions = 0 } }, -- M145VMON (fighter 0x91)
     donor = 17, donor_file = "GABU.MMD", -- Gabumon (Agumon's skeleton)
     mapping = {
+      -- hybrid (as WarGrowlmon): arms keep their own stance; thighs turned to the
+      -- donor's keeping their roll, so its walk swings them the right way; shins
+      -- keep their bend to the thigh; feet flat
       [13] = { 2, "core" }, [20] = { 3, "core" }, [21] = { 4, "core" },                          -- chest, head, jaw
-      [14] = { 6, "limb", 15, 7 }, [15] = { 7, "limb", 16, 8 }, [16] = { 8, "leaf" },          -- right arm
-      [17] = { 10, "limb", 18, 11 }, [18] = { 11, "limb", 19, 12 }, [19] = { 12, "leaf" },     -- left arm
+      [14] = { 6, "core" }, [15] = { 7, "core" }, [16] = { 8, "core" },          -- right arm
+      [17] = { 10, "core" }, [18] = { 11, "core" }, [19] = { 12, "core" },     -- left arm
       [1] = { 13, "core" }, [2] = { 13, "follow" }, [3] = { 13, "follow" }, [4] = { 13, "follow" }, -- pelvis, tail -> hips
-      -- feet not turned with the shin (its battle crouch tipped them toes-down)
-      [5] = { 15, "limb", 6, 16 }, [6] = { 16, "limb", 8, 17 }, [7] = { 16, "follow" }, [8] = { 17, "core" },     -- right leg
-      [9] = { 19, "limb", 10, 20 }, [10] = { 20, "limb", 12, 21 }, [11] = { 20, "follow" }, [12] = { 21, "core" }, -- left leg
+      [5] = { 15, "limb", 6, 16, true }, [6] = { 16, "leaf" }, [7] = { 16, "follow" }, [8] = { 17, "core" },     -- right leg
+      [9] = { 19, "limb", 10, 20, true }, [10] = { 20, "leaf" }, [11] = { 20, "follow" }, [12] = { 21, "core" }, -- left leg
     },
   },
   {
@@ -225,14 +233,16 @@ M.list = {
     source = { ["SLUS-01193"] = { model = 135, anim = 26 } }, -- DW2 Digimon 128 (its first animation file)
     donor = 5, donor_file = "GREY.MMD", -- Greymon
     mapping = {
+      -- hybrid (as WarGrowlmon): arms keep their own stance; thighs turned to the
+      -- donor's keeping their roll, so its walk swings them the right way; shins
+      -- keep their bend to the thigh; feet flat
       [1] = { 2, "core" }, [2] = { 3, "core" }, [3] = { 4, "core" }, [4] = { 5, "core" },       -- chest, neck, head, jaw
-      [5] = { 7, "limb", 6, 8 }, [6] = { 8, "limb", 7, 9 }, [7] = { 9, "leaf" },                -- right arm
-      [8] = { 11, "limb", 9, 12 }, [9] = { 12, "limb", 10, 13 }, [10] = { 13, "leaf" },         -- left arm
+      [5] = { 7, "core" }, [6] = { 8, "core" }, [7] = { 9, "core" },                -- right arm
+      [8] = { 11, "core" }, [9] = { 12, "core" }, [10] = { 13, "core" },         -- left arm
       [11] = { 14, "core" },                                                                    -- pelvis
       [12] = { 15, "limb", 13, 16 }, [13] = { 16, "limb", 14, 17 }, [14] = { 17, "leaf" },      -- tail
-      -- feet not turned with the shin (they tipped toes-up)
-      [15] = { 19, "limb", 16, 20 }, [16] = { 20, "limb", 17, 21 }, [17] = { 21, "core" },      -- right leg
-      [18] = { 23, "limb", 19, 24 }, [19] = { 24, "limb", 20, 25 }, [20] = { 25, "core" },      -- left leg
+      [15] = { 19, "limb", 16, 20, true }, [16] = { 20, "leaf" }, [17] = { 21, "core" },      -- right leg
+      [18] = { 23, "limb", 19, 24, true }, [19] = { 24, "leaf" }, [20] = { 25, "core" },      -- left leg
     },
   },
   {
@@ -255,13 +265,16 @@ M.list = {
     -- cannons (13, 15) ride the hips; 14 and 16 are folded to a point at rest
     -- (hidden) and left out.
     mapping = {
+      -- hybrid (as WarGrowlmon): arms keep their own stance; thighs turned to the
+      -- donor's keeping their roll, so its walk swings them the right way; shins
+      -- keep their bend to the thigh; feet flat
       [17] = { 2, "core" }, [25] = { 2, "follow" }, [26] = { 2, "follow" }, [27] = { 2, "follow" }, [28] = { 2, "follow" }, -- chest, wings
       [21] = { 3, "core" },                                                                     -- head
-      [18] = { 5, "limb", 19, 6 }, [19] = { 6, "limb", 20, 7 }, [20] = { 7, "leaf" },          -- right arm
-      [22] = { 9, "limb", 23, 10 }, [23] = { 10, "limb", 24, 11 }, [24] = { 11, "leaf" },      -- left arm
+      [18] = { 5, "core" }, [19] = { 6, "core" }, [20] = { 7, "core" },          -- right arm
+      [22] = { 9, "core" }, [23] = { 10, "core" }, [24] = { 11, "core" },      -- left arm
       [1] = { 12, "core" }, [10] = { 12, "follow" }, [11] = { 12, "follow" }, [12] = { 12, "follow" }, [13] = { 12, "follow" }, [15] = { 12, "follow" }, -- hips, tail, cannons
-      [2] = { 14, "limb", 3, 15 }, [3] = { 15, "limb", 5, 16 }, [4] = { 15, "follow" }, [5] = { 16, "leaf" },      -- right leg
-      [6] = { 18, "limb", 7, 19 }, [7] = { 19, "limb", 9, 20 }, [8] = { 19, "follow" }, [9] = { 20, "leaf" },      -- left leg
+      [2] = { 14, "limb", 3, 15, true }, [3] = { 15, "leaf" }, [4] = { 15, "follow" }, [5] = { 16, "core" },      -- right leg
+      [6] = { 18, "limb", 7, 19, true }, [7] = { 19, "leaf" }, [8] = { 19, "follow" }, [9] = { 20, "core" },      -- left leg
     },
   },
   {
