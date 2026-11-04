@@ -18,11 +18,64 @@ M.EXE = {
   { 0x800E9188, 0x2A010042 }, -- loadVLALL (the evolution's voice): type <= 65, else voice 15
 }
 
--- Adds the rewrites to `patch(addr, expect, value)`.
-function M.patch_exe(patch)
-  for _, p in ipairs(M.EXE) do
-    patch(p[1], p[2], (p[2] & 0xFFFF0000) | tables.CAPACITY)
-  end
+-- Techniques (lib/tables.lua). A finisher is any technique from 0x3A below
+-- a bound, 0x71 in the game; these are every check of it in the US build
+-- (dw_decomp: battle_main, std_main/std_setup, vs_main, vs_combat, evl,
+-- partner_impl; 32 in C, 32 here: slti/sltiu rt, rs, 0x71), raised to
+-- tables.FINISHER_END. The other compares with 113 aren't about techniques
+-- (Digimon type 0x71, a rotation, screen positions).
+local FINISHER_CHECKS = {
+  { "SLUS_010.32", 0x800A46C8, 0x2CA10071 }, -- initializePartner
+  { "SLUS_010.32", 0x800F5E34, 0x28A10071 }, -- VS__tickDigimonSenile
+  { "BTL_REL.BIN", 0x80058734, 0x28A10071 }, -- BTL_tickEnemyAI
+  { "BTL_REL.BIN", 0x8005A1AC, 0x28810071 }, -- BTL_tickMeleeAttack
+  { "BTL_REL.BIN", 0x8005BCA4, 0x28E10071 }, -- BTL_calculateHitChance
+  { "BTL_REL.BIN", 0x8005BFC4, 0x2A010071 }, -- BTL_calculateDamage
+  { "BTL_REL.BIN", 0x8005C10C, 0x2A010071 }, -- BTL_calculateDamage
+  { "BTL_REL.BIN", 0x8005D3D8, 0x28410071 }, -- BTL_isMoveUsable
+  { "BTL_REL.BIN", 0x8005D824, 0x2A610071 }, -- BTL_startQueuedMove
+  { "BTL_REL.BIN", 0x8005DB2C, 0x2A210071 }, -- BTL_setupMoveExecution
+  { "BTL_REL.BIN", 0x8005DCC4, 0x2A210071 }, -- BTL_setupMoveExecution
+  { "BTL_REL.BIN", 0x8005E050, 0x28410071 }, -- BTL_addFinisherProgress
+  { "STD_REL.BIN", 0x8005729C, 0x28410071 }, -- STD_initializeOpponent
+  { "STD_REL.BIN", 0x800574BC, 0x2C610071 }, -- STD_initializeOpponent
+  { "STD_REL.BIN", 0x800601CC, 0x28A10071 }, -- STD_tickEnemyAI
+  { "STD_REL.BIN", 0x80061D74, 0x28810071 }, -- STD_tickMeleeAttack
+  { "STD_REL.BIN", 0x80063D6C, 0x28E10071 }, -- STD_applyPartnerStatsToFighter
+  { "STD_REL.BIN", 0x80063FAC, 0x2A010071 }, -- STD_calculateDamage
+  { "STD_REL.BIN", 0x800640F4, 0x2A010071 }, -- STD_calculateDamage
+  { "STD_REL.BIN", 0x8006517C, 0x28410071 }, -- STD_isMoveUsable
+  { "STD_REL.BIN", 0x800655C8, 0x2A610071 }, -- STD_startQueuedMove
+  { "STD_REL.BIN", 0x800659AC, 0x2A010071 }, -- STD_setupMoveExecution
+  { "STD_REL.BIN", 0x80065B44, 0x2A010071 }, -- STD_setupMoveExecution
+  { "STD_REL.BIN", 0x80065E84, 0x28410071 }, -- STD_addFinisherProgress
+  { "VS_REL.BIN",  0x8005B9F0, 0x28E10071 }, -- VS_applyPartnerStatsToFighter
+  { "VS_REL.BIN",  0x8005BC20, 0x28C10071 }, -- VS_rollAttackOutcome
+  { "VS_REL.BIN",  0x8005CB84, 0x28410071 }, -- VS_isMoveUsable
+  { "VS_REL.BIN",  0x8005CF80, 0x2A610071 }, -- VS_startFighterMove
+  { "VS_REL.BIN",  0x8005D364, 0x2A210071 }, -- VS_playMoveEffect
+  { "VS_REL.BIN",  0x8005D384, 0x2A210071 }, -- VS_playMoveEffect
+  { "VS_REL.BIN",  0x8005D868, 0x28410071 }, -- VS_addFinisherProgress
+  { "EVL_REL.BIN", 0x80063A0C, 0x2C810071 }, -- EVL_applyEvolution
+}
+-- The generic attack, technique 0x79 (`tech = 0x79` in getAttackTech:
+-- addiu v0, zero, 0x79), moves with the Bubbles past the finishers.
+local GENERIC_ATTACK = {
+  { "BTL_REL.BIN", 0x8005B7B8, 0x24020079 },
+  { "STD_REL.BIN", 0x800638AC, 0x24020079 },
+  { "VS_REL.BIN",  0x8005B530, 0x24020079 },
+}
+-- drawMoveName (Battle Mode slots) draws names of techniques < 0x79.
+local NAME_CHECK = { "SLUS_010.32", 0x8010FC0C, 0x28410079 }
+
+local function with_imm(w, v) return (w & 0xFFFF0000) | v end
+
+-- Every rewrite: `patch(file, addr, expect, value)`.
+function M.patch_code(patch)
+  for _, p in ipairs(M.EXE) do patch("SLUS_010.32", p[1], p[2], with_imm(p[2], tables.CAPACITY)) end
+  for _, p in ipairs(FINISHER_CHECKS) do patch(p[1], p[2], p[3], with_imm(p[3], tables.FINISHER_END)) end
+  for _, p in ipairs(GENERIC_ATTACK) do patch(p[1], p[2], p[3], with_imm(p[3], tables.MOVED_MOVES[0x79])) end
+  patch(NAME_CHECK[1], NAME_CHECK[2], NAME_CHECK[3], with_imm(NAME_CHECK[3], tables.MOVES))
 end
 
 -- hasDigimonRaised(type) is isTriggerSet(0x200 + type), and only the game's
@@ -43,6 +96,44 @@ local ROOT_SCALE_SET = 0x800A1094
 -- developer option test_raised (a save has no room for them so far).
 M.raised_new = {}
 
+-- A technique's look in battle is its effect file: entry 0x100 + technique
+-- of EFE DAT (getEFEDATEntry(id): sector EFEDAT_CD_LOCATION + 10 * (id -
+-- 0x100)), loaded at battle start for every technique the fighters have;
+-- the loaded file's header (EfeFileHeader.effectId, +48) must name the
+-- technique asked for (setupLoadedEFEFile, else load error -3). A moved
+-- or new technique reads another one's entry (efe_source: technique ->
+-- the technique whose effect it uses), and its header is renamed when
+-- setupLoadedEFEFile(EfeLoad *) first sees it (EfeLoad: moves +8, already
+-- past the one loading; model +16; ModelComponent.mmdPtr +12).
+M.efe_source = {}
+for old, new in pairs(tables.MOVED_MOVES) do M.efe_source[new] = old end -- the Bubbles, the generic attack
+local GET_EFEDAT_ENTRY = 0x800AEFF4
+-- The three battle overlays load at the same address (0x80052AE0): each
+-- hook acts only when its own overlay's code is there.
+local SETUP_LOADED_EFE = {
+  { "BTL_REL.BIN", 0x800650EC },
+  { "STD_REL.BIN", 0x8006D7D4 },
+  { "VS_REL.BIN",  0x800638A4 },
+}
+local code_words = {} -- file -> { addr -> its first 4 words (from the disc) }
+
+-- Called with every code file's words while the mod loads (main.lua).
+function M.note_code(file, base, words)
+  for _, h in ipairs(SETUP_LOADED_EFE) do
+    if h[1] == file then
+      local i = (h[2] - base) // 4 + 1
+      code_words[h[2]] = { words[i], words[i + 1], words[i + 2], words[i + 3] }
+    end
+  end
+end
+
+local function is_here(ctx, addr)
+  local w = code_words[addr]
+  if not w then return false end
+  for k = 1, 4 do if ctx:read32(addr + 4 * (k - 1)) ~= w[k] then return false end end
+  return true
+end
+
 function M.install()
   dwrc.on_exec(HAS_DIGIMON_RAISED, function(ctx)
     local t = ctx:reg("a0") & 0xFFFF
@@ -50,6 +141,26 @@ function M.install()
     ctx:ret(M.raised_new[t] and 1 or 0)
     return true
   end)
+  dwrc.on_exec(GET_EFEDAT_ENTRY, function(ctx)
+    local id = ctx:reg("a0")
+    local src = M.efe_source[id - 0x100]
+    if src then ctx:set_reg("a0", src + 0x100) end
+    return false
+  end)
+  for _, h in ipairs(SETUP_LOADED_EFE) do
+    local addr = h[2]
+    dwrc.on_exec(addr, function(ctx)
+      if not is_here(ctx, addr) then return false end
+      local load = ctx:reg("a0")
+      local want = ctx:read16(ctx:read32(load + 8) - 2)
+      if want >= 0x8000 then return false end
+      local src = M.efe_source[want - 0x100]
+      if not src then return false end
+      local mmd = ctx:read32(ctx:read32(load + 16) + 12)
+      if ctx:read32(mmd + 48) == src + 0x100 then ctx:write32(mmd + 48, want) end
+      return false
+    end)
+  end
   dwrc.on_exec(ROOT_SCALE_SET, function(ctx)
     local s = M.root_scale[ctx:reg("s4")]
     if s then

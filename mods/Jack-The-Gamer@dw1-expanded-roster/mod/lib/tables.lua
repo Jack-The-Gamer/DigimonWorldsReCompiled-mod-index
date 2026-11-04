@@ -31,23 +31,31 @@ local DEFS = {
   { "EVOLUTION_STATS_GAINS",  0x8012B2D0, 66,  0xE,  M.CAPACITY },
   -- indexed by type - 1; -1 (0xFF) means "no Digimon"
   { "EVOLUTION_PATHS",        0x8012B66C, 62,  11,   M.CAPACITY - 1, 0xFF },
+  -- by technique, not by type (`techniques`): names (char *) and Move
+  -- {power, mpCost, ...}, room for MOVES
+  { "MOVE_NAMES",             0x80126054, 122, 4,    0xF9, nil, true },
+  { "MOVE_DATA",              0x8012623C, 122, 0x10, 0xF9, nil, true },
 }
 
--- Techniques stay where they are (MOVE_NAMES: char *[122], MOVE_DATA: Move
--- [122] of 16 bytes). Finishers are recognised by number, 0x3A..0x70, in
--- about 45 places (0x71..0x78 are the In-Training Bubbles), so a new
--- Digimon's own finisher reuses one of the numbers no Digimon has; more
--- finishers will need that range widened.
-M.MOVE_NAMES = 0x80126054
-M.MOVE_DATA = 0x8012623C
-M.FREE_FINISHERS = { 0x6E, 0x70 } -- Glacial Blast, High Electro Shocker: in no DigimonPara.moves[]
+-- Techniques: 0x00..0x39 learnable, 0x3A..0x70 finishers, 0x71..0x78 the
+-- In-Training Bubbles, 0x79 the generic attack; a Digimon names them by
+-- number (DigimonPara.moves[], u8, 0xFF none). A finisher is any number
+-- from 0x3A below a bound (0x71), checked by number in 32 places, so the
+-- bound goes up to FINISHER_END (lib/limits.lua) and the Bubbles and the
+-- generic attack move past it: new finishers get 0x71..FINISHER_END - 1.
+M.GAME_MOVES = 122
+M.FINISHER_END = 0xF0
+M.FIRST_NEW_FINISHER = 0x71
+M.MOVED_MOVES = {}            -- old number -> new (0x71..0x79 -> 0xF0..0xF8)
+for n = 0x71, 0x79 do M.MOVED_MOVES[n] = n - 0x71 + M.FINISHER_END end
+M.MOVES = M.FINISHER_END + 9  -- 0xF9 techniques
 
 -- The moved tables: name -> { old, size (old bytes), new, new_size, fill }.
 M.list = {}
 M.by_name = {}
 local at = M.HEAP_START
 for _, d in ipairs(DEFS) do
-  local t = { name = d[1], old = d[2], size = d[3] * d[4], entry = d[4], count = d[5], new = at, new_size = d[5] * d[4], fill = d[6] or 0 }
+  local t = { name = d[1], old = d[2], size = d[3] * d[4], entry = d[4], count = d[5], new = at, new_size = d[5] * d[4], fill = d[6] or 0, techniques = d[7] }
   M.list[#M.list + 1] = t
   M.by_name[t.name] = t
   at = (at + t.new_size + 7) & ~7
@@ -60,7 +68,8 @@ at = at + M.STRINGS_SIZE
 -- Names of the new finishers (MOVE_NAMES points here), 24 bytes each.
 M.MOVE_STRING_BYTES = 24
 M.MOVE_STRINGS = at
-at = at + M.MOVE_STRING_BYTES * #M.FREE_FINISHERS
+M.NEW_FINISHERS = M.FINISHER_END - M.FIRST_NEW_FINISHER
+at = at + M.MOVE_STRING_BYTES * M.NEW_FINISHERS
 -- Room for the new Digimon's chart icons (lib/icon.lua), uploaded from here
 -- to VRAM when the chart opens: per type 256 bytes of pixels (two 16x16
 -- 4-bit frames), a 32-byte CLUT, and the two RECTs for LoadImage.
@@ -85,7 +94,7 @@ function M.copy_entries(ctx, from, to)
   for _, t in ipairs(M.list) do
     local f, d = from, to
     if t.name == "EVOLUTION_PATHS" then f, d = f - 1, d - 1 end
-    if f >= 0 and f < t.count and d >= 0 and d < t.count then
+    if not t.techniques and f >= 0 and f < t.count and d >= 0 and d < t.count then
       ctx:write_bytes(t.new + d * t.entry, ctx:read_bytes(t.new + f * t.entry, t.entry))
     end
   end
@@ -116,7 +125,24 @@ function M.install(wipe, setup)
       if wipe then ctx:write_bytes(t.old, string.rep("\0", t.size)) end
     end
     ctx:write_bytes(M.STRINGS, string.rep("\0", M.STRINGS_SIZE))
-    ctx:write_bytes(M.MOVE_STRINGS, string.rep("\0", M.MOVE_STRING_BYTES * #M.FREE_FINISHERS))
+    ctx:write_bytes(M.MOVE_STRINGS, string.rep("\0", M.MOVE_STRING_BYTES * M.NEW_FINISHERS))
+    -- the Bubbles and the generic attack to their new numbers: their
+    -- entries, and every Digimon's moves[] (DigimonPara +35, 16 bytes)
+    local names, data = M.by_name.MOVE_NAMES, M.by_name.MOVE_DATA
+    for old, new in pairs(M.MOVED_MOVES) do
+      ctx:write32(names.new + 4 * new, ctx:read32(names.new + 4 * old))
+      ctx:write_bytes(data.new + 16 * new, ctx:read_bytes(data.new + 16 * old, 16))
+    end
+    local dd = M.by_name.DIGIMON_DATA
+    for ty = 0, 179 do
+      local at = dd.new + ty * dd.entry + 35
+      local moves = { string.byte(ctx:read_bytes(at, 16), 1, 16) }
+      local changed = false
+      for i, m in ipairs(moves) do
+        if M.MOVED_MOVES[m] then moves[i], changed = M.MOVED_MOVES[m], true end
+      end
+      if changed then ctx:write_bytes(at, string.char(table.unpack(moves))) end
+    end
     if setup then setup(ctx) end
     ctx:set_reg("a0", M.END)
     ctx:set_reg("a1", size - (M.END - start))

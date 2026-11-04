@@ -57,15 +57,6 @@ local function read_game_file(name)
   return dwrc.disc.read(lba, (size + 2047) // 2048):sub(1, size)
 end
 
--- Changes to the executable besides the moved references (word index -> value).
-local exe_extra = {}
-local function patch_exe(addr, expect, value)
-  local v = bin.u32(exe, exe_off(addr))
-  if v ~= expect then error(string.format("unexpected code at %08X: %08X, not %08X", addr, v, expect)) end
-  exe_extra[(addr - EXE_CODE) // 4 + 1] = value
-end
-limits.patch_exe(patch_exe)
-
 -- Every file of code with its load address: the executable, then the overlays
 -- as the executable lists them.
 local code_files = { { name = EXE, base = EXE_CODE, skip = 0x800 } }
@@ -74,18 +65,29 @@ for i = 0, 15 do
   code_files[#code_files + 1] = { name = name, base = bin.u32(exe, exe_off(REL_BIN_OFFSETS + 4 * i)), skip = 0 }
 end
 
+-- Changes to the code besides the moved references (lib/limits.lua):
+-- file -> { addr -> {expect, value} }, checked against the code below.
+local extra = {}
+limits.patch_code(function(file, addr, expect, value)
+  extra[file] = extra[file] or {}
+  extra[file][addr] = { expect, value }
+end)
+
 local total = 0
 for _, f in ipairs(code_files) do
   local data, lba, size = iso.read(f.name)
   if f.name == EXE then data = exe end
   local code = data:sub(f.skip + 1, size)
-  local patches, refs = reloc.scan(bin.words(code), f.base, tables.move, f.name)
-  if f.name == EXE then
-    for i, w in pairs(exe_extra) do
-      if patches[i] then error(string.format("%s: %08X is both moved and patched", f.name, f.base + 4 * (i - 1))) end
-      patches[i] = w
-    end
+  local words = bin.words(code)
+  limits.note_code(f.name, f.base, words)
+  local patches, refs = reloc.scan(words, f.base, tables.move, f.name)
+  for addr, p in pairs(extra[f.name] or {}) do
+    local i = (addr - f.base) // 4 + 1
+    if words[i] ~= p[1] then error(string.format("%s: unexpected code at %08X: %08X, not %08X", f.name, addr, words[i] or 0, p[1])) end
+    if patches[i] then error(string.format("%s: %08X is both moved and patched", f.name, addr)) end
+    patches[i] = p[2]
   end
+  extra[f.name] = nil
   if next(patches) then
     -- word indices are relative to the code; shift them past the header
     local shifted = {}
@@ -96,6 +98,7 @@ for _, f in ipairs(code_files) do
     total = total + refs
   end
 end
+for name in pairs(extra) do error("patches for " .. name .. ", which isn't one of the game's code files") end
 
 -- One texture per type, read at type * 9 sectors: the new types' entries go
 -- after the game's 180. `textures[type]` = a TIM for a new type.
@@ -151,6 +154,29 @@ else
         b.name, dw3.title, info.verts, info.prims, #mmd, os.clock() - t1, fnv(mmd), fnv(tim)))
     end)
     if not ok then dwrc.log(b.name .. " couldn't be built: " .. tostring(err)) end
+  end
+end
+
+-- The new finishers' numbers (lib/tables.lua), given out in type order now
+-- (not at boot) so the battle effect hooks know them in every session, a
+-- loaded state's too: each looks like its donor finisher in battle.
+local finisher_id = {}
+do
+  local types = {}
+  for t, b in pairs(built) do if b.finisher then types[#types + 1] = t end end
+  table.sort(types)
+  local next_id = tables.FIRST_NEW_FINISHER
+  for _, t in ipairs(types) do
+    local b = built[t]
+    if next_id >= tables.FINISHER_END then
+      dwrc.log("no room for more finishers: " .. b.name .. " keeps its donor's")
+    elseif #b.finisher.name >= tables.MOVE_STRING_BYTES then
+      dwrc.log(b.name .. "'s finisher name is too long: " .. b.finisher.name)
+    else
+      finisher_id[t] = next_id
+      limits.efe_source[next_id] = b.finisher.from
+      next_id = next_id + 1
+    end
   end
 end
 
@@ -246,7 +272,6 @@ local function setup(ctx)
   local types = {}
   for t in pairs(built) do types[#types + 1] = t end
   table.sort(types)
-  local next_move = 1 -- the next of tables.FREE_FINISHERS, in type order
   for _, t in ipairs(types) do
     local b = built[t]
     -- For now every table entry starts as the donor's (stats, care, voice,
@@ -261,31 +286,24 @@ local function setup(ctx)
     if b.radius then ctx:write16(data + 24, b.radius) end
     if b.attribute then ctx:write8(data + 28, b.attribute) end
     if b.specialties then ctx:write_bytes(data + 30, string.char(table.unpack(b.specialties))) end
-    -- Its own finisher: a finisher number no Digimon has, given the donor's
-    -- finisher's stats (power, MP, range...) and its own name, in place of
-    -- that one in its moves[] (DigimonPara +35, technique by animation
-    -- slot: the animation, and so the attack's look, stays the donor's)
-    if b.finisher then
-      local f = b.finisher
-      local slot = next_move
-      if slot > #tables.FREE_FINISHERS then
-        dwrc.log("no free finisher number: " .. b.name .. " keeps its donor's finisher")
-      else
-        next_move = next_move + 1
-        local id = tables.FREE_FINISHERS[slot]
-        local str = tables.MOVE_STRINGS + tables.MOVE_STRING_BYTES * (slot - 1)
-        ctx:write_bytes(str, f.name .. string.rep("\0", tables.MOVE_STRING_BYTES - #f.name))
-        ctx:write32(tables.MOVE_NAMES + 4 * id, str)
-        ctx:write_bytes(tables.MOVE_DATA + 16 * id, ctx:read_bytes(tables.MOVE_DATA + 16 * f.from, 16))
-        local found = false
-        for i = 0, 15 do
-          if ctx:read8(data + 35 + i) == f.from then
-            ctx:write8(data + 35 + i, id)
-            found = true
-          end
+    -- Its own finisher (finisher_id): the donor finisher's stats (power,
+    -- MP, range...) under its own name, in place of that one in its
+    -- moves[] (DigimonPara +35, technique by animation slot: the
+    -- animation stays the donor's, and so does the effect, see above)
+    if finisher_id[t] then
+      local f, id = b.finisher, finisher_id[t]
+      local str = tables.MOVE_STRINGS + tables.MOVE_STRING_BYTES * (id - tables.FIRST_NEW_FINISHER)
+      ctx:write_bytes(str, f.name .. string.rep("\0", tables.MOVE_STRING_BYTES - #f.name))
+      ctx:write32(tables.entry("MOVE_NAMES", id), str)
+      ctx:write_bytes(tables.entry("MOVE_DATA", id), ctx:read_bytes(tables.entry("MOVE_DATA", f.from), 16))
+      local found = false
+      for i = 0, 15 do
+        if ctx:read8(data + 35 + i) == f.from then
+          ctx:write8(data + 35 + i, id)
+          found = true
         end
-        if not found then dwrc.log(string.format("%s has no technique %d to replace with %s", b.name, f.from, f.name)) end
       end
+      if not found then dwrc.log(string.format("%s has no technique %d to replace with %s", b.name, f.from, f.name)) end
     end
     -- EvoStatsGains {hp, mp, off, def, speed, brains, targetDigimon}: the
     -- evolution target is an index here, and this names the Digimon

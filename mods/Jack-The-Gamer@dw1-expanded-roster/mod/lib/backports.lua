@@ -25,7 +25,7 @@ M.list = {
     attribute = 3, specialties = { 0, 255, 1 }, radius = 140,
     -- Techniques: Agumon's; its finisher (59 Pepper Breath, a fireball, on
     -- Agumon's animation) becomes Guilmon's own Pyro Sphere with the same
-    -- stats (lib/tables.lua: on an unused finisher number).
+    -- stats (lib/tables.lua: new finishers from 0x71).
     finisher = { name = "Pyro Sphere", from = 59 },
     -- Stats gained on evolving into it {HP, MP, Off, Def, Speed, Brains}.
     gains = { 900, 450, 110, 40, 70, 40 },
