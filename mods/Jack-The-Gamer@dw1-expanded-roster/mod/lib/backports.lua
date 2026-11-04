@@ -149,8 +149,13 @@ M.list = {
   {
     type = 183, name = "Veemon", file = "VMON", level = 3, height = 260,
     attribute = 2, -- Vaccine
-    -- Gabumon's techniques and gains; its finisher (99 Blue Blaster) as Vee Headbutt
-    finisher = { name = "Vee Headbutt", from = 99 },
+    -- Gabumon's techniques; its finisher (99 Blue Blaster's stats) as
+    -- V-Headbutt with Buster Dive's effect (0x2F), placed in front of it
+    -- (bone 0, as that effect's own users: 100 up, 550 forward, where the foe stands). Buster Dive
+    -- hits where the user's own motion carries it, and no Digimon with
+    -- Gabumon's skeleton has its dive, so it plays Gabumon's lunging Megaton
+    -- Punch (0x2E) instead of Blue Blaster's breath (`anim`).
+    finisher = { name = "V-Headbutt", from = 99, anim = 0x2E, effect = 0x2F, origin = { 0, 0, -100, -550 } },
     gains = { 800, 500, 100, 70, 80, 50 },
     -- Becoming it: a Tsunomon (16) whose highest stat is Offense or Brains, at
     -- weight 20 +- 5, any care mistakes (Elecmon, before it, wants HP, Offense
@@ -158,7 +163,7 @@ M.list = {
     requirements = { digimon = 16, hp = -1, mp = -1, offense = 1, defense = -1, speed = -1, brain = 1,
       care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
     evolves_from = { 16 }, -- Tsunomon
-    evolutions = { 184, 185, 5, 7 }, -- ExVeemon, Veedramon, Greymon, Airdramon
+    evolutions = { 185, 184, 10 }, -- Veedramon, ExVeemon, Seadramon
     source = { ["SLES-03936"] = { file = 526, bones = 44, motions = 0 } }, -- M145VMON (fighter 0x91)
     donor = 17, donor_file = "GABU.MMD", -- Gabumon (Agumon's skeleton)
     mapping = {
@@ -174,15 +179,17 @@ M.list = {
   {
     type = 184, name = "ExVeemon", file = "EXVM", level = 4, height = 420,
     attribute = 2,
-    -- Leomon's techniques and gains; its finisher (91 Fist of the Beast King) as Vee Laser
-    finisher = { name = "Vee Laser", from = 91 },
+    -- Leomon's techniques; its finisher (91 Fist of the Beast King) as V-Laser
+    -- with Howling Blaster's effect (0x40) from the chest (bone 0: 290 up,
+    -- 70 forward)
+    finisher = { name = "V-Laser", from = 91, effect = 0x40, origin = { 0, 0, -290, -70 } },
     gains = { 1500, 1500, 250, 150, 200, 200 },
     -- Offense and Speed 100, at most 3 care mistakes (flags 0x10), weight 25,
     -- 10 battles, 30 techniques
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = -1,
       care = 3, weight = 25, discipline = -1, happiness = -1, battles = 10, techs = 30, flags = 0x10 },
     evolves_from = { 183 }, -- Veemon
-    evolutions = { 186, 40 }, -- Paildramon, Andromon
+    evolutions = { 186, 187, 13 }, -- Paildramon, AeroVeedramon, Mamemon
     source = { ["SLES-03936"] = { file = 575, bones = 54, motions = 0 } }, -- M259EXVM (fighter 0x103)
     donor = 48, donor_file = "LEOM.MMD", -- Leomon (a tail, 4-bone legs)
     mapping = {
@@ -201,15 +208,17 @@ M.list = {
   {
     type = 185, name = "Veedramon", file = "VDRA", level = 4, height = 400, game = "dw2",
     attribute = 2,
-    -- Greymon's techniques and gains; its finisher (63 Mega Flame) as V-Breath Arrow
-    finisher = { name = "V-Breath Arrow", from = 63 },
+    -- Greymon's techniques; its finisher (63 Mega Flame) as V-Nova Blast with
+    -- Howling Blaster's effect (0x40) from the mouth (Greymon's jaw, bone 5,
+    -- where Mega Flame starts)
+    finisher = { name = "V-Nova Blast", from = 63, effect = 0x40, origin = { 5, 40, -30, 0 } },
     gains = { 2000, 1500, 200, 200, 200, 200 },
     -- Offense and Defense 100, Brains 80, at most 3 care mistakes, weight 30,
     -- discipline 70, 30 techniques
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = 100, speed = -1, brain = 80,
       care = 3, weight = 30, discipline = 70, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
     evolves_from = { 183 }, -- Veemon
-    evolutions = { 187, 12 }, -- AeroVeedramon, MetalGreymon
+    evolutions = { 12, 187 }, -- MetalGreymon, AeroVeedramon
     icon_head = { 4, 5 },     -- Greymon's head and jaw
     source = { ["SLUS-01193"] = { model = 135, anim = 26 } }, -- DW2 Digimon 128 (its first animation file)
     donor = 5, donor_file = "GREY.MMD", -- Greymon
@@ -227,8 +236,10 @@ M.list = {
   {
     type = 186, name = "Paildramon", file = "PLDR", level = 5, height = 470,
     attribute = 2,
-    -- Andromon's techniques and gains; its finisher (102 Spiral Sword) as Desperado Blaster
-    finisher = { name = "Desperado Blaster", from = 102 },
+    -- Andromon's techniques; its finisher (102 Spiral Sword) as Death Parade
+    -- Blaster with Giga Scissor Claw's effect (0x4F), set up as for
+    -- MetalGreymon (bone 0, no offset)
+    finisher = { name = "Death Parade Blaster", from = 102, effect = 0x4F, origin = { 0, 0, 0, 0 } },
     gains = { 4500, 5000, 500, 450, 550, 500 },
     -- HP 300, MP 200, Offense 400, Defense 300, Speed 400, Brains 300, at most
     -- 8 care mistakes, weight 50, discipline 90, 30 battles, 35 techniques
@@ -254,14 +265,16 @@ M.list = {
   {
     type = 187, name = "AeroVeedramon", file = "AVDR", level = 5, height = 470, game = "dw2",
     attribute = 2,
-    -- MetalGreymon's techniques and gains; its finisher (79 Giga Scissor Claw) as Dragon Impulse
-    finisher = { name = "Dragon Impulse", from = 79 },
+    -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw) as Dragon
+    -- Impulse with Crimson Flare's effect (0x6D) from the chest (the torso,
+    -- bone 2, as WarGrowlmon's Atomic Blaster)
+    finisher = { name = "Dragon Impulse", from = 79, effect = 0x6D, origin = { 2, 95, -15, 0 } },
     gains = { 5000, 5000, 500, 500, 500, 500 },
     -- HP 400, MP 300, Offense 500, Defense 400, Speed 400, Brains 300, at most
     -- 10 care mistakes, weight 60, discipline 90, 30 battles, 30 techniques
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 400, speed = 400, brain = 300,
       care = 10, weight = 60, discipline = 90, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
-    evolves_from = { 185 }, -- Veedramon
+    evolves_from = { 185, 184 }, -- Veedramon, ExVeemon
     icon_head = { 4, 5 },   -- MetalGreymon's head and jaw
     source = { ["SLUS-01193"] = { model = 114, anim = 27 } }, -- DW2 Digimon 180
     donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (as WarGrowlmon: arms keep their own stance, feet flat)

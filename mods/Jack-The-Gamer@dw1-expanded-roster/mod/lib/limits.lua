@@ -126,18 +126,36 @@ local GET_ORIGINAL_TYPE = 0x800D9A3C
 M.efe_origin = {}
 
 -- The first plausible {type, bone, x, y, z} list in an effect file's data.
-local function find_origin_list(data)
-  for i = 1, #data - 20, 2 do
-    local ok, n, at = true, 0, i
-    while true do
-      local ty, bone, x, y, z = string.unpack("<i2i2i2i2i2", data, at)
-      if ty == -1 then break end
-      if ty < 0 or ty >= 256 or bone < 0 or bone >= 40 or math.abs(x) > 2000 or math.abs(y) > 2000 or math.abs(z) > 2000 then ok = false; break end
-      n, at = n + 1, at + 10
-      if n > 12 or at + 10 > #data then ok = false; break end
-    end
-    if ok and n > 0 then return i - 1, n end
+local function list_at(data, i) -- a plausible {type, bone, x, y, z} list at (1-based) i: its types, or nil
+  local types, at = {}, i
+  while true do
+    local ty, bone, x, y, z = string.unpack("<i2i2i2i2i2", data, at)
+    if ty == -1 then break end
+    if ty < 0 or ty >= 256 or bone < 0 or bone >= 40 or math.abs(x) > 2000 or math.abs(y) > 2000 or math.abs(z) > 2000 then return nil end
+    types[#types + 1] = ty
+    at = at + 10
+    if #types > 12 or at + 10 > #data then return nil end
   end
+  if #types > 0 then return types end
+end
+-- The first plausible list, then every later one naming the same Digimon
+-- in the same order: an effect starting from several points checks one
+-- list a point (Crimson Flare: four, Phoenixmon's wings and feet). Returns
+-- {{offset, count}, ...} (0-based offsets).
+local function find_origin_lists(data)
+  local first, out, i = nil, {}, 1
+  while i <= #data - 20 do
+    local types = list_at(data, i)
+    local same = types and (not first or table.concat(types, ",") == first)
+    if same then
+      first = first or table.concat(types, ",")
+      out[#out + 1] = { i - 1, #types }
+      i = i + 10 * #types + 2
+    else
+      i = i + 2
+    end
+  end
+  return out
 end
 for old, new in pairs(tables.MOVED_MOVES) do M.efe_source[new] = old end -- the Bubbles, the generic attack
 local GET_EFEDAT_ENTRY = 0x800AEFF4
@@ -202,10 +220,10 @@ function M.install()
       if o then
         local size = ctx:read32(mmd + 36) -- dataEnd (from the data, +0x34)
         local data = ctx:read_bytes(mmd + 0x34, math.min(size, 0x10000))
-        local at, n = find_origin_list(data)
-        if not at then
-          dwrc.log(string.format("effect %X: no origin list found", src))
-        else
+        local lists = find_origin_lists(data)
+        if #lists == 0 then dwrc.log(string.format("effect %X: no origin list found", src)) end
+        for _, l in ipairs(lists) do
+          local at, n = l[1], l[2]
           local pick = at
           for k = 0, n - 1 do
             if string.unpack("<i2", data, at + 10 * k + 1) == o.type then pick = at + 10 * k end

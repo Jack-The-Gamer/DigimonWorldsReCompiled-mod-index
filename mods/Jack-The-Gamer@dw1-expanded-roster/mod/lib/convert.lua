@@ -482,7 +482,10 @@ local function pack_texture(objs, nobj, tim)
   return table.concat(rows), { islands = #islands, scale = fit }
 end
 
-function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height)
+-- anim_alias: {[animation] = other animation}: that entry of the animation
+-- table plays the other one (a finisher with another of the donor's motions;
+-- technique slot k is animation 0x2E + k).
+function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)
   local pose1 = start_pose(donor_mmd, info, 0, nb)
@@ -716,6 +719,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   end
   parts[#parts + 1] = anims:sub(pos + 1)
   anims = table.concat(parts)
+  for _, dst in ipairs(sorted_keys(anim_alias or {})) do
+    anims = anims:sub(1, 4 * dst) .. string.pack("<I4", info.anims[anim_alias[dst]]) .. anims:sub(4 * dst + 5)
+  end
 
   local mmd = string.pack("<I4I4", 8, 8 + #tmd) .. tmd .. anims
   local verts, prims = 0, 0

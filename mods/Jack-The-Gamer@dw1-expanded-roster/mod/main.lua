@@ -178,7 +178,21 @@ do
         for i = 0, n - 1 do skel[i] = { string.unpack("<i1i1", exe, exe_off(sk + 2 * i) + 1) }; skel[i][3] = nil end
         alltim = alltim or read_game_file("ALLTIM.TIM")
         local entry = alltim:sub(b.donor * TEXTURE_SIZE + 1, (b.donor + 1) * TEXTURE_SIZE)
-        local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.height)
+        -- a finisher playing another of the donor's motions (finisher.anim):
+        -- technique slot k is animation 0x2E + k
+        local alias
+        local f = b.finisher
+        if f and f.anim then
+          local data, from_k, anim_k = DIGIMON_DATA + b.donor * 0x34, nil, nil
+          for k = 0, 15 do
+            local m = exe:byte(exe_off(data + 35 + k) + 1)
+            if m == f.from then from_k = k end
+            if m == f.anim then anim_k = k end
+          end
+          if from_k and anim_k then alias = { [0x2E + from_k] = 0x2E + anim_k }
+          else dwrc.log(string.format("%s: its donor has no technique %d or %d; %s keeps its own motion", b.name, f.from, f.anim, f.name)) end
+        end
+        local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.height, alias)
         if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
         files.add(b.file .. ".MMD", mmd)
         textures[b.type] = tim
