@@ -5,7 +5,7 @@
 The first line is **Guilmon → Growlmon → WarGrowlmon**:
 
 - **Guilmon** (Virus Rookie, Fire and Battle): raise a **Koromon** whose highest stat is **Offense or Speed** and keep it **well fed (weight 20 to 30)**, and it becomes Guilmon instead of Agumon or Gabumon. Its finisher is **Pyro Sphere**. Guilmon can become Growlmon, Greymon, Tyrannomon or Airdramon.
-- **Growlmon** (Virus Champion, Fire and Battle): from Guilmon, aiming for **Offense and Speed 100**, at most **3 care mistakes**, weight **25 to 35** and **30 techniques**. Its finisher is **Exhaust Flame**. Growlmon can become WarGrowlmon or SkullGreymon.
+- **Growlmon** (Virus Champion, Fire and Battle): from Guilmon, aiming for **Offense and Speed 100**, at most **3 care mistakes**, weight **25 to 35** and **30 techniques**. Its finisher is **Exhaust Flame**. Growlmon can become WarGrowlmon, SkullGreymon or Megadramon.
 - **WarGrowlmon** (Virus Ultimate, Fire, Mech and Battle): from **Growlmon, Greymon or Tyrannomon**, aiming for HP 4000, MP 3000, **Offense 500, Speed 500**, Defense and Brains 300, at most 10 care mistakes, weight 60 to 70, discipline 80, 30 battles and 30 techniques. Its finisher is **Atomic Blaster**, fired from its chest.
 
 As with the game's own Digimon, the evolution is decided by how close your partner comes to these, so it doesn't have to meet every one.

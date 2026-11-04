@@ -78,8 +78,10 @@ M.list = {
       care = 3, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
     evolves_from = { 180 }, -- Guilmon
     icon_head = { 4, 5 }, -- Greymon's head and jaw
-    -- WarGrowlmon, or SkullGreymon (Greymon's other Ultimate)
-    evolutions = { 182, 26 },
+    -- WarGrowlmon, SkullGreymon (Greymon's other Ultimate) or Megadramon
+    -- (SkullGreymon's own source list is full, so its chart page doesn't
+    -- name Growlmon; Megadramon's has room)
+    evolutions = { 182, 26, 54 },
     source = { ["SLES-03936"] = { file = 625, bones = 50, motions = 0 } }, -- M367GRAW
     donor = 5, donor_file = "GREY.MMD", -- Greymon
     -- Its model is bigger than Greymon's: lib/convert.lua slims it to fit
