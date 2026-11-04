@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-expanded-roster"
 name = "DW1 Expanded Roster"
-version = "0.1.0"
+version = "0.1.1"
 author = "Jack-The-Gamer"
 description = "Digimon from Digimon World 2003 come to Digimon World, built from your own copy of it: Koromon can become Guilmon, then Growlmon and WarGrowlmon. Work in progress."
 game = "dw1"
