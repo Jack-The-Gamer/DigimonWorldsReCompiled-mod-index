@@ -106,6 +106,17 @@ M.raised_new = {}
 -- setupLoadedEFEFile(EfeLoad *) first sees it (EfeLoad: moves +8, already
 -- past the one loading; model +16; ModelComponent.mmdPtr +12).
 M.efe_source = {}
+
+-- getOriginalType(type) (0x800D9A3C) names the Digimon an NPC copy stands
+-- for (ORIGINAL_DIGIMON_TYPES, -1 = itself) and answers -1 above type
+-- 0xB0. Effects look their user up in it: a technique's effect file lists
+-- per original type where the attack comes from (EfeTechBoneOffset,
+-- BTL_checkTechCompatibility), and a type it doesn't list stops the
+-- effect (Growlmon's finisher charged and fired nothing). A new Digimon
+-- answers its donor's original type, the skeleton and animations it uses:
+-- type -> original type.
+M.original_type = {}
+local GET_ORIGINAL_TYPE = 0x800D9A3C
 for old, new in pairs(tables.MOVED_MOVES) do M.efe_source[new] = old end -- the Bubbles, the generic attack
 local GET_EFEDAT_ENTRY = 0x800AEFF4
 -- The three battle overlays load at the same address (0x80052AE0): each
@@ -139,6 +150,12 @@ function M.install()
     local t = ctx:reg("a0") & 0xFFFF
     if t < 180 then return false end
     ctx:ret(M.raised_new[t] and 1 or 0)
+    return true
+  end)
+  dwrc.on_exec(GET_ORIGINAL_TYPE, function(ctx)
+    local o = M.original_type[ctx:reg("a0")]
+    if not o then return false end
+    ctx:ret(o)
     return true
   end)
   dwrc.on_exec(GET_EFEDAT_ENTRY, function(ctx)

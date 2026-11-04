@@ -161,6 +161,11 @@ end
 -- (not at boot) so the battle effect hooks know them in every session, a
 -- loaded state's too: each looks like its donor finisher in battle.
 local finisher_id = {}
+local ORIGINAL_DIGIMON_TYPES = 0x8012A84C -- s16 per type, -1 = itself
+for t, b in pairs(built) do
+  local o = string.unpack("<i2", exe, exe_off(ORIGINAL_DIGIMON_TYPES + 2 * b.donor) + 1)
+  limits.original_type[t] = o >= 0 and o or b.donor -- battle effects treat it as its donor
+end
 do
   local types = {}
   for t, b in pairs(built) do if b.finisher then types[#types + 1] = t end end
