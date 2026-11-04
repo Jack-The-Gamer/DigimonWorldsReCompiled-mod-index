@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-expanded-roster"
 name = "DW1 Expanded Roster"
-version = "0.1.1"
+version = "0.2.0"
 author = "Jack-The-Gamer"
 description = "Digimon from Digimon World 2003 and Digimon World 2 come to Digimon World, built from your own copies: Koromon can become Guilmon (then Growlmon, WarGrowlmon), Tsunomon can become Veemon (then ExVeemon and Paildramon, or Veedramon and AeroVeedramon). Work in progress."
 game = "dw1"
