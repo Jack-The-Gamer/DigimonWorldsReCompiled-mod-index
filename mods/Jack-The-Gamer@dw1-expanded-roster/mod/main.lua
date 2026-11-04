@@ -9,8 +9,11 @@
 --   rebuilt with entries for the new types (lib/files.lua).
 -- The executable and its 16 overlays are patched on the virtual disc while
 -- the mod loads (Re:Compiled 1.6: dwrc.disc); the player's disc is never
--- changed and the mod ships nothing of the game's. No new Digimon yet: the
--- developer option test_clone adds type 180, a copy of Agumon.
+-- changed and the mod ships nothing of the game's.
+-- The new Digimon (lib/backports.lua) are built from the player's Digimon
+-- World 2003 disc while the mod loads (lib/dw3model.lua, lib/convert.lua),
+-- with their chart icons (lib/icon.lua), finishers (lib/limits.lua) and
+-- evolutions (lib/evolution.lua, lib/chart.lua).
 
 local bin = require("lib.bin")
 local iso = require("lib.iso")

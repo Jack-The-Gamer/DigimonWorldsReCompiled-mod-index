@@ -3,14 +3,14 @@ id = "dw1-expanded-roster"
 name = "DW1 Expanded Roster"
 version = "0.1.0"
 author = "Jack-The-Gamer"
-description = "Digimon from Digimon World 2003 come to Digimon World, read from your own copy of it. Work in progress: this version only makes room for new Digimon and changes nothing you can see yet."
+description = "Digimon from Digimon World 2003 come to Digimon World, built from your own copy of it: Koromon can become Guilmon, then Growlmon and WarGrowlmon. Work in progress."
 game = "dw1"
 serials = ["SLUS-01032"]
 script = "main.lua"
 engine = ">=1.6"
 uses_games = ["dw3"]
 categories = ["CONTENT", "GAMEPLAY"]
-tags = ["digivolution", "new digimon", "guilmon"]
+tags = ["digivolution", "new digimon", "guilmon", "growlmon", "wargrowlmon"]
 license = "MIT"
 github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
 homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-expanded-roster"
