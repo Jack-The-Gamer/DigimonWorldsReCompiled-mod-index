@@ -220,46 +220,108 @@ local function set_file_name(ctx, t, name)
   ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", t), at)
 end
 
--- EvolutionPath lists (from[5], to[6]; 0xFF none) are centred the way the
--- game's are, since the Digivolution Chart draws slot i at position i: an
--- odd count in 5 positions, an even one in 4 (from) or 6 (to).
-local function write_list(ctx, at, size, items)
+-- --- the evolution lists -------------------------------------------------------
+-- Worked out here, when the mod loads, on a copy of the game's EvolutionPath
+-- table (from[5], to[6] per type, row type - 1; 0xFF none) read from the
+-- executable, so the lists past the slots (evolution.extra, .extra_from)
+-- are known in every session, a save state's too; the rows are written to
+-- the moved table at boot (setup).
+local EVOLUTION_PATHS_EXE = 0x8012B66C -- 62 rows in the executable
+local rows = {}                        -- type -> its 11 bytes (1-based)
+
+local function row(t)
+  if not rows[t] then
+    local r = {}
+    for i = 1, 11 do r[i] = 0xFF end
+    if t >= 1 and t <= 62 then
+      local at = exe_off(EVOLUTION_PATHS_EXE + (t - 1) * 11)
+      for i = 1, 11 do r[i] = exe:byte(at + i) end
+    end
+    rows[t] = r
+  end
+  return rows[t]
+end
+
+-- A list in its slots is centred the way the game's are (the chart's
+-- detail page draws slot i at place i): an odd count in 5 places, an even
+-- one in 4 (from) or 6 (to).
+local function write_list(r, off, size, items)
   local n = #items
   local span = (n % 2 == 1) and 5 or (size == 5 and 4 or 6)
   local start = (span - n) // 2
-  local bytes = {}
-  for i = 1, size do bytes[i] = 0xFF end
-  for i, v in ipairs(items) do bytes[start + i] = v end
-  ctx:write_bytes(at, string.char(table.unpack(bytes)))
+  for i = 1, size do r[off + i] = 0xFF end
+  for i, v in ipairs(items) do r[off + start + i] = v end
 end
 
--- Adds `t` after the existing entries of type f's list (offset 0 from[5],
--- 5 to[6]); a "to" list that is full keeps it as an extra target the mod's
--- evolution pickers try after the six (the chart can't show it yet).
-local function add_to_list(ctx, f, off, size, t, is_to)
-  local at = tables.entry("EVOLUTION_PATHS", f) + off
+-- The lists past their slots: evolution.extra (targets the mod's pickers
+-- try after the six) and evolution.extra_from; the chart's detail page
+-- shows both.
+local function extras(is_to) return is_to and evolution.extra or evolution.extra_from end
+
+-- Type t's list (offset 0 from[5], 5 to[6]): the first `size` in its
+-- slots, the rest as extras.
+local function set_list(t, off, size, items, is_to)
+  local first, rest = {}, {}
+  for i, v in ipairs(items) do if i <= size then first[#first + 1] = v else rest[#rest + 1] = v end end
+  write_list(row(t), off, size, first)
+  extras(is_to)[t] = #rest > 0 and rest or nil
+end
+
+-- Adds `t` after the entries of type f's list, or to its extras when the
+-- slots are full.
+local function add_to_list(f, off, size, t, is_to)
+  local r = row(f)
   local items = {}
-  for i = 0, size - 1 do
-    local v = ctx:read8(at + i)
+  for i = 1, size do
+    local v = r[off + i]
     if v == t then return end -- already there
     if v ~= 0xFF then items[#items + 1] = v end
   end
-  for _, v in ipairs(evolution.extra[f] or {}) do if v == t then return end end
+  local more = extras(is_to)
+  for _, v in ipairs(more[f] or {}) do if v == t then return end end
   if #items < size then
     items[#items + 1] = t
-    write_list(ctx, at, size, items)
-  elseif is_to then
-    evolution.extra[f] = evolution.extra[f] or {}
-    table.insert(evolution.extra[f], t)
+    write_list(r, off, size, items)
+  else
+    more[f] = more[f] or {}
+    table.insert(more[f], t)
+  end
+end
+
+-- In type order (a backport may evolve from another one: Growlmon from
+-- Guilmon). Each new type starts as a copy of its donor's row (as its other
+-- entries do); its own lists replace the donor's, and each Digimon on them
+-- gets it after its own (the pickers keep the earlier target on a tie, so
+-- the game's own ones win ties).
+do
+  local types = {}
+  for t in pairs(built) do types[#types + 1] = t end
+  table.sort(types)
+  for _, t in ipairs(types) do
+    local b = built[t]
+    local copy = {}
+    for i, v in ipairs(row(b.donor)) do copy[i] = v end
+    rows[t] = copy
+    if b.evolves_from then
+      set_list(t, 0, 5, b.evolves_from, false)
+      for _, f in ipairs(b.evolves_from) do add_to_list(f, 5, 6, t, true) end
+    end
+    if b.evolutions then
+      set_list(t, 5, 6, b.evolutions, true)
+      for _, e in ipairs(b.evolutions) do add_to_list(e, 0, 5, t, false) end
+    end
   end
 end
 
 -- The chart icons: in the mod's RAM (tables.ICONS), uploaded to the chart's
 -- text area in VRAM (x 704, y 256: page 0x1B; the chart clears rows 12..211
 -- when it opens and writes text only above row 72): icon i at texel (i % 8
--- * 32, 100 + i // 8 * 16), its CLUT in rows 200..211, 4 a row.
+-- * 32, 100 + i // 8 * 16), its CLUT in rows 200..211, 4 a row. Placed now
+-- (chart.icons and chart.uploads are needed in every session); the bytes
+-- are written at boot (setup_icons).
 local ICON_TPAGE = 0x1B
-local function setup_icons(ctx)
+local icon_writes = {}                 -- {address, bytes}
+do
   local types = {}
   for t in pairs(icons) do types[#types + 1] = t end
   table.sort(types)
@@ -269,14 +331,17 @@ local function setup_icons(ctx)
     local at = tables.ICONS + n * tables.ICON_BYTES
     local u, v = (n % 8) * 32, 100 + (n // 8) * 16
     local cx, cy = 704 + (n % 4) * 16, 256 + 200 + n // 4
-    ctx:write_bytes(at, icons[t].pixels)
-    ctx:write_bytes(at + 256, icons[t].clut)
-    ctx:write_bytes(at + 288, string.pack("<i2i2i2i2", 704 + u // 4, 256 + v, 8, 16))
-    ctx:write_bytes(at + 296, string.pack("<i2i2i2i2", cx, cy, 16, 1))
+    icon_writes[#icon_writes + 1] = { at, icons[t].pixels }
+    icon_writes[#icon_writes + 1] = { at + 256, icons[t].clut }
+    icon_writes[#icon_writes + 1] = { at + 288, string.pack("<i2i2i2i2", 704 + u // 4, 256 + v, 8, 16) }
+    icon_writes[#icon_writes + 1] = { at + 296, string.pack("<i2i2i2i2", cx, cy, 16, 1) }
     chart.icons[t] = { u = u, v = v, clut = (cy << 6) | (cx >> 4), tpage = ICON_TPAGE }
     chart.uploads[#chart.uploads + 1] = { at + 288, at }
     chart.uploads[#chart.uploads + 1] = { at + 296, at + 256 }
   end
+end
+local function setup_icons(ctx)
+  for _, w in ipairs(icon_writes) do ctx:write_bytes(w[1], w[2]) end
 end
 
 local function setup(ctx)
@@ -337,19 +402,9 @@ local function setup(ctx)
       local raise = tables.entry("RAISE_DATA", t)
       for i, v in ipairs(b.view) do ctx:write16(raise + 22 + 2 * (i - 1), v & 0xFFFF) end
     end
-    -- EvolutionPath {from[5], to[6]} (0xFF none): it comes from these, and
-    -- each of them gets it after its own evolutions (the pickers keep the
-    -- earlier target on a tie, so the game's own ones win ties)
-    if b.evolves_from then
-      write_list(ctx, tables.entry("EVOLUTION_PATHS", t), 5, b.evolves_from)
-      for _, f in ipairs(b.evolves_from) do add_to_list(ctx, f, 5, 6, t, true) end
-    end
-    -- Its own evolutions replace the donor's; each target lists it as a source.
-    if b.evolutions then
-      write_list(ctx, tables.entry("EVOLUTION_PATHS", t) + 5, 6, b.evolutions)
-      for _, e in ipairs(b.evolutions) do add_to_list(ctx, e, 0, 5, t, false) end
-    end
   end
+  -- the evolution lists worked out above
+  for t, r in pairs(rows) do ctx:write_bytes(tables.entry("EVOLUTION_PATHS", t), string.char(table.unpack(r))) end
   if not test_clone then return end
   tables.copy_entries(ctx, CLONE_OF, CLONE)
   -- DigimonPara (USA): name[20] first; level at +29 (a Champion, so the

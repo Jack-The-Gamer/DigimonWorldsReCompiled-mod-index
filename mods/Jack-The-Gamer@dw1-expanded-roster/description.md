@@ -14,7 +14,7 @@ For now the new Digimon:
 
 - move with the animations of Agumon, Greymon and MetalGreymon, and use their techniques (their finishers have their own names and effects);
 - keep those Digimon's care habits and voices;
-- don't show on the Digivolution Chart yet once raised (a save has no room to record them so far); the chart itself is rebuilt with room for them, and for a future Mega column.
+- don't show on the Digivolution Chart yet once raised (a save has no room to record them so far); the chart itself is rebuilt with room for them, and for a future Mega column, and its detail page shows any number of evolutions and pre-evolutions.
 
 **Needs** Re:Compiled 1.6 or newer, Digimon World (USA, SLUS-01032), and **Digimon World 2003 (Europe, SLES-03936)** imported in the launcher. Without Digimon World 2003 the game plays as usual; the American and Japanese Digimon World 3 discs aren't supported yet.
 

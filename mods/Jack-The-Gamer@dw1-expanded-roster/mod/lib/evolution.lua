@@ -116,6 +116,10 @@ end
 -- Targets past a Digimon's six slots (type -> {types}), tried after them in
 -- this order: the game's EvolutionPath has room for six.
 M.extra = {}
+-- Digimon a Digimon comes from past its five slots (type -> {types}): only
+-- the chart's detail page shows them (lib/chart.lua); evolving only looks
+-- at the targets.
+M.extra_from = {}
 
 -- The targets of `current`: its six slots (type - 1 row; 0xFF = none), then
 -- any extra ones.
