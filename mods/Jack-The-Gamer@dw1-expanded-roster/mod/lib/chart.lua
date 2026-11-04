@@ -17,14 +17,15 @@
 -- chart's part of tickPlayerMenu (0x800B9654..0x800B9B88: the cursor, and
 -- opening/closing a Digimon's detail page) is replaced.
 --
--- The detail page (renderEvoChartDetail 0x800BA930) is still the game's for
--- its text, frames and centre icon, but its two lists are drawn here: the
--- game has 5 places for the Digimon a Digimon comes from and 6 for those it
--- becomes, reads them as signed bytes (types 128 and up never show) and
--- takes icons from its 61 boxes. Here a list can be any length: the game's
--- own places while it fits, then the same arc spread to fit the page (the
--- icons shrink once they'd touch), with the entries past the stored 5 / 6
--- from evolution.extra_from / evolution.extra.
+-- The detail page (renderEvoChartDetail 0x800BA930, the box that opens on
+-- a Digimon) is drawn here too, from the game's pieces: its side panels run
+-- the page's height, the centre box sits at their middle with the stage and
+-- name centred under it, and each list is a column of frames on the game's
+-- arc, 19 apart like the chart's, shrinking as the list grows so it stays in
+-- its panel. The game's page had 5 places for the Digimon a Digimon comes
+-- from and 6 for those it becomes, read them as signed bytes (types 128 and
+-- up never showed) and took icons from its 61 boxes; here a list is any
+-- length (entries past the stored 5 / 6: evolution.extra_from / .extra).
 
 local tables = require("lib.tables")
 local evolution = require("lib.evolution")
@@ -46,14 +47,14 @@ local LOAD_IMAGE = 0x800948A8       -- LoadImage(RECT *, u_long *): queued VRAM 
 local DRAW_LINE_3P = 0x800E3D14     -- (color, x1, y1, x2, y2, x3, y3, depth, 0)
 local DRAW_LINE_2P = 0x800E3E7C     -- (color, x1, y1, x2, y2, depth, 0)
 local DRAW_CHART_STRINGS = 0x800C0718 -- drawEvoChartStrings(int8_t type)
-local DETAIL_CENTRE_ICON = 0x800BAF1C -- renderEvoChartDetail: the selected Digimon's icon ...
-local DETAIL_CENTRE_ICON_END = 0x800BAF8C -- ... up to its border box
-local DETAIL_END = 0x800BB4D0       -- renderEvoChartDetail's epilogue (lw ra, 76(sp))
+local RENDER_STRING = 0x800E5B50     -- (colour, x, y, w, h, u, v, depth, 0): text from the page's text area
+local RENDER_INSET_BOX = 0x800BE734  -- (x, y, w, h, depth): the page's sunken frames (screen pixels)
+local MENU_SUB_STATE = 0x80134D35    -- u8 (2: the detail page's name is drawn every frame)
+local ASCII_TO_SJIS = 0x800F18C8     -- (char): what drawString (0x8010CF24) does per letter...
+local SJIS_TO_FONT = 0x800F1AB0      -- (code)
+local FONT_CODES = 0x801307E0        -- 80 x u16 (byte-swapped font codes): each glyph's code
+local FONT_GLYPHS = 0x80130880       -- 80 x {u16 rows[11], u16 advance}: the glyph drawn for each
 local EVO_CHART_DETAIL_COLORS = 0x80123E6C -- 5 CLUT ids for the detail page's icons
-local CHART_FROM_SPRITES = { [0] = 0x80124AA8, [1] = 0x80124AC8 } -- even (4 places), odd (5), {s16 x, s16 y} per 8 bytes
-local CHART_TO_SPRITES = { [0] = 0x80124AF0, [1] = 0x80124B20 }   -- even (6), odd (5)
-local CHART_FROM_LINES = { [0] = 0x80124944, [1] = 0x80124984 }   -- {x1..x4, y1..y4} s16 per 16 bytes
-local CHART_TO_LINES = { [0] = 0x801249D4, [1] = 0x80124A34 }
 local CHART_TO_LINE_COLORS = 0x80124A84 -- 6 x 2 RGB8: each place's line colours
 local FROM_LINE_DARK, FROM_LINE_LIGHT = 0x65db, 0x794e3
 
@@ -376,7 +377,25 @@ local function tick(call, ctx, frame, l)
   end
 end
 
--- --- the detail page's lists -------------------------------------------------------
+-- --- the detail page -----------------------------------------------------------------
+-- Screen pixels (the page box spans 10..310 x 31..221). The game's panels
+-- were 130 high from y 43, the centre box at 136, 85 with the stage and name
+-- low on the left; here the panels run to the page's bottom, the centre box
+-- sits at their middle and the stage and name are centred under it.
+local PANEL_TOP, PANEL_H, PANEL_W = 43, 170, 78
+local LEFT_X, RIGHT_X = 28, 214
+local MID_Y = PANEL_TOP + PANEL_H // 2          -- 128: the centre icon's middle
+local CENTRE_BOX = { 136, MID_Y - 23, 48, 46 }
+local STAGE_Y, NAME_Y = MID_Y + 29, MID_Y + 48  -- text tops (12 high); their lines 9 lower
+local STAGE_LINE_W, NAME_LINE_W = 96, 104
+local TITLE_LINE = { 129, 50, 60, 4 }           -- under "Tree", as the game's
+-- The stage names in the page's text area {w, u, v} by level (the US
+-- game's own renderString calls; a stage without one shows none).
+local STAGE_TEXT = { { 0x2e, 0x24, 0x18 }, { 0x3e, 0x52, 0x18 }, { 0x2f, 0, 0x24 }, { 0x41, 0x2f, 0x24 }, { 0x41, 0, 0x3c } }
+local PITCH, MIN_PITCH = 19, 8                  -- frames apart, as on the chart
+local INSET = 7                                 -- an icon's distance from its panel's sides
+local ARC_STEP = 18                             -- the game's step in per row from the middle
+
 -- A Digimon's lists: the stored ones (centred, 0xFF gaps) in order, then the
 -- extra ones the mod keeps.
 local function detail_lists(ctx, t)
@@ -389,71 +408,91 @@ local function detail_lists(ctx, t)
   return from, to
 end
 
--- Where list entry i of n goes, {x, y (top left of a 16 cell), size, line
--- points}: the game's own places and lines while the list fits them (5 or
--- 4 from, 5 or 6 to, centred as stored), else the same arc spread over the
--- page's height: rows 24 apart while they fit, the inner ones stepped 18
--- towards the middle per row from the centre (less when there are more
--- rows), lines leaving each icon level, turning 45 degrees and reaching the
--- centre icon 3 apart.
-local function detail_place(ctx, side_from, i, n)
-  local fits = side_from and n <= 5 or (not side_from and n <= 6)
-  if fits then
-    local odd = n % 2
-    local span = odd == 1 and 5 or (side_from and 4 or 6)
-    local slot = (span - n) // 2 + i - 1
-    local sp = (side_from and CHART_FROM_SPRITES or CHART_TO_SPRITES)[odd] + 8 * slot
-    local ln = (side_from and CHART_FROM_LINES or CHART_TO_LINES)[odd] + 16 * slot
-    local p = {}
-    for k = 0, 7 do p[k + 1] = ctx:read_s16(ln + 2 * k) end
-    return { x = ctx:read_s16(sp), y = ctx:read_s16(sp + 2), size = 16, slot = slot,
-      line = { p[1], p[5], p[2], p[6], p[3], p[7], p[4], p[8] } }
-  end
-  local step = math.min(24, 120 / (n - 1))
+-- Entry i of n in a side's column (coordinates from the screen's middle):
+-- {x, y, size, line points}. Rows PITCH apart around the centre icon's
+-- height, closer and smaller once they'd leave the panel; the middle rows
+-- outermost and each row from the middle stepped in (at most ARC_STEP, less
+-- if the column would reach the panel's other side). Lines leave each frame
+-- level, turn 45 degrees and reach the centre icon, 3 apart (or closer).
+local function detail_place(side_from, i, n)
+  local room = PANEL_H - 2 * 4 - (16 + 2)
+  local p = n > 1 and math.max(MIN_PITCH, math.min(PITCH, room // (n - 1))) or PITCH
+  local size = math.min(16, p - 3)
   local c = (n + 1) / 2
-  local y = math.floor(-21 + (i - c) * step + 0.5)
-  local size = math.min(16, math.floor(step) - 2)
+  local mid = MID_Y - 120 + (i - c) * p          -- this row's middle
+  local y = math.floor(mid - size / 2 + 0.5)
+  local yi = y + size // 2
   local dist = math.abs(i - c)
-  local fd, F = math.floor(dist), math.max(2, math.floor((n - 1) / 2))
-  local off = math.floor(18 * fd * 2 / F + 0.5)
-  local e = math.floor(-12 + (i - c) * math.min(3, 15 / (n - 1)))
-  local bend = math.floor(27 * (F - fd) * 2 / F + 0.5)
-  local yi = y + 9
-  local line
+  local fd, F = math.floor(dist), math.max(1, math.floor((n - 1) / 2))
+  local span = PANEL_W - 2 * INSET - size
+  local off = math.floor(math.min(ARC_STEP, span / F) * fd + 0.5)
+  local e = math.floor(8 + (i - c) * (n > 1 and math.min(3, 14 / (n - 1)) or 0) + 0.5)
+  local bend = math.floor(36 * (F - fd) / F + 0.5)
+  local dy = math.abs(yi - e)
   if side_from then
-    local x = -120 + off
-    local sx, x3 = x + 18, -10 - bend
-    local x2 = math.max(sx, x3 - math.abs(yi - e))
-    line = { sx, yi, x2, yi, x3, e, -10, e }
-    return { x = x, y = y, size = size, slot = (i - 1) % 6, line = line }
+    local x = LEFT_X - 160 + INSET + off
+    local sx, x3 = x + size + 1, -10 - bend
+    return { x = x, y = y, size = size, slot = (i - 1) % 6,
+      line = { sx, yi, math.max(sx, x3 - dy), yi, x3, e, -10, e } }
   end
-  local x = 102 - off
+  local x = RIGHT_X + PANEL_W - 160 - INSET - size - off
   local xa = 9 + bend
-  local xb = math.min(x - 2, xa + math.abs(e - yi))
-  line = { 9, e, xa, e, xb, yi, x - 2, yi }
-  return { x = x, y = y, size = size, slot = (i - 1) % 6, line = line }
+  return { x = x, y = y, size = size, slot = (i - 1) % 6,
+    line = { 9, e, xa, e, math.min(x - 2, xa + dy), yi, x - 2, yi } }
 end
 
--- An icon (16 cell at x, y; drawn `size` big in its middle) for type t.
-local function detail_icon(call, ctx, t, x, y, size)
-  local o = (16 - size) // 2
+-- An icon `size` big at x, y (from the screen's middle) for type t.
+local function detail_icon(ctx, t, x, y, size)
   if t <= 61 then
     local b = EVO_CHART_BOXES + 8 * (t - 1)
     local clut = ctx:read16(EVO_CHART_DETAIL_COLORS + 2 * ctx:read8(b + 6))
-    sprite(ctx, x + o, y + o, size, size, ctx:read8(b + 4), ctx:read8(b + 5), 0x10, 0x10, 0x18, clut, 4)
+    sprite(ctx, x, y, size, size, ctx:read8(b + 4), ctx:read8(b + 5), 0x10, 0x10, 0x18, clut, 4)
   elseif M.icons[t] then
     local ic = M.icons[t]
-    sprite(ctx, x + o, y + o, size, size, ic.u, ic.v, 0x10, 0x10, ic.tpage, ic.clut, 4)
+    sprite(ctx, x, y, size, size, ic.u, ic.v, 0x10, 0x10, ic.tpage, ic.clut, 4)
   end
 end
 
+local function frame_box(call, x, y, size)
+  call(RENDER_BORDER_BOX, x - 1 + 160, y - 1 + 120, size + 2, size + 2, 0xbebebe, 0x3c3c3c, 0x87, 0x87, 0x87, 4)
+end
+
+-- The width in pixels of the text at `at`, as drawString lays it out (the
+-- letters' own advances; ' and . are its two special cases), or nil.
+local name_widths = {}
+local function text_width(call, ctx, at)
+  local w, i = 0, 0
+  while i < 20 do
+    local b = ctx:read8(at + i)
+    if b == 0 then return w end
+    local code
+    if b < 0x80 then
+      code = b == 0x2E and 0x8142 or b == 0x27 and 0x8175 or call(ASCII_TO_SJIS, b) & 0xFFFF
+      i = i + 1
+    else
+      code = (b << 8) | ctx:read8(at + i + 1)
+      i = i + 2
+    end
+    code = call(SJIS_TO_FONT, code) & 0xFFFF
+    local key, k = ((code & 0xFF) << 8) | (code >> 8), 0
+    while k < 80 and ctx:read16(FONT_CODES + 2 * k) ~= key do k = k + 1 end
+    if k == 80 then return nil end
+    w = w + ctx:read16(FONT_GLYPHS + 24 * k + 22)
+  end
+  return w
+end
+
+-- In the game's order (lines, icons, the centre, text, the sunken frames
+-- last: the ordering table draws what's added later underneath).
 local function draw_detail(call, ctx, t)
+  ctx:write8(MENU_SUB_STATE, 2)
+  call(DRAW_CHART_STRINGS, t) -- the name into the page's text area
   local from, to = detail_lists(ctx, t)
   for side = 1, 2 do
     local list, side_from = side == 1 and from or to, side == 1
     for i, id in ipairs(list) do
-      local p = detail_place(ctx, side_from, i, #list)
-      local l = p.line
+      local pl = detail_place(side_from, i, #list)
+      local l = pl.line
       local dark, light
       if side_from then
         dark, light = FROM_LINE_DARK, FROM_LINE_LIGHT
@@ -462,19 +501,35 @@ local function draw_detail(call, ctx, t)
           local a = CHART_TO_LINE_COLORS + 3 * k
           return ctx:read8(a) | (ctx:read8(a + 1) << 8) | (ctx:read8(a + 2) << 16)
         end
-        light, dark = rgb(p.slot * 2), rgb(p.slot * 2 + 1)
+        light, dark = rgb(pl.slot * 2), rgb(pl.slot * 2 + 1)
       end
       for dy = -1, 1 do
         local col = dy == 0 and light or dark
         call(DRAW_LINE_3P, col, l[1], l[2] + dy, l[3], l[4] + dy, l[5], l[6] + dy, 4, 0)
         call(DRAW_LINE_2P, col, l[5], l[6] + dy, l[7], l[8] + dy, 4, 0)
       end
-      local o = (16 - p.size) // 2
-      if call(HAS_DIGIMON_RAISED, id) ~= 0 then detail_icon(call, ctx, id, p.x, p.y, p.size) end
-      call(RENDER_BORDER_BOX, p.x + o + 0x9f, p.y + o + 0x77, p.size + 2, p.size + 2, 0xbebebe, 0x3c3c3c, 0x87, 0x87, 0x87, 4)
+      if call(HAS_DIGIMON_RAISED, id) ~= 0 then detail_icon(ctx, id, pl.x, pl.y, pl.size) end
+      frame_box(call, pl.x, pl.y, pl.size)
     end
   end
-  if t > 61 then detail_icon(call, ctx, t, -8, -20, 16) end -- the game's centre icon is skipped for it
+  -- the selected Digimon in the centre box
+  local cy = MID_Y - 8 - 120
+  detail_icon(ctx, t, -8, cy, 16)
+  frame_box(call, -8, cy, 16)
+  -- "Tree", the stage and the name
+  call(RENDER_STRING, 3, -0x14, -0x4f, 0x24, 0xc, 0, 0x18, 4, 0)
+  local data = tables.entry("DIGIMON_DATA", t)
+  local st = STAGE_TEXT[ctx:read8(data + 29)]
+  if st then call(RENDER_STRING, 0, -(st[1] // 2), STAGE_Y - 120, st[1], 0xc, st[2], st[3], 4, 0) end
+  if not name_widths[t] then name_widths[t] = text_width(call, ctx, data) or 0x78 end
+  local w = math.min(name_widths[t], 0x78)
+  call(RENDER_STRING, 0, -(w // 2), NAME_Y - 120, w, 0xc, 0, 0x30, 4, 0)  -- the sunken frames
+  for _, b in ipairs({
+    { LEFT_X, PANEL_TOP, PANEL_W, PANEL_H }, { RIGHT_X, PANEL_TOP, PANEL_W, PANEL_H }, CENTRE_BOX, TITLE_LINE,
+    { 160 - STAGE_LINE_W // 2, STAGE_Y + 9, STAGE_LINE_W, 4 }, { 160 - NAME_LINE_W // 2, NAME_Y + 9, NAME_LINE_W, 4 },
+  }) do
+    call(RENDER_INSET_BOX, b[1], b[2], b[3], b[4], 4)
+  end
 end
 
 -- new_types: the mod's new Digimon (their DIGIMON_DATA level says the stage)
@@ -505,31 +560,10 @@ function M.install(new_types)
     return runner(function(call, cx, frame) tick(call, cx, frame, layout) end)
   end, function() return CHART_TICK_END end)
 
-  -- The detail page: the lists are drawn first, then the game's page runs
-  -- with the selected Digimon's lists blanked (put back at its end), so it
-  -- draws only its own parts.
-  local passing, blanked = false, nil
+  -- The detail page, all drawn here (the game's code is skipped).
   caller(RENDER_CHART_DETAIL, function(ctx)
-    if passing then passing = false; return nil end
-    return runner(function(call, cx)
-      local t = cx:read_s16(CHART_SELECTED_DIGIMON)
-      draw_detail(call, cx, t)
-      local at = tables.entry("EVOLUTION_PATHS", t)
-      blanked = { at = at, bytes = cx:read_bytes(at, 11) }
-      cx:write_bytes(at, string.rep("\xFF", 11))
-    end)
-  end, function() passing = true; return RENDER_CHART_DETAIL end)
-  dwrc.on_exec(DETAIL_END, function(ctx)
-    if blanked then ctx:write_bytes(blanked.at, blanked.bytes); blanked = nil end
-    return false
-  end)
-  -- A new Digimon's centre icon is drawn above; the game's would read past
-  -- its 61 boxes.
-  dwrc.on_exec(DETAIL_CENTRE_ICON, function(ctx)
-    if ctx:read_s16(CHART_SELECTED_DIGIMON) <= 61 then return false end
-    ctx:set_pc(DETAIL_CENTRE_ICON_END)
-    return true
-  end)
+    return runner(function(call, cx) draw_detail(call, cx, cx:read_s16(CHART_SELECTED_DIGIMON)) end)
+  end, function(saved) return saved[31] end)
   -- drawEvoChartStrings gets the type as a signed byte (its name on the
   -- detail page): a type of 128 and up comes in negative.
   dwrc.on_exec(DRAW_CHART_STRINGS, function(ctx)
