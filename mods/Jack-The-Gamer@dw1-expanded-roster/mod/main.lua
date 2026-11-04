@@ -189,7 +189,8 @@ do
             if m == f.from then from_k = k end
             if m == f.anim then anim_k = k end
           end
-          if from_k and anim_k then alias = { [0x2E + from_k] = 0x2E + anim_k }
+          local l = f.lunge -- the dive's travel: a copy of the motion that moves it forward
+          if from_k and anim_k then alias = { [0x2E + from_k] = l and { 0x2E + anim_k, l.frame, l.frames, l.distance } or 0x2E + anim_k }
           else dwrc.log(string.format("%s: its donor has no technique %d or %d; %s keeps its own motion", b.name, f.from, f.anim, f.name)) end
         end
         local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.height, alias)
@@ -232,10 +233,12 @@ do
       local f = b.finisher
       finisher_id[t] = next_id
       -- its look: the donor finisher's effect, or another one (f.effect),
-      -- started from f.origin {bone, x, y, z} if given
+      -- started from f.origin {bone, x, y, z} if given, or from a list of
+      -- them, one for each of the effect's start points in order
       limits.efe_source[next_id] = f.effect or f.from
       if f.origin then
-        limits.efe_origin[next_id] = { type = limits.original_type[t], bone = f.origin[1], x = f.origin[2], y = f.origin[3], z = f.origin[4] }
+        local points = type(f.origin[1]) == "table" and f.origin or { f.origin }
+        limits.efe_origin[next_id] = { type = limits.original_type[t], points = points }
       end
       next_id = next_id + 1
     end

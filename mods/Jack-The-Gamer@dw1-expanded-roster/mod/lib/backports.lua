@@ -151,11 +151,13 @@ M.list = {
     attribute = 2, -- Vaccine
     -- Gabumon's techniques; its finisher (99 Blue Blaster's stats) as
     -- V-Headbutt with Buster Dive's effect (0x2F), placed in front of it
-    -- (bone 0, as that effect's own users: 100 up, 550 forward, where the foe stands). Buster Dive
-    -- hits where the user's own motion carries it, and no Digimon with
-    -- Gabumon's skeleton has its dive, so it plays Gabumon's lunging Megaton
-    -- Punch (0x2E) instead of Blue Blaster's breath (`anim`).
-    finisher = { name = "V-Headbutt", from = 99, anim = 0x2E, effect = 0x2F, origin = { 0, 0, -100, -550 } },
+    -- (bone 0, as that effect's own users: 100 up, 550 forward, where the foe
+    -- stands). No Digimon with Gabumon's skeleton has Buster Dive's dive, so
+    -- it plays Gabumon's Megaton Punch (0x2E, `anim`) with the dive's travel
+    -- added (`lunge`: the whole Digimon moves 450 forward over frames 4..10,
+    -- the punch, as MetalGreymon's Buster Dive moves it ~630).
+    finisher = { name = "V-Headbutt", from = 99, anim = 0x2E, lunge = { frame = 4, frames = 6, distance = 450 },
+      effect = 0x2F, origin = { 0, 0, -100, -550 } },
     gains = { 800, 500, 100, 70, 80, 50 },
     -- Becoming it: a Tsunomon (16) whose highest stat is Offense or Brains, at
     -- weight 20 +- 5, any care mistakes (Elecmon, before it, wants HP, Offense
@@ -245,7 +247,7 @@ M.list = {
     -- 8 care mistakes, weight 50, discipline 90, 30 battles, 35 techniques
     requirements = { digimon = -1, hp = 300, mp = 200, offense = 400, defense = 300, speed = 400, brain = 300,
       care = 8, weight = 50, discipline = 90, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
-    evolves_from = { 184 }, -- ExVeemon
+    evolves_from = { 184, 19, 7 }, -- ExVeemon, Kabuterimon, Airdramon
     icon_head = { 3 },      -- Andromon has no jaw
     source = { ["SLES-03936"] = { file = 601, bones = 54, motions = 0 } }, -- M254PLDR (fighter 0xFE)
     donor = 40, donor_file = "ANDR.MMD", -- Andromon (no tail or jaw)
@@ -266,15 +268,17 @@ M.list = {
     type = 187, name = "AeroVeedramon", file = "AVDR", level = 5, height = 470, game = "dw2",
     attribute = 2,
     -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw) as Dragon
-    -- Impulse with Crimson Flare's effect (0x6D) from the chest (the torso,
-    -- bone 2, as WarGrowlmon's Atomic Blaster)
-    finisher = { name = "Dragon Impulse", from = 79, effect = 0x6D, origin = { 2, 95, -15, 0 } },
+    -- Impulse with Crimson Flare's effect (0x6D), whose four start points
+    -- (Phoenixmon's wings and feet) are its wings (torso, bone 2) and hands
+    -- (bones 9, 13): the centres of those parts at rest, in bone space.
+    finisher = { name = "Dragon Impulse", from = 79, effect = 0x6D,
+      origin = { { 2, 89, 236, -192 }, { 2, 89, 236, 192 }, { 9, 54, 1, 8 }, { 13, 37, -38, -12 } } },
     gains = { 5000, 5000, 500, 500, 500, 500 },
     -- HP 400, MP 300, Offense 500, Defense 400, Speed 400, Brains 300, at most
     -- 10 care mistakes, weight 60, discipline 90, 30 battles, 30 techniques
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 400, speed = 400, brain = 300,
       care = 10, weight = 60, discipline = 90, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
-    evolves_from = { 185, 184 }, -- Veedramon, ExVeemon
+    evolves_from = { 185, 184, 5, 7, 8 }, -- Veedramon, ExVeemon, Greymon, Airdramon, Tyrannomon
     icon_head = { 4, 5 },   -- MetalGreymon's head and jaw
     source = { ["SLUS-01193"] = { model = 114, anim = 27 } }, -- DW2 Digimon 180
     donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (as WarGrowlmon: arms keep their own stance, feet flat)

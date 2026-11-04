@@ -482,9 +482,54 @@ local function pack_texture(objs, nobj, tim)
   return table.concat(rows), { islands = #islands, scale = fit }
 end
 
+-- A copy of an animation (its bytes from the start) in which the whole
+-- Digimon (bone 0, whose location moves the entity: applyRootMomentum) moves
+-- `distance` forward (-z) over `frames` frames from `frame`: a bone-0
+-- location-z key (0x8040, frames, -distance) in the keyframe group at
+-- `frame` and a stop (0x8040, 1, 0) at frame + frames, each in a new group
+-- where the animation has none at that frame (as dw1convert.py).
+local function add_root_motion(d, bones, frame, frames, distance)
+  local function u16(o) return (string.unpack("<I2", d, o + 1)) end
+  local fc = u16(0)
+  local p = 2 + (bones - 1) * ((fc & 0x8000 ~= 0) and 18 or 12)
+  fc = fc & 0x7FFF
+  local steps, first = {}, true
+  while p + 2 <= #d do
+    local w = u16(p)
+    local kind, f = w & 0xF000, first and 1 or (w & 0xFFF)
+    first = false
+    steps[#steps + 1] = { p, kind, f }
+    if kind == 0 then
+      p = p + 2
+      while p + 2 <= #d and u16(p) & 0x8000 ~= 0 do
+        local bits, x = 0, u16(p) & 0x7FC0
+        while x ~= 0 do bits = bits + (x & 1); x = x >> 1 end
+        p = p + 4 + 2 * bits
+      end
+    elseif kind == 0x1000 then p = p + 2
+    elseif kind == 0x2000 or kind == 0x4000 then p = p + 4
+    elseif kind == 0x3000 then p = p + 8
+    else break end
+    if (kind == 0 or kind == 0x3000 or kind == 0x4000) and f > fc then break end
+  end
+  local function place(f, value, div)
+    local entry = string.pack("<I2i2i2", 0x8040, div, value)
+    for _, st in ipairs(steps) do
+      if st[2] == 0 and st[3] == f then return st[1] + 2, entry end
+      if (st[2] == 0 or st[2] == 0x3000 or st[2] == 0x4000) and st[3] > f then return st[1], string.pack("<I2", f) .. entry end
+    end
+    error("the animation has no frame " .. f)
+  end
+  local a1, b1 = place(frame, -distance, frames)
+  local a2, b2 = place(frame + frames, 0, 1)
+  if a1 > a2 then a1, b1, a2, b2 = a2, b2, a1, b1 end
+  return d:sub(1, a1) .. b1 .. d:sub(a1 + 1, a2) .. b2 .. d:sub(a2 + 1)
+end
+
 -- anim_alias: {[animation] = other animation}: that entry of the animation
 -- table plays the other one (a finisher with another of the donor's motions;
--- technique slot k is animation 0x2E + k).
+-- technique slot k is animation 0x2E + k); or {animation, frame, frames,
+-- distance}: a copy of it with that forward travel (add_root_motion).
 function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)
@@ -720,7 +765,22 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   parts[#parts + 1] = anims:sub(pos + 1)
   anims = table.concat(parts)
   for _, dst in ipairs(sorted_keys(anim_alias or {})) do
-    anims = anims:sub(1, 4 * dst) .. string.pack("<I4", info.anims[anim_alias[dst]]) .. anims:sub(4 * dst + 5)
+    local src = anim_alias[dst]
+    local off
+    if type(src) == "table" then
+      local start, stop = info.anims[src[1]], #anims
+      for a = 0, #info.anims do
+        local o = info.anims[a]
+        if o and o > start and o < stop then stop = o end
+      end
+      local blob = add_root_motion(anims:sub(start + 1, stop), nb, src[2], src[3], src[4])
+      anims = anims .. string.rep(" ", (4 - #anims % 4) % 4)
+      off = #anims
+      anims = anims .. blob
+    else
+      off = info.anims[src]
+    end
+    anims = anims:sub(1, 4 * dst) .. string.pack("<I4", off) .. anims:sub(4 * dst + 5)
   end
 
   local mmd = string.pack("<I4I4", 8, 8 + #tmd) .. tmd .. anims

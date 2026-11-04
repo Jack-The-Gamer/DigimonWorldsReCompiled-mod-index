@@ -118,11 +118,13 @@ M.efe_source = {}
 M.original_type = {}
 local GET_ORIGINAL_TYPE = 0x800D9A3C
 
--- A new finisher can use another Digimon's effect from a point of its own
--- (technique -> {type, bone, x, y, z}): in its private copy of the effect
--- file, the {type, bone, x, y, z} list (s16 each, a type of -1 ends it)
--- gets that type's entry (or its first one) set to start there; bone is a
--- skeleton index, x y z are in that bone's space.
+-- A new finisher can use another Digimon's effect from points of its own
+-- (technique -> {type, points = {{bone, x, y, z}, ...}}): in its private copy
+-- of the effect file, each {type, bone, x, y, z} list (s16 each, a type of -1
+-- ends it; an effect with several start points has one list each) gets that
+-- type's entry (or its first one) set to start at the matching point (the
+-- last point for any further lists); bone is a skeleton index, x y z are in
+-- that bone's space.
 M.efe_origin = {}
 
 -- The first plausible {type, bone, x, y, z} list in an effect file's data.
@@ -222,13 +224,14 @@ function M.install()
         local data = ctx:read_bytes(mmd + 0x34, math.min(size, 0x10000))
         local lists = find_origin_lists(data)
         if #lists == 0 then dwrc.log(string.format("effect %X: no origin list found", src)) end
-        for _, l in ipairs(lists) do
+        for i, l in ipairs(lists) do
           local at, n = l[1], l[2]
           local pick = at
           for k = 0, n - 1 do
             if string.unpack("<i2", data, at + 10 * k + 1) == o.type then pick = at + 10 * k end
           end
-          ctx:write_bytes(mmd + 0x34 + pick, string.pack("<i2i2i2i2i2", o.type, o.bone, o.x, o.y, o.z))
+          local pt = o.points[math.min(i, #o.points)] -- {bone, x, y, z}; the last one for any further lists
+          ctx:write_bytes(mmd + 0x34 + pick, string.pack("<i2i2i2i2i2", o.type, pt[1], pt[2], pt[3], pt[4]))
         end
       end
       return false

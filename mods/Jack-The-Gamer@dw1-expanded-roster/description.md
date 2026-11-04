@@ -10,11 +10,11 @@ The first line is **Guilmon → Growlmon → WarGrowlmon**:
 
 The second line is **Veemon**, which becomes **ExVeemon → Paildramon** or **Veedramon → AeroVeedramon** (Veedramon and AeroVeedramon come from Digimon World 2; ExVeemon can also reach AeroVeedramon):
 
-- **Veemon** (Vaccine Rookie): raise a **Tsunomon** whose highest stat is **Offense or Brains** at **weight 15 to 25**. Its finisher is **V-Headbutt** (a lunge with Buster Dive's impact). Veemon can become Veedramon, ExVeemon or Seadramon.
+- **Veemon** (Vaccine Rookie): raise a **Tsunomon** whose highest stat is **Offense or Brains** at **weight 15 to 25**. Its finisher is **V-Headbutt**: Veemon dashes into the foe with Buster Dive's impact. Veemon can become Veedramon, ExVeemon or Seadramon.
 - **ExVeemon** (Vaccine Champion): from Veemon, aiming for **Offense and Speed 100**, at most 3 care mistakes, weight 20 to 30, 10 battles and 30 techniques. Its finisher is **V-Laser** (with Howling Blaster's beam, from its chest). ExVeemon can become Paildramon, AeroVeedramon or Mamemon.
 - **Veedramon** (Vaccine Champion): from Veemon, aiming for **Offense and Defense 100**, Brains 80, at most 3 care mistakes, weight 25 to 35, discipline 70 and 30 techniques. Its finisher is **V-Nova Blast** (with Howling Blaster's beam, from its mouth). Veedramon can become MetalGreymon or AeroVeedramon.
-- **Paildramon** (Vaccine Ultimate): from ExVeemon, aiming for HP 3000, MP 2000, **Offense and Speed 400**, Defense and Brains 300, at most 8 care mistakes, weight 45 to 55, discipline 90, 30 battles and 35 techniques. Its finisher is **Death Parade Blaster** (with Giga Scissor Claw's blast).
-- **AeroVeedramon** (Vaccine Ultimate): from Veedramon or ExVeemon, aiming for HP 4000, MP 3000, **Offense 500**, Defense and Speed 400, Brains 300, at most 10 care mistakes, weight 55 to 65, discipline 90, 30 battles and 30 techniques. Its finisher is **Dragon Impulse** (with Crimson Flare's fire, from its chest).
+- **Paildramon** (Vaccine Ultimate): from ExVeemon, Kabuterimon or Airdramon, aiming for HP 3000, MP 2000, **Offense and Speed 400**, Defense and Brains 300, at most 8 care mistakes, weight 45 to 55, discipline 90, 30 battles and 35 techniques. Its finisher is **Death Parade Blaster** (with Giga Scissor Claw's blast).
+- **AeroVeedramon** (Vaccine Ultimate): from Veedramon, ExVeemon, Greymon, Airdramon or Tyrannomon, aiming for HP 4000, MP 3000, **Offense 500**, Defense and Speed 400, Brains 300, at most 10 care mistakes, weight 55 to 65, discipline 90, 30 battles and 30 techniques. Its finisher is **Dragon Impulse** (Crimson Flare's fire, gathered on its wings and hands).
 
 As with the game's own Digimon, the evolution is decided by how close your partner comes to these, so it doesn't have to meet every one.
 
