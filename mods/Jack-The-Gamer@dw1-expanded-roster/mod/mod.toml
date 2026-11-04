@@ -10,7 +10,7 @@ script = "main.lua"
 engine = ">=1.6"
 uses_games = ["dw3", "dw2"]
 categories = ["CONTENT", "GAMEPLAY"]
-tags = ["digivolution", "new digimon", "guilmon", "growlmon", "wargrowlmon", "veemon", "exveemon", "paildramon", "veedramon", "aeroveedramon"]
+tags = ["digivolution", "new digimon", "guilmon", "growlmon", "wargrowlmon", "veemon", "veedramon", "paildramon"]
 license = "MIT"
 github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
 homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-expanded-roster"
