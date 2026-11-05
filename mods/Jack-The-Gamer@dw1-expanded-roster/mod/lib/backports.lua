@@ -1947,6 +1947,149 @@ M.list = {
       [27] = { 22, "limb", 28, 23, true }, [28] = { 23, "leaf" }, [29] = { 24, "core" }, [30] = { 24, "follow" }, -- leg (-x)
     },
   },
+  -- --- AncientGreymon, BlackWarGreymon, Gallantmon, Imperialdramon (DW2003) -----------
+  {
+    type = 235, name = "AncientGreymon", file = "AGRY", level = 5, height = 500,
+    chart_stage = 6,
+    attribute = 2, specialties = { 0, 1, 255 }, radius = 260, -- Vaccine; Fire, Battle
+    techniques = { auto = true },
+    -- Its finisher (Garurumon's 0x40 Howling Blaster: stats, motion) as Gaia
+    -- Bless: Greymon's Mega Flame (0x3F) from its jaws, at a Mega's power
+    finisher = { name = "Gaia Bless", from = 0x40, power = 280, effect = 0x3F, origin = { 5, 15, 0, -29 } },
+    gains = { 8000, 6000, 800, 700, 600, 600 },
+    -- HP 800, MP 500, Offense 800, Defense 700, Speed 600, Brains 500, at
+    -- most 10 care mistakes, weight 60, 70 battles or 45 techniques
+    requirements = { digimon = -1, hp = 800, mp = 500, offense = 800, defense = 700, speed = 600, brain = 500,
+      care = 10, weight = 60, discipline = -1, happiness = -1, battles = 70, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: wings and tail far past the window at Phoenixmon's
+    -- camera (120, 430, -1230); stands back and to the left
+    view = { -850, 660, 250 },
+    icon_head = { 4, 5 },        -- Garurumon's head and jaw
+    source = { ["SLES-03936"] = { file = 1998, bones = 71, motions = 0 } }, -- M470AGRY (partner fighter 0x1D6)
+    -- Garurumon: on all fours as on DW2003 (Unimon's gallop threw its legs
+    -- about). Legs in their own stance, damped to 0.6: turned to Garurumon's
+    -- narrow legs (hybrid) its feet pinched together, the rear ones touching.
+    -- Wings and shoulder blades with the body
+    donor = 22, donor_file = "GARU.MMD",
+    damp = { [7] = 0.6, [8] = 0.6, [9] = 0.6, [11] = 0.6, [12] = 0.6, [13] = 0.6,
+      [19] = 0.6, [20] = 0.6, [21] = 0.6, [23] = 0.6, [24] = 0.6, [25] = 0.6 },
+    mapping = {
+      [13] = { 2, "core" }, [1] = { 14, "core" }, [2] = { 15, "core" }, [3] = { 16, "core" }, [4] = { 17, "core" }, -- body, hips, tail
+      [21] = { 3, "core" }, [22] = { 3, "follow" }, [23] = { 4, "core" }, [24] = { 5, "core" },     -- neck, head, jaw
+      [18] = { 2, "follow" }, [19] = { 2, "follow" }, [20] = { 2, "follow" },                       -- blade, wing (+x)
+      [31] = { 2, "follow" }, [29] = { 2, "follow" }, [30] = { 2, "follow" },                       -- blade, wing (-x)
+      [14] = { 7, "core" }, [15] = { 8, "core" }, [16] = { 9, "core" }, [17] = { 9, "follow" },     -- front leg (+x)
+      [25] = { 11, "core" }, [26] = { 12, "core" }, [27] = { 13, "core" }, [28] = { 13, "follow" }, -- front leg (-x)
+      [5] = { 19, "core" }, [6] = { 20, "core" }, [7] = { 21, "core" }, [8] = { 21, "follow" },     -- rear leg (+x)
+      [9] = { 23, "core" }, [10] = { 24, "core" }, [11] = { 25, "core" }, [12] = { 25, "follow" },  -- rear leg (-x)
+    },
+  },
+  {
+    type = 236, name = "BlackWarGreymon", file = "BKWG", level = 5, height = 490, -- 470 at first: a hair bigger (the user)
+    chart_stage = 6,
+    attribute = 3, specialties = { 1, 0, 255 }, radius = 180, -- Virus; Battle, Fire
+    techniques = { auto = true },
+    -- Its finisher (Andromon's 0x66 Spiral Sword: stats, motion) as Terra
+    -- Destroyer (DW2003's name): SkullGreymon's Dark Shot (0x50), a great dark
+    -- sphere hurled from its claws, at a Mega's power
+    finisher = { name = "Terra Destroyer", from = 0x66, power = 280, effect = 0x50, origin = { 6, 236, -85, -34 } },
+    gains = { 7500, 5000, 900, 700, 700, 500 },
+    -- HP 700, MP 500, Offense 800, Defense 700, Speed 700, Brains 500, at
+    -- least 15 care mistakes, weight 50, 80 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 500, offense = 800, defense = 700, speed = 700, brain = 500,
+      care = 15, weight = 50, discipline = -1, happiness = -1, battles = 80, techs = 45, flags = 0 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 729, bones = 49, motions = 0 } }, -- M267BKWG (partner fighter 0x10B)
+    -- Andromon: upright (Leomon's run hunched it over). Legs in their own
+    -- stance, their motions damped to 0.5 (turned, and in full, its feet
+    -- floated at rest and kicked high); shield and flaps with chest and hips
+    donor = 40, donor_file = "ANDR.MMD",
+    damp = { [14] = 0.5, [15] = 0.5, [16] = 0.5, [18] = 0.5, [19] = 0.5, [20] = 0.5 },
+    mapping = {
+      [13] = { 2, "core" }, [14] = { 2, "follow" }, [17] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 3, "core" }, -- chest, shield, neck, head
+      [1] = { 12, "core" }, [2] = { 12, "follow" }, [3] = { 12, "follow" }, [12] = { 12, "follow" }, -- hips, flaps
+      [20] = { 5, "core" }, [21] = { 6, "core" }, [18] = { 9, "core" }, [19] = { 10, "core" },      -- arms, claws
+      [8] = { 14, "core" }, [9] = { 15, "core" }, [10] = { 16, "core" }, [11] = { 16, "follow" },   -- leg (+x)
+      [4] = { 18, "core" }, [5] = { 19, "core" }, [6] = { 20, "core" }, [7] = { 20, "follow" },     -- leg (-x)
+    },
+  },
+  {
+    type = 237, name = "Gallantmon", file = "DUKE", level = 5, height = 480,
+    chart_stage = 6,
+    attribute = 3, specialties = { 0, 1, 255 }, radius = 180, -- Virus; Fire, Battle
+    techniques = { auto = true },
+    -- Its finisher (in Angemon's 0x52 Hand of Fate slot, its motion: the
+    -- lance hand drives forward) as Royal Saber: melee (Death Claw's stats,
+    -- 0x3E: it walks up to the foe first), Andromon's Spiral Sword blades
+    -- (0x66) along its lance (bone 9: 30%, 60%, 95% of the way out), at a
+    -- Mega's power
+    finisher = { name = "Royal Saber", from = 0x52, stats = 0x3E, power = 280, effect = 0x66,
+      origin = { { 0, 0, -300, -400 }, { 9, 30, -136, -15 }, { 9, 76, -264, -102 }, { 9, 130, -414, -203 },
+        { 9, 30, -136, -15 }, { 9, 76, -264, -102 }, { 9, 130, -414, -203 } } },
+    gains = { 7500, 6000, 700, 900, 600, 600 },
+    -- HP 700, MP 500, Offense 700, Defense 700, Speed 600, Brains 600, at
+    -- most 10 care mistakes, weight 50, discipline 80 or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 500, offense = 700, defense = 700, speed = 600, brain = 600,
+      care = 10, weight = 50, discipline = 80, happiness = -1, battles = -1, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    view = { -300, 500, -500 },  -- back a little from Phoenixmon's camera (lance and shield)
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 1063, bones = 56, motions = 0 } }, -- M369DUKE (partner fighter 0x171)
+    -- Angemon: upright, its lance in the staff hand, shield on the other
+    -- (Leomon's run hunched it over). Legs in their own stance, damped to
+    -- 0.6 (turned, its feet floated 30-97 at rest); cape with the chest
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [1] = { 2, "core" }, [6] = { 3, "core" }, [7] = { 3, "follow" }, [8] = { 3, "follow" }, [9] = { 3, "follow" },
+      [10] = { 3, "follow" }, [11] = { 3, "follow" },                                               -- chest, head, plume
+      [16] = { 2, "follow" }, [17] = { 2, "follow" }, [18] = { 2, "follow" },                       -- cape
+      [2] = { 4, "core" }, [3] = { 5, "core" }, [4] = { 6, "core" }, [5] = { 4, "follow" },          -- arm (+x), shield
+      [12] = { 7, "core" }, [13] = { 8, "core" }, [14] = { 9, "core" }, [15] = { 7, "follow" },      -- arm (-x), lance
+      [19] = { 18, "core" },                                                                        -- hips
+      [20] = { 19, "core" }, [21] = { 20, "core" }, [22] = { 21, "core" }, [23] = { 21, "follow" }, -- leg (+x)
+      [24] = { 22, "core" }, [25] = { 23, "core" }, [26] = { 24, "core" }, [27] = { 24, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 238, name = "Imperialdramon", file = "IMPD", level = 5, height = 460, -- 520 at first: a little smaller (the user)
+    chart_stage = 6,
+    attribute = 2, specialties = { 1, 5, 0 }, radius = 300, -- Vaccine; Battle, Mech, Fire
+    techniques = { auto = true },
+    -- Dragon Mode. Its finisher (in Unimon's 0x54 Aerial Attack slot) as
+    -- Positron Laser: Centarumon's Solar Ray (0x56: stats and beam) from the
+    -- cannon on its back, playing Unimon's standing Megalo Spark motion
+    -- (`anim` 0x0B), at a Mega's power. With Aerial Attack's own stats it
+    -- flew off out of sight and never fired.
+    finisher = { name = "Positron Laser", from = 0x54, anim = 0x0B, stats = 0x56, power = 280, effect = 0x56, origin = { 2, 0, -158, -57 } },
+    gains = { 8500, 6000, 850, 850, 600, 500 },
+    -- HP 800, MP 500, Offense 800, Defense 800, Speed 600, Brains 500, at
+    -- most 10 care mistakes, weight 70, 70 battles or 45 techniques
+    requirements = { digimon = -1, hp = 800, mp = 500, offense = 800, defense = 800, speed = 600, brain = 500,
+      care = 10, weight = 70, discipline = -1, happiness = -1, battles = 70, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: long, it stands back and to the left
+    view = { -850, 660, 250 },
+    icon_head = { 4, 5 },        -- Unimon's head and jaw
+    source = { ["SLES-03936"] = { file = 503, bones = 27, motions = 0 } }, -- M148IPDR (partner fighter 0x94)
+    -- Unimon: four legs and wings. Each long leg rigid from its thigh, the
+    -- thighs, bodies and wings damped (at full swing its front feet went
+    -- 350 into the ground and 470 above it; damped within -41..75)
+    donor = 33, donor_file = "UNIM.MMD",
+    damp = { [8] = 0.3, [12] = 0.3, [17] = 0.3, [21] = 0.3, [2] = 0.3, [16] = 0.3, [6] = 0.5, [7] = 0.5 },
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" }, [3] = { 4, "core" }, [4] = { 5, "core" },           -- body, neck, head, jaw
+      [5] = { 6, "core" }, [6] = { 6, "follow" }, [7] = { 6, "follow" },                            -- wing (+x)
+      [8] = { 7, "core" }, [9] = { 7, "follow" }, [10] = { 7, "follow" },                           -- wing (-x)
+      [17] = { 16, "core" }, [18] = { 25, "core" }, [19] = { 26, "core" }, [20] = { 26, "follow" }, -- hips, tail
+      [11] = { 8, "core" }, [12] = { 8, "follow" }, [13] = { 8, "follow" },                         -- front leg (+x)
+      [14] = { 12, "core" }, [15] = { 12, "follow" }, [16] = { 12, "follow" },                      -- front leg (-x)
+      [21] = { 17, "core" }, [22] = { 17, "follow" }, [23] = { 17, "follow" },                      -- rear leg (+x)
+      [24] = { 21, "core" }, [25] = { 21, "follow" }, [26] = { 21, "follow" },                      -- rear leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from

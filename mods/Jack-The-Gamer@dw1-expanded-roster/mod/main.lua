@@ -31,6 +31,7 @@ local convert = require("lib.convert")
 local chart = require("lib.chart")
 local tree = require("lib.tree")
 local icon = require("lib.icon")
+local flat = require("lib.flat")
 local techniques = require("lib.techniques")
 local special = require("lib.special")
 local names = require("lib.names")
@@ -328,6 +329,14 @@ do
         dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes (%d on a map)%s (%.2f s; checksums %08X %08X)",
           b.name, src.info.title, info.verts, info.prims, #mmd, #npc, info.packed and string.format(", texture packed at %d%%", info.packed.scale * 5) or "",
           os.clock() - t1, fnv(mmd), fnv(tim)))
+        -- its flattened picture (lib/flat.lua; after the checksum, which
+        -- research/tools/dw1convert.py's texture matches): a Digimon World
+        -- Digimon's own, else drawn from its model
+        if game == "dw1" then
+          textures[b.type] = flat.copy(tim, alltim:sub(spec.type * TEXTURE_SIZE + 1, (spec.type + 1) * TEXTURE_SIZE))
+        else
+          textures[b.type] = flat.draw(tim, info.faces)
+        end
       end)
       if not ok then dwrc.log(b.name .. " couldn't be built: " .. tostring(err)) end
     end
@@ -601,11 +610,22 @@ end
 
 -- The chart icons: in the mod's RAM (tables.ICONS), uploaded to the chart's
 -- text area in VRAM (x 704, y 256: page 0x1B; the chart clears rows 12..211
--- when it opens and writes text only above row 72): icon i at texel (i % 8
--- * 32, 100 + i // 8 * 16), its CLUT in rows 200..211, 4 a row. Placed now
--- (chart.icons and chart.uploads are needed in every session); the bytes
--- are written at boot (setup_icons).
+-- when it opens and writes text only above row 72, besides "Mega", which
+-- lib/chart.lua draws at its left in rows 72..83): icons in 32 x 16 slots
+-- (both frames), rows 72..199 (8 slots a row: 256 texels): the first row
+-- from slot 2 on, clear of "Mega"; the last row's slots 6-7 (x 752..767)
+-- hold CLUTs 48..63, one a row; CLUTs 0..47 in rows 200..211, 4 a row. 60
+-- icons in all (they started at row 100 and held 48 until the 59th new
+-- Digimon). Placed now (chart.icons and chart.uploads are needed in every
+-- session); the bytes are written at boot (setup_icons).
 local ICON_TPAGE = 0x1B
+local icon_slots = {}
+for s = 2, 7 do icon_slots[#icon_slots + 1] = { s * 32, 72 } end
+for band = 1, 7 do
+  for s = 0, 7 do
+    if not (band == 7 and s >= 6) then icon_slots[#icon_slots + 1] = { s * 32, 72 + band * 16 } end
+  end
+end
 local icon_writes = {}                 -- {address, bytes}
 do
   local types = {}
@@ -613,10 +633,11 @@ do
   table.sort(types)
   for i, t in ipairs(types) do
     local n = i - 1
-    if n >= 48 then dwrc.log("no room for more chart icons"); break end
+    if n >= #icon_slots then dwrc.log("no room for more chart icons"); break end
     local at = tables.ICONS + n * tables.ICON_BYTES
-    local u, v = (n % 8) * 32, 100 + (n // 8) * 16
+    local u, v = icon_slots[i][1], icon_slots[i][2]
     local cx, cy = 704 + (n % 4) * 16, 256 + 200 + n // 4
+    if n >= 48 then cx, cy = 752, 256 + 184 + (n - 48) end
     icon_writes[#icon_writes + 1] = { at, icons[t].pixels }
     icon_writes[#icon_writes + 1] = { at + 256, icons[t].clut }
     icon_writes[#icon_writes + 1] = { at + 288, string.pack("<i2i2i2i2", 704 + u // 4, 256 + v, 8, 16) }

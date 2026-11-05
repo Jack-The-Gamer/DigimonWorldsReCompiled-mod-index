@@ -407,6 +407,12 @@ end
 -- transparent 0x0000 against any other colour counts 1 << 20), the palette
 -- with fewer polygons into the other. Rewrites the polygons' rows; returns
 -- the list ({x, y}) of those left, in their old order.
+-- A flattened Digimon is drawn as a 16 x 16 picture from its own texture
+-- (renderFlatDigimon: u 0xE0 / 0xF0, v 0x60 / 0x70, CLUT 15): a new one keeps
+-- CLUT 15 and that corner free for lib/flat.lua's picture (as dw1convert.py).
+local MAX_CLUTS = 15
+local function in_corner(u0, v0, u1, v1) return u1 >= 224 and v1 >= 96 end
+
 local function merge_cluts(objs, nobj, tim, list)
   local w0, src = tim.w, tim.px
   local function texel(u, v)
@@ -435,7 +441,7 @@ local function merge_cluts(objs, nobj, tim, list)
   end
   local alive = {}
   for k = 1, #list do alive[k] = k end
-  while #alive > 16 do
+  while #alive > MAX_CLUTS do
     local best
     for i = 1, #alive do
       for j = i + 1, #alive do
@@ -516,6 +522,7 @@ local function pack_texture(objs, nobj, tim)
       local s = islands[i]
       local w, h = math.max(1, (s[3] - s[1] + 1) * k // 20), math.max(1, (s[4] - s[2] + 1) * k // 20)
       if x + w > 256 then x, y, shelf = 0, y + shelf, 0 end
+      while in_corner(x, y, x + w - 1, y + h - 1) and x > 0 do x, y, shelf = 0, y + shelf, 0 end
       place[i] = { x, y, w, h }
       x, shelf = x + w, math.max(shelf, h)
     end
@@ -1223,15 +1230,24 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
     end
     ::next_bone::
   end
-  if #clut_list > 16 then clut_list = merge_cluts(objs, info.nobj, m3.tims[1], clut_list) end
+  if #clut_list > MAX_CLUTS then clut_list = merge_cluts(objs, info.nobj, m3.tims[1], clut_list) end
 
   -- texture: 256x128 texels, CLUT rows 0..15 (the source's rows as they are
   -- when it's 256 wide and uses only the first 128, else packed)
   local px, tw = m3.tims[1].px, m3.tims[1].w
-  local vmax = 0
-  for o = 0, info.nobj - 1 do for _, p in ipairs(objs[o].prims) do for _, uv in ipairs(p.uv) do vmax = math.max(vmax, uv[2]) end end end
+  local vmax, corner = 0, false
+  for o = 0, info.nobj - 1 do
+    for _, p in ipairs(objs[o].prims) do
+      local u0, v0, u1, v1 = 255, 255, 0, 0
+      for _, uv in ipairs(p.uv) do
+        vmax = math.max(vmax, uv[2])
+        u0, v0, u1, v1 = math.min(u0, uv[1]), math.min(v0, uv[2]), math.max(u1, uv[1]), math.max(v1, uv[2])
+      end
+      if in_corner(u0, v0, u1, v1) then corner = true end
+    end
+  end
   local pixels, packed
-  if vmax < 128 and tw == 64 then
+  if vmax < 128 and tw == 64 and not corner then
     pixels = px:sub(1, 128 * 128)
   else
     pixels, packed = pack_texture(objs, info.nobj, m3.tims[1])
