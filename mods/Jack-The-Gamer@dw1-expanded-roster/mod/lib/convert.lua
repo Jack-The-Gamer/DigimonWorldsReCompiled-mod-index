@@ -1197,7 +1197,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       out.normals[#out.normals + 1] = { clamp16(l[1] * 4096), clamp16(l[2] * 4096), clamp16(l[3] * 4096) }
     end
     for _, p in ipairs(bone.polys) do
-      if not p.textured then error("DW3 bone " .. b .. " has a polygon that isn't textured") end
+      if not p.textured then goto next_poly end -- flat-coloured slivers (two on Pharaohmon's face): left out
       local key = p.tex[4] .. "," .. p.tex[5]
       if not clut_rows[key] then
         clut_list[#clut_list + 1] = { p.tex[4], p.tex[5] }
@@ -1227,6 +1227,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       local pts = {}
       for k = 1, n do pts[k] = placed_verts[p.idx[k] + 1] end
       faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * m3.tims[1].w + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
+      ::next_poly::
     end
     ::next_bone::
   end

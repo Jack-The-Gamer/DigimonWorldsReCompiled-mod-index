@@ -2090,6 +2090,147 @@ M.list = {
       [24] = { 21, "core" }, [25] = { 21, "follow" }, [26] = { 21, "follow" },                      -- rear leg (-x)
     },
   },
+  -- --- Mummymon, Mammothmon, Pharaohmon, SkullMammothmon (DW2003) ------------------------
+  {
+    type = 239, name = "Mummymon", file = "MUMY", level = 5, height = 430, -- 400 at first: a little bigger (the user)
+    attribute = 3, specialties = { 1, 3, 5 }, radius = 160, -- Virus; Battle, Earth, Mech
+    techniques = { auto = true },
+    -- Its finisher (in Angemon's 0x52 Hand of Fate slot: both hands drive
+    -- forward) as Necrophobia: SkullGreymon's Dark Shot (0x50) from its
+    -- gun's muzzle, at an Ultimate's power
+    finisher = { name = "Necrophobia", from = 0x52, power = 220, effect = 0x50, origin = { 9, 158, -130, -28 } },
+    gains = { 5000, 4000, 500, 400, 400, 500 },
+    -- HP 400, MP 300, Offense 400, Defense 300, Brains 400, at least 15 care
+    -- mistakes, weight 30, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 400, defense = 300, speed = -1, brain = 400,
+      care = 15, weight = 30, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 1820, bones = 44, motions = 0 } }, -- M364MUMY (enemy fighter 0x16C)
+    -- Angemon: upright, its gun in the staff hand (Ogremon kicked its long
+    -- legs high, Devimon flung its arms out); bandages with the head, legs
+    -- hybrid and damped (as the angels')
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" }, [3] = { 3, "follow" }, [4] = { 3, "follow" }, [5] = { 3, "follow" }, -- body, head, bandages
+      [6] = { 4, "core" }, [7] = { 5, "core" }, [8] = { 6, "core" },                                -- arm (+x)
+      [9] = { 7, "core" }, [10] = { 8, "core" }, [11] = { 9, "core" }, [12] = { 9, "follow" },       -- arm (-x), gun
+      [13] = { 18, "core" },                                                                        -- hips
+      [14] = { 19, "limb", 15, 20, true }, [15] = { 20, "leaf" }, [16] = { 21, "core" }, [17] = { 21, "follow" }, -- leg (+x)
+      [18] = { 22, "limb", 19, 23, true }, [19] = { 23, "leaf" }, [20] = { 24, "core" }, [21] = { 24, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 240, name = "Mammothmon", file = "MAMO", level = 5, height = 440,
+    attribute = 2, specialties = { 3, 4, 255 }, radius = 280, -- Vaccine; Earth, Ice (Water)
+    techniques = { auto = true },
+    -- Its finisher (Monochromon's 0x68 Volcanic Strike: stats, motion) as
+    -- Freezing Breath: Seadramon's Ice Blast (0x58: shards of ice) from the
+    -- tip of its trunk, at an Ultimate's power (Glacial Blast, 0x6E, is a
+    -- magenta mist)
+    finisher = { name = "Freezing Breath", from = 0x68, power = 220, effect = 0x58, origin = { 4, -1, 129, -293 } },
+    gains = { 6500, 2500, 500, 600, 250, 350 },
+    -- HP 500, Offense 400, Defense 500, Brains 200, at most 10 care mistakes,
+    -- weight 55, discipline 60 or 35 techniques
+    requirements = { digimon = -1, hp = 500, mp = -1, offense = 400, defense = 500, speed = -1, brain = 200,
+      care = 10, weight = 55, discipline = 60, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    -- The Digimon page: at MetalGreymon's camera its head and trunk filled
+    -- the window (it faces the camera, its body running back); farther back
+    -- and to the left
+    view = { -500, 520, -300 },
+    icon_head = { 4 },           -- Monochromon's head
+    source = { ["SLES-03936"] = { file = 769, bones = 54, motions = 0 } }, -- M212MANM (enemy fighter 0xD4)
+    -- Monochromon (Garurumon crouched it): trunk and ears with the head,
+    -- mouth on the jaw. Legs in their own stance (hybrid set the feet in
+    -- under the body), damped to 0.6 for a heavier tread
+    donor = 47, donor_file = "MONO.MMD",
+    damp = { [7] = 0.6, [8] = 0.6, [9] = 0.6, [10] = 0.6, [11] = 0.6, [12] = 0.6,
+      [18] = 0.6, [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6 },
+    mapping = {
+      [12] = { 2, "core" }, [1] = { 13, "core" },                                                   -- body, hips
+      [8] = { 14, "core" }, [9] = { 15, "core" }, [10] = { 16, "core" }, [11] = { 16, "follow" },   -- tail
+      [13] = { 3, "core" }, [14] = { 4, "core" }, [18] = { 5, "core" },                             -- neck, head, jaw
+      [15] = { 4, "follow" }, [16] = { 4, "follow" }, [17] = { 4, "follow" }, [19] = { 4, "follow" }, [20] = { 4, "follow" }, -- trunk, ears
+      [24] = { 7, "core" }, [25] = { 8, "core" }, [26] = { 9, "core" },                             -- front leg (+x)
+      [21] = { 10, "core" }, [22] = { 11, "core" }, [23] = { 12, "core" },                          -- front leg (-x)
+      [5] = { 18, "core" }, [6] = { 19, "core" }, [7] = { 20, "core" },                             -- rear leg (+x)
+      [2] = { 21, "core" }, [3] = { 22, "core" }, [4] = { 23, "core" },                             -- rear leg (-x)
+    },
+  },
+  {
+    type = 241, name = "Pharaohmon", file = "PHAR", level = 5, height = 480,
+    chart_stage = 6,
+    attribute = 3, specialties = { 1, 3, 2 }, radius = 180, -- Virus; Battle, Earth, Air
+    techniques = { auto = true },
+    -- Its finisher (in Andromon's 0x66 Spiral Sword slot, its motion) as
+    -- Necro Mist: Vegiemon's Sweet Breath (0x48: its stats and its cloud,
+    -- the user's pick), the cloud's nine start points Vegiemon's own (before
+    -- it, from its root), the one on Vegiemon's bone 10 on Pharaohmon's
+    -- fist, at a Mega's power
+    finisher = { name = "Necro Mist", from = 0x66, stats = 0x48, power = 280, effect = 0x48,
+      origin = { { 0, 0, 0, -300 }, { 0, 0, 0, -100 }, { 0, -55, -1, -110 }, { 0, 55, 0, -100 }, { 0, 110, 0, -75 },
+        { 0, -345, 0, -1 }, { 7, 31, -2, -6 }, { 0, -1, -1, -1 }, { 0, -1, -1, -1 } } },
+    gains = { 7500, 8000, 800, 700, 600, 800 },
+    -- HP 700, MP 700, Offense 700, Defense 600, Speed 500, Brains 700, at
+    -- least 15 care mistakes, weight 45, 70 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 700, offense = 700, defense = 600, speed = 500, brain = 700,
+      care = 15, weight = 45, discipline = -1, happiness = -1, battles = 70, techs = 45, flags = 0 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: taller than the window at Phoenixmon's camera (120,
+    -- 430, -1230); at MetalGreymon's distance, a little lower
+    view = { -30, 430, -780 },
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 1828, bones = 44, motions = 0 } }, -- M358PHAR (enemy fighter 0x166)
+    -- Andromon: upright (Leomon hunched it, Angemon's stride was wild). Its
+    -- splayed legs in their own stance, damped to 0.5; cape with the chest,
+    -- loincloth with the hips. (Two flat-coloured slivers on its face are
+    -- left out: lib/convert.lua)
+    donor = 40, donor_file = "ANDR.MMD",
+    damp = { [14] = 0.5, [15] = 0.5, [16] = 0.5, [18] = 0.5, [19] = 0.5, [20] = 0.5 },
+    mapping = {
+      [1] = { 2, "core" }, [5] = { 3, "core" }, [6] = { 2, "follow" }, [7] = { 2, "follow" },       -- body, head, cape
+      [8] = { 5, "core" }, [9] = { 6, "core" }, [10] = { 7, "core" },                               -- arm (+x)
+      [2] = { 9, "core" }, [3] = { 10, "core" }, [4] = { 11, "core" },                              -- arm (-x)
+      [11] = { 12, "core" }, [16] = { 12, "follow" }, [17] = { 12, "follow" },                      -- hips, loincloth
+      [12] = { 14, "core" }, [13] = { 15, "core" }, [14] = { 16, "core" }, [15] = { 16, "follow" }, -- leg (+x)
+      [18] = { 18, "core" }, [19] = { 19, "core" }, [20] = { 20, "core" }, [21] = { 20, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 242, name = "SkullMammothmon", file = "SKMM", level = 5, height = 480,
+    chart_stage = 6,
+    attribute = 3, specialties = { 3, 0, 1 }, radius = 300, -- Virus; Earth, Fire, Battle
+    techniques = { auto = true },
+    -- Its finisher (Monochromon's 0x68 Volcanic Strike: stats, motion) as
+    -- Spiral Blow: Biyomon's Spiral Twister (0x46) from the tip of its trunk,
+    -- at a Mega's power
+    finisher = { name = "Spiral Blow", from = 0x68, power = 280, effect = 0x46, origin = { 4, -1, 123, -250 } },
+    gains = { 8500, 5000, 900, 800, 550, 500 },
+    -- HP 800, MP 400, Offense 800, Defense 700, Speed 500, at least 15 care
+    -- mistakes, weight 65, 80 battles or 45 techniques
+    requirements = { digimon = -1, hp = 800, mp = 400, offense = 800, defense = 700, speed = 500, brain = -1,
+      care = 15, weight = 65, discipline = -1, happiness = -1, battles = 80, techs = 45, flags = 0 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    view = { -500, 520, -300 },  -- as Mammothmon
+    icon_head = { 4 },           -- Monochromon's head
+    source = { ["SLES-03936"] = { file = 775, bones = 54, motions = 0 } }, -- M215SMAN (enemy fighter 0xD7)
+    -- Monochromon, as Mammothmon: legs in their own stance, damped to 0.6
+    donor = 47, donor_file = "MONO.MMD",
+    damp = { [7] = 0.6, [8] = 0.6, [9] = 0.6, [10] = 0.6, [11] = 0.6, [12] = 0.6,
+      [18] = 0.6, [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6 },
+    mapping = {
+      [1] = { 2, "core" }, [16] = { 13, "core" },                                                   -- body, hips
+      [23] = { 14, "core" }, [24] = { 15, "core" }, [25] = { 16, "core" }, [26] = { 16, "follow" }, -- tail
+      [8] = { 3, "core" }, [9] = { 4, "core" }, [12] = { 5, "core" },                               -- neck, head, jaw
+      [10] = { 4, "follow" }, [11] = { 4, "follow" }, [13] = { 4, "follow" }, [14] = { 4, "follow" }, [15] = { 4, "follow" }, -- ears, trunk
+      [5] = { 7, "core" }, [6] = { 8, "core" }, [7] = { 9, "core" },                                -- front leg (+x)
+      [2] = { 10, "core" }, [3] = { 11, "core" }, [4] = { 12, "core" },                             -- front leg (-x)
+      [20] = { 18, "core" }, [21] = { 19, "core" }, [22] = { 20, "core" },                          -- rear leg (+x)
+      [17] = { 21, "core" }, [18] = { 22, "core" }, [19] = { 23, "core" },                          -- rear leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from

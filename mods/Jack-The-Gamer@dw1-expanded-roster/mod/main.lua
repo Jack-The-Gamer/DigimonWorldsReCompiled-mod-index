@@ -391,7 +391,7 @@ do
   end
 end
 
--- Developer option: the last type (239), a copy of Agumon, for testing new type numbers.
+-- Developer option: the last type (249), a copy of Agumon, for testing new type numbers.
 local test_clone = dwrc.options.test_clone
 local CLONE, CLONE_OF, CLONE_FILE = tables.CAPACITY - 1, 3, "XAGU"
 if test_clone then
@@ -628,10 +628,11 @@ end
 -- lib/chart.lua draws at its left in rows 72..83): icons in 32 x 16 slots
 -- (both frames), rows 72..199 (8 slots a row: 256 texels): the first row
 -- from slot 2 on, clear of "Mega"; the last row's slots 6-7 (x 752..767)
--- hold CLUTs 48..63, one a row; CLUTs 0..47 in rows 200..211, 4 a row. 60
--- icons in all (they started at row 100 and held 48 until the 59th new
--- Digimon). Placed now (chart.icons and chart.uploads are needed in every
--- session); the bytes are written at boot (setup_icons).
+-- hold CLUTs 48..63, one a row; CLUTs 0..47 in rows 200..211, 4 a row; four
+-- more slots below (rows 212..227). 64 icons in all (they started at row
+-- 100 and held 48 until the 59th new Digimon, 60 until the 60th). Placed
+-- now (chart.icons and chart.uploads are needed in every session); the
+-- bytes are written at boot (setup_icons).
 local ICON_TPAGE = 0x1B
 local icon_slots = {}
 for s = 2, 7 do icon_slots[#icon_slots + 1] = { s * 32, 72 } end
@@ -640,6 +641,10 @@ for band = 1, 7 do
     if not (band == 7 and s >= 6) then icon_slots[#icon_slots + 1] = { s * 32, 72 + band * 16 } end
   end
 end
+-- and four below the area the chart clears (rows 212..227, empty while it's
+-- open; the rename screen draws its text there and redraws it), clear of the
+-- text at x 0..79 of rows 228..249: 64 in all, as many as the CLUT rows hold
+for s = 3, 6 do icon_slots[#icon_slots + 1] = { s * 32, 212 } end
 local icon_writes = {}                 -- {address, bytes}
 do
   local types = {}
