@@ -1,0 +1,21 @@
+[mod]
+id = "dw1-reusable-monzaemon-suit"
+name = "DW1 Re-Usable Monzaemon Suit"
+version = "1.0.0"
+author = "Jack-The-Gamer"
+description = "The Monzaemon suit that stands in Jijimon's House once Monzaemon joins the city can be used again: examine it with Numemon as your partner and Numemon climbs in and digivolves into Monzaemon, as in Toy Town."
+game = "dw1"
+script = "main.lua"
+categories = ["GAMEPLAY"]
+tags = ["digivolution", "monzaemon", "numemon", "jijimon"]
+license = "MIT"
+engine = ">=1.6"
+github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
+homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-reusable-monzaemon-suit"
+
+[[option]]
+id = "hide_while_worn"
+name = "Hide the suit while Monzaemon is your partner"
+description = "The suit isn't in the room while your partner is Monzaemon (it's being worn), as in Toy Town. It's back once your partner is someone else."
+type = "bool"
+default = true
