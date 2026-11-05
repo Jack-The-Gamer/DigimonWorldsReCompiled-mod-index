@@ -1,9 +1,9 @@
 [mod]
 id = "dw1-expanded-roster"
 name = "DW1 Expanded Roster"
-version = "0.7.0"
+version = "0.8.0"
 author = "Jack-The-Gamer"
-description = "Digimon from Digimon World 2003 and Digimon World 2 come to Digimon World, built from your own copies: Guilmon, Growlmon and WarGrowlmon; Veemon, ExVeemon, Veedramon, Paildramon and AeroVeedramon; Deltamon, Kimeramon and Raremon; Renamon, Kyubimon, Taomon and Sakuyamon; MegaKabuterimon, Okuwamon and Garudamon. Tentomon, PlatinumSukamon and KingSukamon become raisable, Machinedramon, HerculesKabuterimon and Phoenixmon become Megas alongside Sakuyamon, and every Digimon follows a revised evolution tree. Work in progress."
+description = "Digimon from Digimon World 2003 and Digimon World 2 come to Digimon World, built from your own copies: Guilmon, Growlmon and WarGrowlmon; Veemon, ExVeemon, Veedramon, Paildramon and AeroVeedramon; Deltamon, Kimeramon and Raremon; Renamon, Kyubimon, Taomon and Sakuyamon; WereGarurumon, MetalGarurumon and SaberLeomon; MegaKabuterimon, Okuwamon and Garudamon. Tentomon, PlatinumSukamon and KingSukamon become raisable, Machinedramon, HerculesKabuterimon and Phoenixmon become Megas alongside Sakuyamon, MetalGarurumon and SaberLeomon, and every Digimon follows a revised evolution tree. Work in progress."
 game = "dw1"
 serials = ["SLUS-01032"]
 script = "main.lua"
