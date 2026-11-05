@@ -1,0 +1,30 @@
+[mod]
+id = "dw1-wild-randomizer"
+name = "DW1 Wild Digimon Randomizer"
+version = "0.1.0"
+author = "Jack-The-Gamer"
+description = "The wild Digimon you meet on the field become other Digimon of the same stage that share at least two of their specialties, with their own techniques. Story Digimon and recruits stay as they are. Works with DW1 Expanded Roster, whose new Digimon can turn up too."
+game = "dw1"
+serials = ["SLUS-01032"]
+script = "main.lua"
+categories = ["GAMEPLAY"]
+tags = ["randomizer", "wild digimon", "enemies", "battle"]
+license = "MIT"
+engine = ">=1.6"
+github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
+homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-wild-randomizer"
+
+[[option]]
+id = "reroll"
+name = "New Digimon"
+description = "Every visit: each time you enter an area, its wild Digimon are picked again. Fixed: an area always has the same wild Digimon."
+type = "choice"
+default = "Every visit"
+choices = ["Every visit", "Fixed"]
+
+[[option]]
+id = "expanded_roster"
+name = "Include Expanded Roster Digimon"
+description = "With DW1 Expanded Roster installed, its new Digimon can be wild Digimon too."
+type = "bool"
+default = true
