@@ -51,7 +51,10 @@
 -- may take as much heap as the original (model + bone data) did, and more
 -- only when the largest free block still holds every model of the map not
 -- loaded yet, every NPC's bone data and a margin. Model sizes come from
--- FILE_OFFSET_TABLE (0x8011FE1C, {sector, size, name*}).
+-- FILE_OFFSET_TABLE (0x8011FE1C, {sector, size, name*}). A replacement of
+-- the game's own loads a light copy of its model (see "Light copies"), and
+-- once a map's loads are known (see "Learning") only the models its
+-- scripts loaded before are counted, plus the biggest of the others.
 --
 -- DW1 Expanded Roster: that mod moves the per-Digimon tables (and raises the
 -- type limit) and rewrites the game's code to use them, so the tables are
@@ -144,6 +147,7 @@ end
 
 local NEEDED_ANIMS = { 0, 1, 2, 4, 19, 33, 34, 35, 36, 37, 40, 41, 42, 43, 44 }
 local anims = {}   -- "AGUM.MMD" -> { [index] = true }
+local mmd_at = {}  -- "AGUM.MMD" -> its directory entry {lba, size}
 
 local function u32(s, o) return string.unpack("<I4", s, o + 1) end
 
@@ -181,6 +185,7 @@ local function read_animation_tables()
               if u32(s, o + 4 * i) ~= 0 then present[i] = true end
             end
             anims[file] = present
+            mmd_at[file] = f
           end
         end
       end
@@ -192,6 +197,100 @@ local ok, err = pcall(read_animation_tables)
 if not ok then
   anims = {}
   dwrc.log("DW1 Wild Randomizer: couldn't read the models' animations: " .. tostring(err))
+end
+
+-- Light copies -----------------------------------------------------------------------
+--
+-- The partner Digimon's models (Greymon's GREY.MMD: 93 KB) also hold their
+-- care, training and menu motions, which a wild Digimon never plays. While
+-- the mod loads, each model that can walk and fight gets a light copy
+-- (NAME.WLD, added past the disc's end): the same TMD, the animations
+-- above and every technique slot (0x2E..0x3D), the other motions left out,
+-- when that saves at least 4 KB. A map script's load of a model only wild
+-- Digimon of this map use (a replacement; no story Digimon of that type
+-- there) reads the copy: loadMMD's NPC branch (0x800A1F68) has built the
+-- path CHDAT\MMDn\NAME.MMD at sp+40 (type in s1) by the `jal
+-- lookupFileSize` at 0x800A2190, hooked there (DW1 Expanded Roster hooks
+-- 0x800A2188 for its own models), and lookupFileTable (0x800A31F8: `addiu
+-- sp,sp,-40` first, so hooked at its second instruction, 0x800A31FC, after
+-- Expanded Roster's at its first) answers NAME.WLD.
+
+local SAVES_AT_LEAST = 4096
+local light = {}   -- "GREY.MMD" -> { name = "GREY.WLD", lba, size }
+local light_names = {}  -- "GREY.WLD" -> that entry
+
+-- The motions no table entry plays any more left out: the rest in order,
+-- each 4-aligned, the table pointed at their new places (`starts`: every
+-- entry's original offset, for the motions' extents). From DW1 Expanded
+-- Roster's lib/convert.lua.
+local function prune_anims(anims_, count, starts)
+  local table_, seen, bounds, used = {}, {}, {}, {}
+  for a = 0, count - 1 do table_[a] = string.unpack("<I4", anims_, 4 * a + 1) end
+  for a = 0, count - 1 do
+    for _, o in ipairs({ starts[a] or 0, table_[a] }) do
+      if o ~= 0 and not seen[o] then seen[o] = true; bounds[#bounds + 1] = o end
+    end
+    if table_[a] ~= 0 then used[table_[a]] = true end
+  end
+  table.sort(bounds)
+  bounds[#bounds + 1] = #anims_
+  local parts, len, moved = { anims_:sub(1, 4 * count) }, 4 * count, {}
+  for i = 1, #bounds - 1 do
+    local a, b = bounds[i], bounds[i + 1]
+    if used[a] then
+      local pad = (4 - len % 4) % 4
+      parts[#parts + 1] = string.rep("\0", pad)
+      len = len + pad
+      moved[a] = len
+      parts[#parts + 1] = anims_:sub(a + 1, b)
+      len = len + (b - a)
+    end
+  end
+  local out = table.concat(parts)
+  local words = {}
+  for a = 0, count - 1 do words[#words + 1] = string.pack("<I4", table_[a] ~= 0 and moved[table_[a]] or 0) end
+  return table.concat(words) .. out:sub(4 * count + 1)
+end
+
+local function light_model(mmd)
+  local anim_at = u32(mmd, 4)
+  local anims_ = mmd:sub(anim_at + 1)
+  local count = u32(anims_, 0) // 4
+  local wanted, offs, words = {}, {}, {}
+  for _, a in ipairs(NEEDED_ANIMS) do wanted[a] = true end
+  for k = 0, 15 do wanted[0x2E + k] = true end
+  for a = 0, count - 1 do
+    offs[a] = u32(anims_, 4 * a)
+    words[#words + 1] = string.pack("<I4", wanted[a] and offs[a] or 0)
+  end
+  return mmd:sub(1, anim_at) .. prune_anims(table.concat(words) .. anims_:sub(4 * count + 1), count, offs)
+end
+
+local function build_light_copies()
+  local made, saved = 0, 0
+  for file, f in pairs(mmd_at) do
+    local ready = true
+    for _, i in ipairs(NEEDED_ANIMS) do ready = ready and anims[file][i] == true end
+    if ready then
+      local mmd = dwrc.disc.read(f.lba, (f.size + 2047) // 2048):sub(1, f.size)
+      local copy = light_model(mmd)
+      if #copy + SAVES_AT_LEAST <= f.size then
+        local entry = { name = file:sub(1, -5) .. ".WLD", size = #copy }
+        entry.lba = dwrc.disc.append(copy)
+        light[file], light_names[entry.name] = entry, entry
+        made, saved = made + 1, saved + f.size - #copy
+      end
+    end
+  end
+  dwrc.log(string.format("DW1 Wild Randomizer: %d light copies of the game's models, %d KiB smaller in all", made, saved // 1024))
+end
+
+if next(anims) then
+  local built, why = pcall(build_light_copies)
+  if not built then
+    light, light_names = {}, {}
+    dwrc.log("DW1 Wild Randomizer: no light copies: " .. tostring(why))
+  end
 end
 
 -- The game's tables -------------------------------------------------------------
@@ -265,6 +364,7 @@ local function read_types(ctx)
     types[t] = {
       t = t, name = raw:sub(o + 1, o + 20):match("^[^%z]*"), level = raw:byte(o + 30), spec = spec,
       techs = techs, ready = ready, bones = string.unpack("<i4", raw, o + 21), size = size,
+      light = t < VANILLA_TYPES and light[file .. ".MMD"] and light[file .. ".MMD"].size or nil,
     }
   end
   -- Groups: the game's partner copies (128..179) belong to their partner,
@@ -298,6 +398,9 @@ local function fits(orig, cand)
   return need > 0 and shared >= need
 end
 
+-- The model a wild Digimon of type c loads: its light copy, if it has one.
+local function wild_size(c) return c.light or c.size end
+
 -- The replacements for `orig`: one type per Digimon (group), the smallest
 -- model among the types that are that Digimon under its own name; the
 -- game's own before Expanded Roster's (its Gotsumon, Goburimon... are the
@@ -309,7 +412,7 @@ local function candidates(types, limit, orig)
     if c.group ~= orig.group and fits(orig, c) and c.name == types[c.group].name then
       local b = best[c.group]
       local own, b_own = c.t < VANILLA_TYPES, b and b.t < VANILLA_TYPES
-      if not b or (own and not b_own) or (own == b_own and c.size < b.size) then best[c.group] = c end
+      if not b or (own and not b_own) or (own == b_own and wild_size(c) < wild_size(b)) then best[c.group] = c end
     end
   end
   local list = {}
@@ -464,20 +567,33 @@ local function choose(ctx, t)
   local orig = types[t]
 
   -- what the map still needs besides this model: the other types' models
-  -- not loaded yet, and every Digimon's bone data
-  local others, seen, taken = 0, { [t] = true }, {}
+  -- not loaded yet, and every Digimon's bone data. Once a map's loads are
+  -- known (see "Learning"), only the models its scripts loaded before, and
+  -- room for the biggest of the others in case one comes this time.
+  local map = ctx:read8(slot_at(1) + LIST_LENGTH)
+  local learned = dwrc.data.loads and dwrc.data.loads[tostring(map)]
+  local others, unseen, seen, taken, story = 0, 0, { [t] = true }, {}, {}
   for i = 0, n - 1 do
-    local u = ctx:read16(slot_at(i))
-    if (mark(ctx, i) & CHOSEN) ~= 0 then taken[u] = true end
+    local u, mk = ctx:read16(slot_at(i)), mark(ctx, i)
+    if (mk & CHOSEN) ~= 0 then taken[u] = true end
+    if (mk & (WILD | CHOSEN)) == 0 then story[u] = true end
+  end
+  for i = 0, n - 1 do
+    local u, mk = ctx:read16(slot_at(i)), mark(ctx, i)
     if not seen[u] then
       seen[u] = true
-      if not loaded(ctx, u) then others = others + padded(types[u] and types[u].size or MAX_MODEL) + 8 end
+      if not loaded(ctx, u) then
+        local ty = types[u]
+        local size = padded(ty and ((mk & CHOSEN) ~= 0 and not story[u] and wild_size(ty) or ty.size) or MAX_MODEL) + 8
+        local scripts_load = (mk & (WILD | CHOSEN)) ~= 0 and (mk & 0x3FFF) or u  -- the type the map's scripts ask for
+        if not learned or learned[tostring(scripts_load)] then others = others + size
+        else unseen = math.max(unseen, size) end
+      end
     end
-    if mark(ctx, i) ~= (WILD | t) then others = others + bone_data(types[u] and types[u].bones or 32) end
+    if mk ~= (WILD | t) then others = others + bone_data(types[u] and types[u].bones or 32) end
   end
-  local room = largest_free(ctx) - others - MARGIN - #slots * 8
+  local room = largest_free(ctx) - others - unseen - MARGIN - #slots * 8
 
-  local map = ctx:read8(slot_at(1) + LIST_LENGTH)
   local nonce = EVERY_VISIT and (session + visit * 0x9E3779B9) or dwrc.data.seed
   local list = candidates(types, limit, orig)
   for _, c in ipairs(list) do c.order = mix(nonce * 0x100000 + map * 0x400 + t * 0x10000000 + c.t) end
@@ -485,7 +601,7 @@ local function choose(ctx, t)
   local own = padded(orig.size) + #slots * bone_data(orig.bones)
   local pick, fallback
   for _, c in ipairs(list) do
-    local takes = padded(c.size) + #slots * bone_data(c.bones)
+    local takes = padded(story[c.t] and c.size or wild_size(c)) + #slots * bone_data(c.bones)
     if takes <= own or takes + 8 <= room then
       if not taken[c.t] then pick = c break end
       fallback = fallback or c
@@ -514,8 +630,10 @@ local function choose(ctx, t)
     techs[#techs + 1] = table.concat(named, " ")
   end
   local moves_note = RANDOM_TECHNIQUES and (", techniques " .. table.concat(techs, " / ")) or ""
+  if learned then moves_note = ", loads known" .. moves_note end
   if pick then
-    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s -> %s (%d candidates, %d KiB free for it)%s", map, orig.name, pick.name, #list, room // 1024, moves_note))
+    local model = (pick.light and not story[pick.t]) and string.format(", light copy %d KiB", pick.light // 1024) or string.format(", %d KiB", pick.size // 1024)
+    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s -> %s (%d candidates, %d KiB free for it%s)%s", map, orig.name, pick.name, #list, room // 1024, model, moves_note))
   else
     dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s stays (%d candidates, none fit in %d KiB)%s", map, orig.name, #list, room // 1024, moves_note))
   end
@@ -531,14 +649,38 @@ local function replacement(ctx, t, slot)
   return nil
 end
 
+-- Learning: the types a map's scripts load on a visit (Gear Savanna lists
+-- six kinds and loads two) are kept in dwrc.data.loads[map] once the visit
+-- is over (the next map load), joined with the earlier visits'.
+local visiting   -- { map, types = { ["83"] = true } }
+
+local function end_visit()
+  if not visiting then return end
+  dwrc.data.loads = dwrc.data.loads or {}
+  local key, known, new = tostring(visiting.map), dwrc.data.loads[tostring(visiting.map)], false
+  if not known then known, new = {}, true end
+  for u in pairs(visiting.types) do
+    if not known[u] then known[u], new = true, true end
+  end
+  if new then
+    dwrc.data.loads[key] = known
+    dwrc.save()
+  end
+  visiting = nil
+end
+
 dwrc.on_exec(POST_LOAD, function(ctx)
+  if ctx:read32(POST_LOAD - 8) ~= JAL_LOAD_MAP_DIGIMON then return false end
+  end_visit()
   mark_wild(ctx)
+  if listed(ctx) > 0 then visiting = { map = ctx:read8(slot_at(1) + LIST_LENGTH), types = {} } end
   return false
 end)
 
 dwrc.on_exec(SCRIPT_LOAD_MODEL, function(ctx)
   if ctx:read32(SCRIPT_LOAD_MODEL) ~= FIRST_WORDS[SCRIPT_LOAD_MODEL] then return false end
   local t = ctx:reg("a0") & 0xFF
+  if visiting and listed(ctx) > 0 and ctx:read8(slot_at(1) + LIST_LENGTH) == visiting.map then visiting.types[tostring(t)] = true end
   local r = replacement(ctx, t) or choose(ctx, t)
   if r then ctx:set_reg("a0", r) end
   return false
@@ -559,6 +701,64 @@ dwrc.on_exec(SCRIPT_SET_DIGIMON, function(ctx)
   if r then ctx:set_reg("a0", r) end
   return false
 end)
+
+-- The light copies (see "Light copies") ------------------------------------------------
+
+local PATH_BUILT = 0x800A2190   -- loadMMD's NPC branch: jal lookupFileSize, the path complete
+local PATH_WORDS = { [0x800A218C] = 0xA3A20031, [0x800A2190] = 0x0C028CB3, [0x800A2194] = 0x27A40028 }
+local FROM_SCRIPT = 0x80106A04  -- loadMMD's saved ra (sp+36) for a map script's load
+local LOOKUP_FILE_TABLE = 0x800A31F8   -- lookupFileTable(FileLookup *lookup, char *path)
+local LOOKUP_WORDS = { [0x800A31F8] = 0x27BDFFD8, [0x800A31FC] = 0xAFBF0020 }  -- addiu sp,sp,-40; sw ra,32(sp)
+
+-- Only wild Digimon of this map have type u, one of them a replacement.
+local function only_wild(ctx, u)
+  local chosen = false
+  for i = 0, listed(ctx) - 1 do
+    if ctx:read16(slot_at(i)) == u then
+      local mk = mark(ctx, i)
+      if (mk & CHOSEN) ~= 0 then chosen = true elseif (mk & WILD) == 0 then return false end
+    end
+  end
+  return chosen
+end
+
+local function words_match(list)
+  return function(ctx)
+    for a, w in pairs(list) do if ctx:read32(a) ~= w then return false end end
+    return true
+  end
+end
+local path_code, lookup_code = words_match(PATH_WORDS), words_match(LOOKUP_WORDS)
+
+local function bcd(v) return (v // 10) * 16 + v % 10 end
+
+if next(light) then
+  dwrc.on_exec(PATH_BUILT, function(ctx)
+    if not path_code(ctx) then return false end
+    local sp = ctx:reg("sp")
+    if ctx:read32(sp + 36) ~= FROM_SCRIPT then return false end
+    local path = cstring(ctx, sp + 40, 32)
+    local file = (path:match("([^\\]+)$") or path):upper()
+    local copy = light[file]
+    if copy and only_wild(ctx, ctx:reg("s1")) then ctx:write_bytes(sp + 40 + #path - 4, ".WLD") end
+    return false
+  end)
+  dwrc.on_exec(LOOKUP_FILE_TABLE + 4, function(ctx)
+    if not lookup_code(ctx) then return false end
+    local path = cstring(ctx, ctx:reg("a1"), 64)
+    local copy = light_names[(path:match("([^\\]+)$") or path):upper()]
+    if not copy then return false end
+    -- FileLookup: CdlLOC {minute, second, sector (BCD), track}, then the size
+    local lookup, i = ctx:reg("a0"), copy.lba + 150  -- CdIntToPos counts the 2-second pregap
+    ctx:write8(lookup, bcd(i // 75 // 60))
+    ctx:write8(lookup + 1, bcd(i // 75 % 60))
+    ctx:write8(lookup + 2, bcd(i % 75))
+    ctx:write32(lookup + 4, copy.size)
+    ctx:set_reg("sp", ctx:reg("sp") + 40)  -- undo the first instruction
+    ctx:ret(1)
+    return true
+  end)
+end
 
 dwrc.log(string.format("DW1 Wild Randomizer: %s%s", EVERY_VISIT and "new Digimon every visit" or "the same Digimon every visit",
   WITH_ROSTER and ", Expanded Roster's Digimon included when it is installed" or ""))
