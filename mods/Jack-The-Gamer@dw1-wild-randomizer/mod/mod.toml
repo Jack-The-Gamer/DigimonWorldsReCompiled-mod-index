@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-wild-randomizer"
 name = "DW1 Wild Digimon Randomizer"
-version = "0.3.0"
+version = "0.4.0"
 author = "Jack-The-Gamer"
 description = "The wild Digimon you meet on the field become other Digimon of the same stage that share at least two of their specialties, fighting with techniques drawn at random from their own. Story Digimon and recruits stay as they are. Works with DW1 Expanded Roster, whose new Digimon can turn up too."
 game = "dw1"
