@@ -119,41 +119,42 @@ local textures = {}
 local DIGIMON_DATA = 0x8012CEB4      -- the game's own copy (USA: boneCount at +20)
 local DIGIMON_SKELETONS = 0x8011CE60 -- pointers to {s8 object, s8 parent}[boneCount]
 local built = {}                     -- the backports that were built (type -> entry)
-local npc_models = {}                -- their NAME.NPC: type -> {size, slots (bit k = technique slot k kept)}
-local MOVE_DATA = 0x8012623C         -- the game's own copy: 16 bytes a technique, specialty at +9
+local npc_models = {}                -- their map copies: type -> list of {file, size, slots (bit k = technique slot k kept)}
+local NPC_COPIES = 4                 -- map copies per Digimon, each with other techniques
 
--- The technique slots a wild copy keeps: its finisher, and up to three
--- others, the first of each of its specialties before the rest (as the
--- table the setup below writes: moves[k] at DigimonPara +35).
+-- The technique slots of each map copy: its finisher, and three others
+-- (moves[k] as the table the setup below writes: DigimonPara +35). The
+-- others are shuffled every session and dealt three to a copy, round the
+-- list as often as needed, so every technique is in some copy and each
+-- visit to an area can bring others (lib/files.lua picks one per map).
 local function npc_techniques(b)
   local moves = {}
   local data = DIGIMON_DATA + (b.techniques and b.techniques.from or b.donor) * 0x34
   for k = 0, 15 do
     moves[k] = b.techniques and b.techniques.moves and (b.techniques.moves[k + 1] or 0xFF) or exe:byte(exe_off(data + 35 + k) + 1)
   end
-  local specs = b.specialties
-  if not specs then
-    specs = {}
-    for i = 0, 2 do specs[#specs + 1] = exe:byte(exe_off(DIGIMON_DATA + b.donor * 0x34 + 30 + i) + 1) end
-  end
-  local slots, regular = {}, {}
+  local finisher, regular = {}, {}
   for k = 0, 15 do
     local m = moves[k]
     if m ~= 0xFF and m ~= 0 then
-      if (m >= 0x3A and m < 0x71) or (b.finisher and m == b.finisher.from) then slots[k] = true
-      elseif m < 0x71 then regular[#regular + 1] = { k = k, kind = exe:byte(exe_off(MOVE_DATA + 16 * m + 9) + 1) } end
+      if (m >= 0x3A and m < 0x71) or (b.finisher and m == b.finisher.from) then finisher[k] = true
+      elseif m < 0x71 then regular[#regular + 1] = k end
     end
   end
-  local kept = 0
-  for _, s in ipairs(specs) do
-    for _, r in ipairs(regular) do
-      if kept < 3 and r.kind == s and not slots[r.k] then slots[r.k], kept = true, kept + 1 break end
-    end
+  for i = #regular, 2, -1 do
+    local j = math.random(i)
+    regular[i], regular[j] = regular[j], regular[i]
   end
-  for _, r in ipairs(regular) do
-    if kept < 3 and not slots[r.k] then slots[r.k], kept = true, kept + 1 end
+  local per = math.min(3, #regular)
+  local copies = #regular <= 3 and 1 or NPC_COPIES  -- four of four or more are all different
+  local out = {}
+  for c = 0, copies - 1 do
+    local slots = {}
+    for k in pairs(finisher) do slots[k] = true end
+    for i = 0, per - 1 do slots[regular[(c * per + i) % #regular + 1]] = true end
+    out[#out + 1] = slots
   end
-  return slots
+  return out
 end
 local icons = {}                     -- their chart icons (type -> {pixels, clut})
 
@@ -316,18 +317,23 @@ do
           error(string.format("its %d vertices and %d polygons don't fit the evolution scene's shard buffer", info.verts, info.prims))
         end
         files.add(b.file .. ".MMD", mmd)
-        -- the smaller copy a map loads (a wild Digimon: lib/files.lua)
-        local slots, mask = npc_techniques(b), 0
-        for k in pairs(slots) do mask = mask | (1 << k) end
-        local npc = convert.npc_model(mmd, slots)
-        files.add_npc(b.file .. ".MMD", npc)
-        npc_models[b.type] = { size = #npc, slots = mask }
+        -- the smaller copies a map loads (a wild Digimon: lib/files.lua)
+        local copies = {}
+        for c, slots in ipairs(npc_techniques(b)) do
+          local mask = 0
+          for k in pairs(slots) do mask = mask | (1 << k) end
+          local data = convert.npc_model(mmd, slots)
+          copies[c] = { file = files.add_npc(b.file, c - 1, data), size = #data, slots = mask }
+        end
+        npc_models[b.type] = copies
+        local on_map = {}
+        for c, copy in ipairs(copies) do on_map[c] = tostring(copy.size) end
         textures[b.type] = tim
         built[b.type] = b
         local pixels, clut = icon.render(info.faces, info.texture, { head = b.icon_head or { 3, 4 }, head_scale = b.icon_head_scale, pivots = info.pivots, split = b.icon_split, split_factor = b.icon_split_factor, no_white = b.icon_no_white, head_from_second = b.icon_head_from_second, width = info.texture_w })
         icons[b.type] = { pixels = pixels, clut = clut }
-        dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes (%d on a map)%s (%.2f s; checksums %08X %08X)",
-          b.name, src.info.title, info.verts, info.prims, #mmd, #npc, info.packed and string.format(", texture packed at %d%%", info.packed.scale * 5) or "",
+        dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes (%s on a map)%s (%.2f s; checksums %08X %08X)",
+          b.name, src.info.title, info.verts, info.prims, #mmd, table.concat(on_map, "/"), info.packed and string.format(", texture packed at %d%%", info.packed.scale * 5) or "",
           os.clock() - t1, fnv(mmd), fnv(tim)))
         -- its flattened picture (lib/flat.lua; after the checksum, which
         -- research/tools/dw1convert.py's texture matches): a Digimon World
@@ -406,19 +412,27 @@ dwrc.log(string.format("roster core ready: %d references moved, %d bytes at %08X
 
 -- A new type's 4-letter file name, in the moved tables' string room (16
 -- bytes each). For other mods (DW1 Wild Digimon Randomizer weighs the
--- models it can load and gives each its kept techniques), its NAME.NPC
--- follows: the technique slots it keeps (u16 at +6, bit k), "NPC" (+8) and
--- its size (+12).
+-- models it can load and gives each its kept techniques), the map copy the
+-- current map loads follows: the technique slots it keeps (u16 at +6, bit
+-- k), "NPC" (+8) and its size (+12). Each map load (loadMapDigimon,
+-- before the map's scripts load any model) deals each Digimon one of its
+-- copies at random; lib/files.lua loads the copy whose slots are written
+-- there, so a save state keeps the choice.
 local NPC_TAG = 0x0043504E -- "NPC\0"
+local LOAD_MAP_DIGIMON = 0x800B5D0C          -- loadMapDigimon(data, mapId), from loadMapEntities
+local LOAD_MAP_DIGIMON_WORDS = { 0x84890000, 0x24820002 } -- lh t1,0(a0); addiu v0,a0,2
+local function name_at(t) return tables.STRINGS + 16 * (t - 180) end
+local function describe_copy(ctx, t, copy)
+  local at = name_at(t)
+  ctx:write16(at + 6, copy.slots)
+  ctx:write32(at + 8, NPC_TAG)
+  ctx:write32(at + 12, copy.size)
+end
 local function set_file_name(ctx, t, name)
-  local at = tables.STRINGS + 16 * (t - 180)
+  local at = name_at(t)
   ctx:write_bytes(at, name .. "\0")
-  local npc = npc_models[t]
-  if npc then
-    ctx:write16(at + 6, npc.slots)
-    ctx:write32(at + 8, NPC_TAG)
-    ctx:write32(at + 12, npc.size)
-  end
+  local copies = npc_models[t]
+  if copies then describe_copy(ctx, t, copies[math.random(#copies)]) end
   ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", t), at)
 end
 
@@ -767,6 +781,30 @@ end
 tables.install(dwrc.options.check_relocation, setup)
 limits.install()
 files.install()
+-- The map copies (see set_file_name): one dealt to each Digimon per map
+-- load, and loaded by the slots written beside its name.
+do
+  local by_file = {}
+  for t, b in pairs(built) do if npc_models[t] then by_file[b.file:upper()] = t end end
+  files.pick_npc = function(ctx, stem)
+    local t = by_file[stem]
+    if not t then return nil end
+    local slots = ctx:read16(name_at(t) + 6)
+    for _, copy in ipairs(npc_models[t]) do
+      if copy.slots == slots then return copy.file end
+    end
+    return npc_models[t][1].file
+  end
+  dwrc.on_exec(LOAD_MAP_DIGIMON, function(ctx)
+    for i, w in ipairs(LOAD_MAP_DIGIMON_WORDS) do
+      if ctx:read32(LOAD_MAP_DIGIMON + 4 * (i - 1)) ~= w then return false end
+    end
+    for t, copies in pairs(npc_models) do
+      if #copies > 1 and ctx:read32(name_at(t) + 8) == NPC_TAG then describe_copy(ctx, t, copies[math.random(#copies)]) end
+    end
+    return false
+  end)
+end
 do
   local new_types = {}
   for t, b in pairs(built) do

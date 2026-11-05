@@ -12,13 +12,14 @@
 -- forever when it isn't there; for the mod's files it is sent to
 -- addFileReadRequestLookup, which takes the same arguments.
 --
--- A model can also have a smaller version for the field's NPCs (`add_npc`,
--- NAME.NPC: lib/convert.lua's npc_model). loadMMD's NPC branch builds the
+-- A model can also have smaller versions for the field's NPCs (`add_npc`,
+-- NAME.NP0..: lib/convert.lua's npc_model). loadMMD's NPC branch builds the
 -- path CHDAT\MMDn\NAME.MMD at sp+40, then calls lookupFileSize(path) and
 -- readFile(path) (0x800A2190, 0x800A21C8). When the load comes from a map
 -- script (scriptLoadModel -> loadNPCModel -> thunkLoadMMD -> loadMMD, all
 -- tail calls, so loadMMD's saved ra at sp+36 is scriptLoadModel's
--- 0x80106A04), the path's extension becomes .NPC. Vs mode loads its
+-- 0x80106A04), the path's extension becomes the one `pick_npc` names
+-- (main.lua: the copy dealt for this map). Vs mode loads its
 -- opponent through the same branch from its own code and keeps the whole
 -- model.
 
@@ -46,10 +47,16 @@ function M.add(name, data)
   return lba
 end
 
--- The field NPC version of the model `name` (NAME.MMD -> NAME.NPC).
-function M.add_npc(name, data)
-  return M.add((name:gsub("%.[^.]*$", "")) .. ".NPC", data)
+-- Field NPC version `c` (0..9) of the model NAME.MMD, as NAME.NPc; returns
+-- its file name.
+function M.add_npc(stem, c, data)
+  local name = stem:upper() .. ".NP" .. c
+  M.add(name, data)
+  return name
 end
+
+-- Set by the mod: the NPC copy to load for a model NAME (or nil: the whole one).
+M.pick_npc = function(ctx, stem) return nil end
 
 local function bcd(v) return (v // 10) * 16 + v % 10 end
 
@@ -63,8 +70,9 @@ function M.install()
     local path = ctx:read_bytes(sp + 40, 32)
     path = path:sub(1, (path:find("\0", 1, true) or 33) - 1)
     local name = (path:match("([^\\]+)$") or path):upper()
-    if name:sub(-4) == ".MMD" and files[name:sub(1, -5) .. ".NPC"] then
-      ctx:write_bytes(sp + 40 + #path - 4, ".NPC")
+    if name:sub(-4) == ".MMD" then
+      local npc = M.pick_npc(ctx, name:sub(1, -5))
+      if npc and files[npc] then ctx:write_bytes(sp + 40 + #path - 4, npc:sub(-4)) end
     end
     return false
   end)
