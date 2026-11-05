@@ -408,7 +408,12 @@ if next(textures) then
   files.add("ALLTIM.TIM", alltim .. table.concat(extra))
 end
 
-dwrc.log(string.format("roster core ready: %d references moved, %d bytes at %08X..%08X (%.2f s)", total, tables.BYTES, tables.HEAP_START, tables.END, os.clock() - t0))
+do
+  local outside = 0
+  for _, p in ipairs(tables.placed) do if p[1] < tables.HEAP_START or p[1] >= tables.HEAP_END then outside = outside + p[2] end end
+  dwrc.log(string.format("roster core ready: %d references moved; %d bytes outside the heap (the stack's reserve, the old tables), %d at the bottom of the heap (%.2f s)",
+    total, outside, tables.BYTES, os.clock() - t0))
+end
 
 -- A new type's 4-letter file name, in the moved tables' string room (16
 -- bytes each). For other mods (DW1 Wild Digimon Randomizer weighs the
@@ -622,18 +627,22 @@ do
     #tree_sources, #skipped, table.concat(skipped, ", "), #interim > 0 and table.concat(interim, ", ") or "none"))
 end
 
--- The chart icons: in the mod's RAM (tables.ICONS), uploaded to the chart's
--- text area in VRAM (x 704, y 256: page 0x1B; the chart clears rows 12..211
--- when it opens and writes text only above row 72, besides "Mega", which
--- lib/chart.lua draws at its left in rows 72..83): icons in 32 x 16 slots
--- (both frames), rows 72..199 (8 slots a row: 256 texels): the first row
--- from slot 2 on, clear of "Mega"; the last row's slots 6-7 (x 752..767)
--- hold CLUTs 48..63, one a row; CLUTs 0..47 in rows 200..211, 4 a row; four
--- more slots below (rows 212..227). 64 icons in all (they started at row
--- 100 and held 48 until the 59th new Digimon, 60 until the 60th). Placed
--- now (chart.icons and chart.uploads are needed in every session); the
--- bytes are written at boot (setup_icons).
-local ICON_TPAGE = 0x1B
+-- The chart icons: kept here (not in the game's RAM) and uploaded when the
+-- chart opens (lib/chart.lua stages them through tables.EVL_SCRATCH), as 32 x
+-- 16 slots (both frames) and a CLUT each:
+--  1. the chart's text area (x 704, y 256: page 0x1B; the chart clears rows
+--     12..211 when it opens and writes text only above row 72, besides
+--     "Mega", which lib/chart.lua draws at its left in rows 72..83): rows
+--     72..199 (8 slots a row: 256 texels), the first row from slot 2 on,
+--     clear of "Mega"; four more in rows 212..227 (below the cleared area,
+--     empty while the chart is open: the rename screen draws its text there
+--     and redraws it), clear of the text at x 0..79 of rows 228..249; CLUTs
+--     0..47 in rows 200..211 (4 a row), 48..63 in the last row's slots 6-7
+--     (x 752..767, one a row): 64 icons;
+--  2. then page 0x1A's lower half (x 640..703, y 256..511), empty in every
+--     scene looked at but the rename screen, which fills all of it and
+--     redraws it: rows 0..239 of the page for icons, 240..255 for CLUTs (4
+--     a row): 64 more, 128 in all.
 local icon_slots = {}
 for s = 2, 7 do icon_slots[#icon_slots + 1] = { s * 32, 72 } end
 for band = 1, 7 do
@@ -641,33 +650,31 @@ for band = 1, 7 do
     if not (band == 7 and s >= 6) then icon_slots[#icon_slots + 1] = { s * 32, 72 + band * 16 } end
   end
 end
--- and four below the area the chart clears (rows 212..227, empty while it's
--- open; the rename screen draws its text there and redraws it), clear of the
--- text at x 0..79 of rows 228..249: 64 in all, as many as the CLUT rows hold
 for s = 3, 6 do icon_slots[#icon_slots + 1] = { s * 32, 212 } end
-local icon_writes = {}                 -- {address, bytes}
+local PAGE_1B, PAGE_1A = 0x1B, 0x1A
+local IN_1B = 64                       -- icons in page 0x1B before 0x1A's
 do
   local types = {}
   for t in pairs(icons) do types[#types + 1] = t end
   table.sort(types)
   for i, t in ipairs(types) do
     local n = i - 1
-    if n >= #icon_slots then dwrc.log("no room for more chart icons"); break end
-    local at = tables.ICONS + n * tables.ICON_BYTES
-    local u, v = icon_slots[i][1], icon_slots[i][2]
-    local cx, cy = 704 + (n % 4) * 16, 256 + 200 + n // 4
-    if n >= 48 then cx, cy = 752, 256 + 184 + (n - 48) end
-    icon_writes[#icon_writes + 1] = { at, icons[t].pixels }
-    icon_writes[#icon_writes + 1] = { at + 256, icons[t].clut }
-    icon_writes[#icon_writes + 1] = { at + 288, string.pack("<i2i2i2i2", 704 + u // 4, 256 + v, 8, 16) }
-    icon_writes[#icon_writes + 1] = { at + 296, string.pack("<i2i2i2i2", cx, cy, 16, 1) }
-    chart.icons[t] = { u = u, v = v, clut = (cy << 6) | (cx >> 4), tpage = ICON_TPAGE }
-    chart.uploads[#chart.uploads + 1] = { at + 288, at }
-    chart.uploads[#chart.uploads + 1] = { at + 296, at + 256 }
+    local tpage, x0, u, v, cx, cy
+    if n < IN_1B then
+      tpage, x0, u, v = PAGE_1B, 704, icon_slots[i][1], icon_slots[i][2]
+      cx, cy = 704 + (n % 4) * 16, 256 + 200 + n // 4
+      if n >= 48 then cx, cy = 752, 256 + 184 + (n - 48) end
+    elseif n < IN_1B + 64 then
+      local k = n - IN_1B
+      tpage, x0, u, v = PAGE_1A, 640, (k % 8) * 32, (k // 8) * 16
+      cx, cy = 640 + (k % 4) * 16, 256 + 240 + k // 4
+    else
+      dwrc.log("no room for more chart icons"); break
+    end
+    chart.icons[t] = { u = u, v = v, clut = (cy << 6) | (cx >> 4), tpage = tpage }
+    chart.uploads[#chart.uploads + 1] = { rect = string.pack("<i2i2i2i2", x0 + u // 4, 256 + v, 8, 16), data = icons[t].pixels }
+    chart.uploads[#chart.uploads + 1] = { rect = string.pack("<i2i2i2i2", cx, cy, 16, 1), data = icons[t].clut }
   end
-end
-local function setup_icons(ctx)
-  for _, w in ipairs(icon_writes) do ctx:write_bytes(w[1], w[2]) end
 end
 
 -- A Digimon's stat gains (EvoStatsGains {hp, mp, off, def, speed, brains})
@@ -685,7 +692,6 @@ local function write_evolution(ctx, t, b)
 end
 
 local function setup(ctx)
-  setup_icons(ctx)
   -- In type order: a backport may evolve from another one (Growlmon from
   -- Guilmon), and each one's entries start as a copy of its donor's.
   local types = {}

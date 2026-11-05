@@ -1,19 +1,30 @@
 -- The game's per-Digimon tables (Digimon World, USA: SLUS-01032; addresses
--- and names from the dw_decomp decompilation), moved to the bottom of the
--- heap with room for CAPACITY types.
+-- and names from the dw_decomp decompilation), moved with room for CAPACITY
+-- types, and the mod's other data in the game's RAM.
 --
 -- The game sizes them for its own 180 types (66 for the ones that can be a
--- partner). The heap (0x801BFB70..0x801EFF00) is filled from the top, and
--- its bottom 136 KiB were never touched through loading a save, a field and
--- a battle, so the mod raises the heap's start past the moved tables when
--- the game sets the heap up (InitHeap3, the first thing main() does, before
--- anything reads these tables) and copies them there.
+-- partner). They move when the game sets its heap up (InitHeap3, the first
+-- thing main() does, before anything reads these tables), and no longer to
+-- the bottom of the heap: wild Digimon's models share the heap (DW1 Wild
+-- Digimon Randomizer fits fewer when it's smaller). Instead:
+--  1. the stack's reserve: initializeHeap ends the heap 64 KiB below the
+--     stack top (0x801FFFF0, the linker's _stack_size), and the stack never
+--     went deeper than ~4.3 KiB (a probe marking the reserve at InitHeap3:
+--     boot, loading a save, fields, menus, the chart, evolutions, battles
+--     with finishers); its top STACK_KEEP bytes stay the stack's;
+--  2. the old tables themselves, unread once the code is patched, except
+--     ORIGINAL_DIGIMON_TYPES (DW1 Wild Digimon Randomizer reads it there);
+--  3. only what doesn't fit: the bottom of the heap, whose start is raised
+--     past it.
 
 local M = {}
 
 M.CAPACITY = 250            -- Digimon types after the move (the game has 180)
 M.INIT_HEAP3 = 0x80090F24   -- InitHeap3(start, size), called by initializeHeap()
 M.HEAP_START = 0x801BFB70   -- what initializeHeap() passes (from _end)
+M.HEAP_END = 0x801EFF00     -- where it ends: 64 KiB below the stack top
+M.STACK_TOP = 0x801FFFF0
+M.STACK_KEEP = 0x4000       -- the stack's own (16 KiB, ~4x the deepest seen)
 
 -- name, address, entries, entry size, entries after the move, fill byte for new entries
 local DEFS = {
@@ -53,46 +64,66 @@ M.MOVES = M.FINISHER_END + 9  -- 0xF9 techniques
 -- The moved tables: name -> { old, size (old bytes), new, new_size, fill }.
 M.list = {}
 M.by_name = {}
-local at = M.HEAP_START
 for _, d in ipairs(DEFS) do
-  local t = { name = d[1], old = d[2], size = d[3] * d[4], entry = d[4], count = d[5], new = at, new_size = d[5] * d[4], fill = d[6] or 0, techniques = d[7] }
+  local t = { name = d[1], old = d[2], size = d[3] * d[4], entry = d[4], count = d[5], new_size = d[5] * d[4], fill = d[6] or 0, techniques = d[7] }
   M.list[#M.list + 1] = t
   M.by_name[t.name] = t
-  at = (at + t.new_size + 7) & ~7
 end
--- Room for the new Digimon's strings (4-letter file names: the game keeps
--- pointers to them in PTR_DIGIMON_FILE_NAMES).
-M.STRINGS = at
+-- The mod's other data:
+-- the new Digimon's strings (4-letter file names: the game keeps pointers to
+-- them in PTR_DIGIMON_FILE_NAMES);
 M.STRINGS_SIZE = 16 * (M.CAPACITY - 180)
-at = at + M.STRINGS_SIZE
--- Names of the new finishers (MOVE_NAMES points here), 24 bytes each.
+-- names of the new finishers (MOVE_NAMES points here), 24 bytes each;
 M.MOVE_STRING_BYTES = 24
-M.MOVE_STRINGS = at
 M.NEW_FINISHERS = M.FINISHER_END - M.FIRST_NEW_FINISHER
-at = at + M.MOVE_STRING_BYTES * M.NEW_FINISHERS
--- Room for the new Digimon's chart icons (lib/icon.lua), uploaded from here
--- to VRAM when the chart opens: per type 256 bytes of pixels (two 16x16
--- 4-bit frames), a 32-byte CLUT, and the two RECTs for LoadImage.
-M.ICONS = (at + 7) & ~7
-M.ICON_BYTES = 256 + 32 + 8 + 8
-at = M.ICONS + M.ICON_BYTES * (M.CAPACITY - 180)
--- A few bytes for text the mod draws (lib/chart.lua: "Mega").
-M.TEXT = at
-at = at + 16
--- The evolution scene's shard buffer (lib/limits.lua: EVL_setScratchTop):
--- 6 bytes per vertex and per polygon of the Digimon evolving away. The
--- game's (EVL_D_80066274, 0x153C bytes) holds 906; the backports need up to
--- ~1400.
-M.EVL_SCRATCH = (at + 3) & ~3
+-- a few bytes for text the mod draws (lib/chart.lua: "Mega");
+-- the evolution scene's shard buffer (lib/limits.lua: EVL_setScratchTop):
+-- 6 bytes per vertex and per polygon of the Digimon evolving away (the
+-- game's, EVL_D_80066274, 0x153C bytes, holds 906; the backports need up to
+-- ~1400). The chart also stages its icons here (no evolution while it's
+-- open; lib/chart.lua);
 M.EVL_SCRATCH_SIZE = 0x3000
-at = M.EVL_SCRATCH + M.EVL_SCRATCH_SIZE
--- Translated effect start points (lib/limits.lua: borrow), 12 bytes each:
+-- translated effect start points (lib/limits.lua: borrow), 12 bytes each:
 -- {type, bone, x, y, z} and -1.
-M.BORROW = at
 M.BORROW_SLOTS = 32
-at = at + 12 * M.BORROW_SLOTS
-M.END = (at + 15) & ~15 -- the heap starts here after the move
-M.BYTES = M.END - M.HEAP_START
+local extra = {
+  { "STRINGS", M.STRINGS_SIZE }, { "MOVE_STRINGS", M.MOVE_STRING_BYTES * M.NEW_FINISHERS },
+  { "TEXT", 16 }, { "EVL_SCRATCH", M.EVL_SCRATCH_SIZE }, { "BORROW", 12 * M.BORROW_SLOTS },
+}
+
+-- Placing them, biggest first, each in the first free place it fits (8-byte
+-- aligned): the stack's reserve, then the old tables (adjacent ones joined),
+-- then the bottom of the heap.
+local free = { { M.HEAP_END, M.STACK_TOP - M.STACK_KEEP } }
+do
+  local olds = {}
+  for _, t in ipairs(M.list) do
+    if t.name ~= "ORIGINAL_DIGIMON_TYPES" then olds[#olds + 1] = { t.old, t.old + t.size } end
+  end
+  table.sort(olds, function(a, b) return a[1] < b[1] end)
+  for _, r in ipairs(olds) do
+    local last = free[#free]
+    if #free > 1 and last[2] == r[1] then last[2] = r[2] else free[#free + 1] = { r[1], r[2] } end
+  end
+end
+local items = {}
+for _, t in ipairs(M.list) do items[#items + 1] = { t = t, size = t.new_size } end
+for _, e in ipairs(extra) do items[#items + 1] = { name = e[1], size = e[2] } end
+table.sort(items, function(a, b) return a.size > b.size end)
+local heap_at = M.HEAP_START
+M.placed = {}                 -- {address, size, name}, for the log
+for _, it in ipairs(items) do
+  local addr
+  for _, r in ipairs(free) do
+    local a = (r[1] + 7) & ~7
+    if a + it.size <= r[2] then addr = a; r[1] = a + it.size; break end
+  end
+  if not addr then addr = (heap_at + 7) & ~7; heap_at = addr + it.size end
+  if it.t then it.t.new = addr else M[it.name] = addr end
+  M.placed[#M.placed + 1] = { addr, it.size, it.t and it.t.name or it.name }
+end
+M.END = (heap_at + 15) & ~15  -- the heap starts here (HEAP_START when nothing went there)
+M.BYTES = M.END - M.HEAP_START -- heap bytes taken
 
 -- The address of entry `i` of table `name` (after the move). EVOLUTION_PATHS
 -- is indexed by type - 1, like the game does.
@@ -124,20 +155,35 @@ function M.move(addr)
 end
 
 -- At InitHeap3: copy every table to its new place (new entries filled), then
--- start the heap after them. `wipe` also blanks the old copies, so a
--- reference the patching missed shows at once instead of reading stale data.
--- `setup(ctx)` then fills in the new Digimon's entries.
+-- start the heap after whatever went there. Every old table is read before
+-- anything is written (new places can be old ones). `wipe` also blanks the
+-- old copies first, so a reference the patching missed shows at once
+-- instead of reading stale data. `setup(ctx)` then fills in the new
+-- Digimon's entries. Should InitHeap3 run again with the old places already
+-- reused (the exe not reloaded), the tables are left as they are.
+local originals = nil
 function M.install(wipe, setup)
   dwrc.on_exec(M.INIT_HEAP3, function(ctx)
     local start, size = ctx:reg("a0"), ctx:reg("a1")
-    if start > M.HEAP_START or start + size < M.END + 0x10000 then
+    if start > M.HEAP_START or start + size < M.END + 0x10000 or start + size ~= M.HEAP_END then
       dwrc.log(string.format("the heap is at %08X (+%X), not where the mod expects it: the moved tables are not set up", start, size))
       return false
     end
-    for _, t in ipairs(M.list) do
-      local data = ctx:read_bytes(t.old, t.size)
-      ctx:write_bytes(t.new, data .. string.rep(string.char(t.fill), t.new_size - t.size))
-      if wipe then ctx:write_bytes(t.old, string.rep("\0", t.size)) end
+    local olds = {}
+    for i, t in ipairs(M.list) do olds[i] = ctx:read_bytes(t.old, t.size) end
+    local all = table.concat(olds)
+    if originals and all ~= originals then
+      dwrc.log("InitHeap3 again with the tables in place: left as they are")
+      ctx:set_reg("a0", M.END)
+      ctx:set_reg("a1", size - (M.END - start))
+      return false
+    end
+    originals = all
+    if wipe then
+      for _, t in ipairs(M.list) do ctx:write_bytes(t.old, string.rep("\0", t.size)) end
+    end
+    for i, t in ipairs(M.list) do
+      ctx:write_bytes(t.new, olds[i] .. string.rep(string.char(t.fill), t.new_size - t.size))
     end
     ctx:write_bytes(M.STRINGS, string.rep("\0", M.STRINGS_SIZE))
     ctx:write_bytes(M.MOVE_STRINGS, string.rep("\0", M.MOVE_STRING_BYTES * M.NEW_FINISHERS))

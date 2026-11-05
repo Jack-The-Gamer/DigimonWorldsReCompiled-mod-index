@@ -44,6 +44,7 @@ local CREATE_ANIMATED_UI_BOX = 0x800C3014 -- (id, ?, ?, &final, &start, NULL, re
 local REMOVE_ANIMATED_UI_BOX = 0x800C31FC -- (id, &final)
 local RENDER_CHART_DETAIL = 0x800BA930
 local LOAD_IMAGE = 0x800948A8       -- LoadImage(RECT *, u_long *): queued VRAM upload
+local DRAW_SYNC = 0x800947B0        -- DrawSync(0): waits for the queued transfers
 local DRAW_LINE_3P = 0x800E3D14     -- (color, x1, y1, x2, y2, x3, y3, depth, 0)
 local DRAW_LINE_2P = 0x800E3E7C     -- (color, x1, y1, x2, y2, depth, 0)
 local DRAW_CHART_STRINGS = 0x800C0718 -- drawEvoChartStrings(int8_t type)
@@ -132,8 +133,8 @@ end
 local layout = nil     -- built when the page first shows
 -- Icons for Digimon the game has no box for: type -> {u, v, clut, tpage}
 -- (clut and tpage as GPU ids), and what to upload to VRAM when the chart
--- opens: {RECT address, data address} pairs (the page clears its text area,
--- where they live, when it sets up).
+-- opens: {rect = RECT (8 bytes), data = bytes} (the page clears its text
+-- area, where most of them live, when it sets up).
 M.icons = {}
 M.uploads = {}
 local dirty = true
@@ -290,7 +291,17 @@ local function draw(call, ctx, l)
   for i = 0, 4 do colors[i] = ctx:read16(EVO_CHART_VIEW_COLORS + 2 * i) end
   local sel = selected(l)
   if dirty then
-    for _, up in ipairs(M.uploads) do call(LOAD_IMAGE, up[1], up[2]) end
+    -- through the evolution scene's buffer (there's no evolution while the
+    -- chart is open), as many at a time as it holds
+    local buf, room, at = tables.EVL_SCRATCH, tables.EVL_SCRATCH_SIZE, 0
+    for _, up in ipairs(M.uploads) do
+      local need = 8 + #up.data
+      if at + need > room then call(DRAW_SYNC, 0); at = 0 end
+      ctx:write_bytes(buf + at, up.rect .. up.data)
+      call(LOAD_IMAGE, buf + at, buf + at + 8)
+      at = (at + need + 3) & ~3
+    end
+    call(DRAW_SYNC, 0)
     dirty = false
   end
   -- the cursor sprite (24x20 for a 16 box, from the chart texture)
