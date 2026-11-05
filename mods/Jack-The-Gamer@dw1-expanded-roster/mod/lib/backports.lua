@@ -1479,6 +1479,197 @@ M.list = {
       [2] = { 23, "core" }, [3] = { 24, "core" }, [4] = { 26, "core" },                           -- hind leg (-x)
     },
   },
+  -- --- Clockmon, Golemon, Tortomon, HiAndromon (DW2003), Starmon, Wizardmon (DW2) ---
+  {
+    type = 221, name = "Clockmon", file = "CLOK", level = 4, height = 330,
+    attribute = 1, specialties = { 5, 1, 255 }, radius = 150, -- Data; Mech, Battle
+    techniques = { auto = true },
+    -- Its finisher (Mamemon's 0x44 Smiley Bomb: stats, motion) as Chrono
+    -- Breaker (DW2's name): MetalMamemon's Energy Bomb (0x4D) from its clock
+    -- face, at a Champion's power
+    finisher = { name = "Chrono Breaker", from = 0x44, power = 170, effect = 0x4D, origin = { 10, -48, -55, 19 } },
+    gains = { 1500, 1500, 200, 250, 150, 250 },
+    -- Defense, Speed and Brains 100, at most 5 care mistakes, weight 25, 25
+    -- techniques
+    requirements = { digimon = -1, hp = -1, mp = -1, offense = -1, defense = 100, speed = 100, brain = 100,
+      care = 5, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
+    raise_from = 23,             -- a Champion's care (Frigimon; Mamemon is an Ultimate)
+    icon_head = { 10 }, icon_head_scale = 1.0, -- its head sits on the clock
+    source = { ["SLES-03936"] = { file = 1335, bones = 42, motions = 0 } }, -- M143CLOK (enemy fighter 0x8F)
+    -- Mamemon: a round body on short legs, big fists. Head, hat, the small
+    -- arms holding its key and the wind-up key on its back go with the body
+    donor = 13, donor_file = "MAME.MMD",
+    mapping = {
+      [1] = { 10, "core" }, [12] = { 10, "follow" }, [13] = { 10, "follow" }, [20] = { 10, "follow" },   -- body, head, hat, key
+      [14] = { 10, "follow" }, [15] = { 10, "follow" }, [16] = { 10, "follow" },                      -- small arm (-x)
+      [17] = { 10, "follow" }, [18] = { 10, "follow" }, [19] = { 10, "follow" },                      -- small arm (+x), its key
+      [8] = { 7, "core" }, [9] = { 8, "core" }, [10] = { 3, "core" }, [11] = { 4, "core" },           -- big arms
+      [2] = { 12, "limb", 3, 13, true }, [3] = { 13, "leaf" }, [4] = { 14, "core" },                  -- leg (+x)
+      [5] = { 16, "limb", 6, 17, true }, [6] = { 17, "leaf" }, [7] = { 18, "core" },                  -- leg (-x)
+    },
+  },
+  {
+    -- (DW1 and DW2003 call it Rockmon; DW1's own model, type 108 GOLE, is an
+    -- NPC's: the file is GOLM)
+    type = 222, name = "Golemon", file = "GOLM", level = 4, height = 420,
+    attribute = 1, specialties = { 3, 1, 255 }, radius = 200, -- Data; Earth, Battle
+    techniques = { auto = true },
+    -- Its finisher: Ogremon's 0x51 Pummel Whack (stats, motion, effect) as
+    -- Crystal Bash, its fist in place of the club
+    finisher = { name = "Crystal Bash", from = 0x51 },
+    gains = { 2200, 800, 280, 300, 100, 120 },
+    -- HP and Offense 100, Defense 150, at least 15 care mistakes, weight 45,
+    -- 30 battles (with Defense 100, care 10, weight 40 and 25 battles it won
+    -- over a fifth of all Gotsumon and ToyAgumon)
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = 100, defense = 150, speed = -1, brain = -1,
+      care = 15, weight = 45, discipline = -1, happiness = -1, battles = 30, techs = -1, flags = 0 },
+    source = { ["SLES-03936"] = { file = 737, bones = 38, motions = 0 } }, -- M108GOLE (enemy fighter 0x6C, "Rockmon")
+    -- Ogremon: hunched, its long arms swinging low. Legs in their own stance
+    -- (turned to Ogremon's they never planted a foot through the walk); its
+    -- fists hang below its soles, so it stands on its feet (`float`) with
+    -- the fists a little into the ground as on DW2003, and Ogremon's chest
+    -- and shoulders swing at half (in full they drove the fists 100 into it)
+    donor = 34, donor_file = "OGRE.MMD", float = -12,
+    damp = { [2] = 0.5, [5] = 0.5, [8] = 0.5 },
+    mapping = {
+      [1] = { 2, "core" }, [8] = { 3, "core" }, [9] = { 4, "core" }, [10] = { 11, "core" },         -- body, head, jaw, hips
+      [2] = { 5, "core" }, [3] = { 6, "core" }, [4] = { 7, "core" },                                -- arm (+x)
+      [5] = { 8, "core" }, [6] = { 9, "core" }, [7] = { 10, "core" },                               -- arm (-x)
+      [15] = { 12, "core" }, [16] = { 13, "core" }, [17] = { 14, "core" }, [18] = { 14, "follow" }, -- leg (+x)
+      [11] = { 15, "core" }, [12] = { 16, "core" }, [13] = { 17, "core" }, [14] = { 17, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 223, name = "Tortomon", file = "TOTA", level = 4, height = 380,
+    attribute = 2, specialties = { 3, 1, 255 }, radius = 260, -- Vaccine; Earth, Battle
+    techniques = { auto = true },
+    -- Its finisher: Monochromon's 0x68 Volcanic Strike (stats, motion,
+    -- effect, from its mouth) as Shell Smash
+    finisher = { name = "Shell Smash", from = 0x68 },
+    gains = { 2500, 1000, 180, 320, 100, 180 },
+    -- HP and Defense 100, Brains 50, at most 10 care mistakes, weight 45,
+    -- discipline 50
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = -1, defense = 100, speed = -1, brain = 50,
+      care = 10, weight = 45, discipline = 50, happiness = -1, battles = -1, techs = -1, flags = 0x10 },
+    -- The Digimon page: at Monochromon's camera (0, 350, -870) its long body
+    -- ran off the right edge; moved left and a little down
+    view = { -250, 410, -870 },
+    icon_head = { 4 },           -- Monochromon's head
+    source = { ["SLES-03936"] = { file = 811, bones = 42, motions = 0 } }, -- M208TOTA (enemy fighter 0xD0)
+    -- Monochromon: four short legs, hybrid; neck and head on its neck and
+    -- head. The stub tail is fixed to the shell: on Monochromon's tail (off
+    -- its hips, which tilt apart from its body) it stood off the shell and
+    -- dropped away through the idle
+    donor = 47, donor_file = "MONO.MMD",
+    mapping = {
+      [1] = { 2, "core" }, [17] = { 3, "core" }, [18] = { 3, "follow" }, [19] = { 4, "core" }, [20] = { 4, "follow" }, -- shell, neck, head
+      [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 2, "follow" },                         -- tail
+      [11] = { 7, "limb", 12, 8, true }, [12] = { 8, "leaf" }, [13] = { 9, "core" },                  -- front leg (+x)
+      [8] = { 10, "limb", 9, 11, true }, [9] = { 11, "leaf" }, [10] = { 12, "core" },                 -- front leg (-x)
+      [5] = { 18, "limb", 6, 19, true }, [6] = { 19, "leaf" }, [7] = { 20, "core" },                  -- rear leg (+x)
+      [2] = { 21, "limb", 3, 22, true }, [3] = { 22, "leaf" }, [4] = { 23, "core" },                  -- rear leg (-x)
+    },
+  },
+  {
+    type = 224, name = "HiAndromon", file = "HAND", level = 5, height = 480,
+    chart_stage = 6,
+    attribute = 2, specialties = { 5, 1, 255 }, radius = 170, -- Vaccine; Mech, Battle
+    techniques = { auto = true },
+    -- Its finisher (Andromon's 0x66 Spiral Sword: stats, motion) as Atomic
+    -- Ray (DW2003's name): Machinedramon's Infinity Cannon (0x6A) from its
+    -- chest and both hands, at a Mega's power
+    finisher = { name = "Atomic Ray", from = 0x66, power = 280, effect = 0x6A,
+      origin = { { 2, 44, -48, -2 }, { 7, 57, 3, 5 }, { 11, 56, -7, -4 } } },
+    gains = { 8000, 6000, 800, 800, 700, 700 },
+    -- HP 700, MP 600, Offense 700, Defense 700, Speed 600, Brains 600, at
+    -- most 5 care mistakes, weight 45, 60 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 600, offense = 700, defense = 700, speed = 600, brain = 600,
+      care = 5, weight = 45, discipline = -1, happiness = -1, battles = 60, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: Phoenixmon's camera (120, 430, -1230), a little
+    -- higher (its feet were on the panel's edge)
+    view = { 120, 410, -1230 },
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 1826, bones = 52, motions = 0 } }, -- M356HAND (enemy fighter 0x164)
+    -- Andromon. Shoulder joints and plates with the chest; legs hybrid,
+    -- their motions damped to 0.4 (in full Andromon's march kicked the long
+    -- legs' feet up to 220 high; damped about 50, as Andromon's own)
+    donor = 40, donor_file = "ANDR.MMD",
+    damp = { [14] = 0.4, [15] = 0.4, [16] = 0.4, [18] = 0.4, [19] = 0.4, [20] = 0.4 },
+    mapping = {
+      [1] = { 2, "core" }, [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 3, "core" },     -- chest, plates, head
+      [2] = { 2, "follow" }, [7] = { 2, "follow" }, [8] = { 2, "follow" }, [13] = { 2, "follow" },   -- shoulders
+      [3] = { 5, "core" }, [4] = { 6, "core" }, [5] = { 7, "core" }, [6] = { 7, "follow" },          -- arm (+x)
+      [9] = { 9, "core" }, [10] = { 10, "core" }, [11] = { 11, "core" }, [12] = { 11, "follow" },    -- arm (-x)
+      [17] = { 12, "core" },                                                                        -- hips
+      [18] = { 14, "limb", 19, 15, true }, [19] = { 15, "leaf" }, [20] = { 16, "core" }, [21] = { 16, "follow" }, -- leg (+x)
+      [22] = { 18, "limb", 23, 19, true }, [23] = { 19, "leaf" }, [24] = { 20, "core" }, [25] = { 20, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 225, name = "Starmon", file = "STAR", level = 4, height = 300, game = "dw2",
+    attribute = 1, specialties = { 1, 3, 255 }, radius = 140, -- Data; Battle, Earth
+    techniques = { auto = true },
+    -- Its finisher (Ninjamon's 0x59 Iga School Knife Throw: stats, motion) as
+    -- Meteor Stream (DW2's name): Birdramon's Meteor Wing (0x5E), its four
+    -- start points on the star's top, side points and face
+    finisher = { name = "Meteor Stream", from = 0x59, effect = 0x5E,
+      origin = { { 10, -125, 3, 0 }, { 10, -55, -3, -117 }, { 10, -55, -3, 117 }, { 10, 6, -46, -12 } } },
+    gains = { 1500, 1200, 280, 180, 250, 150 },
+    -- Offense, Speed and Brains 100, at most 5 care mistakes, weight 20, 20
+    -- battles
+    requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = 100,
+      care = 5, weight = 20, discipline = -1, happiness = -1, battles = 20, techs = -1, flags = 0x10 },
+    -- The Digimon page: Ninjamon's camera (550, 180, -1920) is for a
+    -- Digimon of 200: at 300 Starmon overflowed the window, so it stands
+    -- back (as tall a Champion as Clockmon), left and a little up
+    view = { -150, 290, -700 },
+    icon_head = { 10 }, icon_head_scale = 1.0, -- the star is its head
+    source = { ["SLUS-01193"] = { model = 442, anim = 439 } }, -- DW2 Digimon 199
+    -- Ninjamon (Mamemon's rig): a body with arms and legs and no head, a
+    -- brisk upright walk; the scarf with the star
+    donor = 58, donor_file = "IGAM.MMD",
+    mapping = {
+      [1] = { 10, "core" }, [16] = { 10, "core" }, [17] = { 10, "follow" }, [18] = { 10, "core" }, [19] = { 10, "follow" }, -- star, scarf
+      [2] = { 7, "core" }, [3] = { 8, "core" }, [4] = { 9, "core" },                                -- arm (+x)
+      [5] = { 3, "core" }, [6] = { 4, "core" }, [7] = { 5, "core" }, [8] = { 5, "follow" }, [9] = { 5, "follow" }, -- arm (-x)
+      [10] = { 12, "limb", 11, 13, true }, [11] = { 13, "leaf" }, [12] = { 14, "core" },            -- leg (+x)
+      [13] = { 16, "limb", 14, 17, true }, [14] = { 17, "leaf" }, [15] = { 18, "core" },            -- leg (-x)
+    },
+  },
+  {
+    type = 226, name = "Wizardmon", file = "WIZA", level = 4, height = 320, game = "dw2",
+    attribute = 1, specialties = { 2, 255, 255 }, radius = 120, -- Data; Air
+    techniques = { auto = true }, -- all eight Air techniques
+    -- Its finisher (Angemon's 0x52 Hand of Fate: stats, motion) as Thunder
+    -- Ball (DW2's name): Kabuterimon's Electro Shocker (0x5D), its ball of
+    -- lightning gathering at the head of its staff
+    finisher = { name = "Thunder Ball", from = 0x52, effect = 0x5D,
+      origin = { { 9, -51, -133, -11 }, { 9, -51, -133, -11 }, { 9, -51, -133, -11 }, { 9, -51, -133, -11 }, { 9, -51, -133, -11 } } },
+    gains = { 1200, 2200, 150, 150, 220, 300 },
+    -- MP 150, Speed 100, Brains 150, at most 10 care mistakes, weight 15, 30
+    -- techniques. In the tree it comes from DemiDevimon; until DemiDevimon is
+    -- in the mod, from Tokomon's other Rookies (`interim_from`)
+    requirements = { digimon = -1, hp = -1, mp = 150, offense = -1, defense = -1, speed = 100, brain = 150,
+      care = 10, weight = 15, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
+    interim_from = { "Patamon", "Penguinmon" },
+    view = { 50, 310, -1030 },   -- Angemon's camera, a little higher (it is shorter)
+    icon_head = { 3 },           -- head and hat (on Angemon's head)
+    source = { ["SLUS-01193"] = { model = 2903, anim = 2908 } }, -- DW2 Digimon 194
+    -- Angemon: it carries a staff in the same hand. Chest, head and hat on
+    -- Angemon's head (they stay upright through the walk; on the chest the
+    -- hat tipped forward), collar and cape with the chest, legs hybrid
+    donor = 20, donor_file = "ANGE.MMD",
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" }, [3] = { 2, "follow" }, [4] = { 2, "follow" },        -- waist, chest/head/hat, collar
+      [11] = { 2, "follow" }, [12] = { 2, "follow" },                                              -- cape
+      [5] = { 4, "core" }, [6] = { 5, "core" }, [7] = { 6, "core" },                                -- arm (+x)
+      [8] = { 7, "core" }, [9] = { 8, "core" }, [10] = { 9, "core" },                               -- arm (-x), staff
+      [13] = { 18, "core" },                                                                        -- hips
+      [14] = { 19, "limb", 15, 20, true }, [15] = { 20, "leaf" }, [16] = { 21, "core" },            -- leg (+x)
+      [17] = { 22, "limb", 18, 23, true }, [18] = { 23, "leaf" }, [19] = { 24, "core" },            -- leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from
