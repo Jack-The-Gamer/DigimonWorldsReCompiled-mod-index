@@ -1239,6 +1239,85 @@ M.list = {
       [7] = { 5, "core" }, [6] = { 11, "core" }, [3] = { 21, "core" }, [2] = { 24, "core" },   -- arms, legs
     },
   },
+  -- --- KingEtemon, MetalEtemon (DW2003) ---------------------------------------------
+  {
+    type = 215, name = "KingEtemon", file = "KETM", level = 5, height = 380,
+    chart_stage = 6,
+    attribute = 3, specialties = { 1, 6, 255 }, radius = 180, -- Virus; Battle, Filth
+    -- Battle and Filth techniques; the Filth ones (none list Ogremon) from its
+    -- right fist
+    techniques = { auto = true, points = { [6] = { 7, 2, -20, -17 } } },
+    -- Its finisher (Ogremon's 0x51 Pummel Whack: stats) as Dark Spirits:
+    -- Etemon's Dark Network, its motion (ETEM.MMD animation 0x3B: arms flung
+    -- up, then crossed, head thrown back) retargeted onto Ogremon's skeleton
+    -- and its effect (0x5C, starting where Etemon's does: bone 0 itself), at
+    -- a Mega's power
+    finisher = { name = "Dark Spirits", from = 0x51, power = 280, effect = 0x5C, origin = { 0, 0, 0, 0 },
+      motion = { file = "ETEM.MMD", type = 42, anim = 0x3B, travel = 1,
+        from = { [1] = 1, [2] = 2, [3] = 4, [4] = 5, [5] = 7, [6] = 8, [7] = 9, [8] = 11, [9] = 12, [10] = 13,
+          [11] = 14, [12] = 20, [13] = 21, [14] = 22, [15] = 24, [16] = 25, [17] = 26 } } },
+    gains = { 7000, 6000, 800, 700, 500, 600 },
+    -- HP 700, MP 600, Offense 700, Defense 600, Brains 500, at most 10 care
+    -- mistakes, weight 40, 60 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 600, offense = 700, defense = 600, speed = -1, brain = 500,
+      care = 10, weight = 40, discipline = -1, happiness = -1, battles = 60, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon; Ogremon is a Champion)
+    view = { 280, 340, -1390 },  -- the donor's camera (Ogremon's: 390 tall)
+    icon_head = { 3, 4 },        -- Ogremon's head and jaw
+    source = { ["SLES-03936"] = { file = 1819, bones = 46, motions = 0 } }, -- M250KGET (enemy fighter 0xFA)
+    -- Ogremon: upright as it stands (on Etemon's crouch its long legs bent
+    -- double and a foot left the ground)
+    donor = 34, donor_file = "OGRE.MMD",
+    -- hybrid; its cape on the chest, its mouth on the jaw, toes with the
+    -- feet; arms turned to Ogremon's (upper arm and forearm keeping their
+    -- roll), hands their own
+    mapping = {
+      [10] = { 2, "core" }, [17] = { 3, "core" }, [18] = { 4, "core" },                            -- chest, head, mouth
+      [19] = { 2, "follow" }, [20] = { 2, "follow" }, [21] = { 2, "follow" }, [22] = { 2, "follow" }, -- cape
+      [11] = { 5, "limb", 12, 6, true }, [12] = { 6, "limb", 13, 7, true }, [13] = { 7, "core" },     -- arm (+x)
+      [14] = { 8, "limb", 15, 9, true }, [15] = { 9, "limb", 16, 10, true }, [16] = { 10, "core" },   -- arm (-x)
+      [1] = { 11, "core" },                                                                         -- hips
+      [2] = { 12, "limb", 3, 13, true }, [3] = { 13, "leaf" }, [4] = { 14, "core" }, [5] = { 14, "follow" }, -- leg (+x)
+      [6] = { 15, "limb", 7, 16, true }, [7] = { 16, "leaf" }, [8] = { 17, "core" }, [9] = { 17, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 216, name = "MetalEtemon", file = "METM", level = 5, height = 310,
+    chart_stage = 6,
+    attribute = 3, specialties = { 5, 6, 1 }, radius = 150, -- Virus; Mech, Filth, Battle
+    -- Mech, Filth and Battle techniques; the Mech and Filth ones that don't
+    -- list Etemon from its right fist
+    techniques = { auto = true, points = { [5] = { 9, 27, 18, -8 }, [6] = { 9, 27, 18, -8 } } },
+    -- Its finisher (Etemon's 0x5C Dark Network: the motion) as Dark Spirits
+    -- DX: MetalMamemon's 0x4D Energy Bomb (stats: Mech, one foe; effect)
+    -- from its right fist, at a Mega's power. (Digitamamon's Nightmare
+    -- Syndrome, 0x60, darkened the screen and stopped: it checks more start
+    -- lists than the borrowed one.)
+    finisher = { name = "Dark Spirits DX", from = 0x5C, stats = 0x4D, power = 280, effect = 0x4D, origin = { 9, 41, 45, -11 } },
+    gains = { 8000, 5000, 800, 900, 600, 600 },
+    -- HP 800, MP 400, Offense 700, Defense 800, Speed 500, at most 10 care
+    -- mistakes, weight 50, 70 battles or 45 techniques
+    requirements = { digimon = -1, hp = 800, mp = 400, offense = 700, defense = 800, speed = 500, brain = -1,
+      care = 10, weight = 50, discipline = -1, happiness = -1, battles = 70, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon; Etemon is an Ultimate)
+    -- The Digimon page: at Etemon's camera (120, 430, -1230) its feet ran
+    -- past the window; moved up a little, at about the same distance
+    view = { 200, 330, -1300 },
+    icon_head = { 4, 5 },        -- Etemon's head and jaw
+    source = { ["SLES-03936"] = { file = 727, bones = 44, motions = 0 } }, -- M065MTET (enemy fighter 0x41)
+    donor = 42, donor_file = "ETEM.MMD", -- Etemon
+    -- hybrid; its tail on Etemon's, toes with the feet; arms turned to
+    -- Etemon's (in its own raised guard a fist rose over its head through
+    -- Etemon's run)
+    mapping = {
+      [1] = { 2, "core" }, [8] = { 4, "core" }, [9] = { 5, "core" },                               -- chest, head, jaw
+      [2] = { 7, "limb", 3, 8, true }, [3] = { 8, "limb", 4, 9, true }, [4] = { 9, "core" },        -- arm (+x)
+      [5] = { 11, "limb", 6, 12, true }, [6] = { 12, "limb", 7, 13, true }, [7] = { 13, "core" },   -- arm (-x)
+      [10] = { 14, "core" }, [11] = { 16, "core" }, [12] = { 17, "core" }, [13] = { 18, "core" },  -- hips, tail
+      [18] = { 20, "limb", 19, 21, true }, [19] = { 21, "leaf" }, [20] = { 22, "core" }, [21] = { 22, "follow" }, -- leg (+x)
+      [14] = { 24, "limb", 15, 25, true }, [15] = { 25, "leaf" }, [16] = { 26, "core" }, [17] = { 26, "follow" }, -- leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from
