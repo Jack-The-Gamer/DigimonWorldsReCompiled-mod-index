@@ -189,9 +189,13 @@ local function by_stats(ctx, current)
   return best
 end
 
+-- The Rookie that met nothing after 96 hours (evoTimer): Numemon, or what
+-- M.numemon answers (lib/special.lua: Raremon a quarter of the time; not
+-- while M.compare checks the port against the game).
+M.numemon = nil
 function M.rookie(ctx, current)
   local best = by_stats(ctx, current)
-  if best == -1 and ctx:read_s16(PARA + 0x56) >= 96 then best = 11 end -- evoTimer: Numemon
+  if best == -1 and ctx:read_s16(PARA + 0x56) >= 96 then best = M.numemon and M.numemon() or 11 end
   return best
 end
 

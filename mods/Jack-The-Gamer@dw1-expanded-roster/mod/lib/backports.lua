@@ -690,6 +690,38 @@ M.list = {
     source = { ["SLUS-01032"] = { type = 120, file = "SCUD.MMD" } },
     donor = 39, donor_file = "SCUM.MMD", -- Sukamon
   },
+  -- --- Raremon (DW2003) ----------------------------------------------------------
+  {
+    -- A Rookie that meets no evolution's requirements becomes Raremon instead
+    -- of Numemon a quarter of the time (lib/special.lua); in the tree it
+    -- comes from DemiDevimon and Hagurumon, not in the mod yet.
+    type = 197, name = "Raremon", file = "RARE", level = 4, height = 330,
+    attribute = 3, specialties = { 6, 5, 255 }, radius = 230, -- Virus; Filth, Mech (as PlatinumSukamon)
+    -- Filth and Mech techniques (lib/techniques.lua); none list Shellmon,
+    -- so they start from its mouth (the nearest-sized Digimon's place)
+    techniques = { auto = true, points = { [6] = { 4, 116, -56, -2 }, [5] = { 4, 116, -56, -2 } } },
+    -- Its finisher (Shellmon's 0x57 Hydro Pressure: stats, the spray from its
+    -- mouth) as Sludge with Vegiemon's Sweet Breath (0x48) from its mouth:
+    -- Shellmon's head bone 4, between its upper teeth and its jaw
+    finisher = { name = "Sludge", from = 0x57, effect = 0x48, origin = { 4, 116, -56, -2 } },
+    gains = { 2000, 1500, 200, 200, 100, 150 },
+    -- HP 100, Defense 100, at most 15 care mistakes, weight 30, 25 techniques
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = -1, defense = 100, speed = -1, brain = -1,
+      care = 15, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
+    icon_head = { 4, 5 },      -- Shellmon's head and jaw
+    source = { ["SLES-03936"] = { file = 666, bones = 30, motions = 0 } }, -- M139RARE (enemy fighter 0x8B)
+    donor = 35, donor_file = "SHEL.MMD", -- Shellmon: both sit on the ground propped on two clawed arms
+    -- its slime base and front lip on the shell, its upper body on Shellmon's
+    -- body, head and jaw on head and jaw, its arms on Shellmon's arms in
+    -- their own stance; Shellmon's neck (3) stays empty
+    mapping = {
+      [1] = { 14, "core" }, [2] = { 14, "follow" }, [3] = { 14, "follow" },             -- root (a speck), slime base, front lip
+      [4] = { 2, "core" },                                                               -- upper body
+      [13] = { 4, "core" }, [14] = { 5, "core" },                                        -- head (eye, upper teeth), jaw
+      [5] = { 7, "core" }, [6] = { 8, "core" }, [7] = { 9, "core" }, [8] = { 9, "follow" },    -- arm (+x)
+      [9] = { 11, "core" }, [10] = { 12, "core" }, [11] = { 13, "core" }, [12] = { 13, "follow" }, -- arm (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from

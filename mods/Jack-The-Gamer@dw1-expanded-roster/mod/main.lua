@@ -32,6 +32,7 @@ local chart = require("lib.chart")
 local tree = require("lib.tree")
 local icon = require("lib.icon")
 local techniques = require("lib.techniques")
+local special = require("lib.special")
 
 if dwrc.serial ~= "SLUS-01032" then
   dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
@@ -698,5 +699,79 @@ if dwrc.options.check_evolution then
   evolution.compare(0x800DD7AC, 200) -- from partnerTick, every frame in the field
 else
   evolution.install()
+  evolution.numemon = special.numemon -- Numemon, or Raremon (lib/special.lua)
 end
 evolution.install_megas() -- Ultimates become Megas (lib/evolution.lua)
+
+-- The special evolutions (lib/special.lua): PlatinumSukamon from the virus
+-- bar, Raremon in Numemon's place, KingSukamon after 20 piles of poop.
+do
+  local ok, why = special.check(function(a) return bin.u32(exe, exe_off(a)) end)
+  if ok then
+    special.install({ platinum = built[195] and 195, king = built[196] and 196, raremon = built[197] and 197 })
+  else
+    dwrc.log("the special evolutions are left out: unexpected code at " .. why)
+  end
+end
+
+-- Sukamon's hint in File City. Once recruited (trigger 239) he stands on map
+-- 179 (MAPHEAD section 179: SET_SCRIPT 162, Sukamon in slot 1), and talking to
+-- him runs section 6 of DG.SCN's script 162: two pages, "Let's see what's
+-- around here." and "I don't like the toilet, but / everything else seems
+-- Ok!". He keeps both and then gives the hint, in the same 182 bytes: the
+-- game's text is full-width Shift-JIS (2 bytes a character), and his two
+-- pages alone take 176 bytes, so the new section spells them in ASCII,
+-- which the American text box also draws, with the same glyphs
+-- (drawTextboxStrings: a byte below 0x80 is convertAsciiToJis'd, as the
+-- speaker's name is), keeping the game's own apostrophe (81 75). Codes:
+-- 0D 00 a new line, 0D 00 00 00 a page's end, 1A 00 the next page (SHOW_TEXTBOX),
+-- FE 00 the end. showTextbox copies text 2 bytes at a time and looks for
+-- the 0D at the start of a pair, so every line is made an even length (a
+-- trailing space); bytes after FE 00 are never reached.
+do
+  local APOSTROPHE = "\x81\x75"
+  local function sjis(s)
+    local out = {}
+    for c in s:gmatch(".") do
+      local b = c:byte()
+      local w
+      if c == " " then w = 0x8140
+      elseif b >= 65 and b <= 90 then w = 0x8260 + b - 65
+      elseif b >= 97 and b <= 122 then w = 0x8281 + b - 97
+      else w = ({ ["!"] = 0x8149, [","] = 0x8143, ["."] = 0x8142, ["'"] = 0x8175, ["?"] = 0x8148 })[c] end
+      out[#out + 1] = string.char(w >> 8, w & 0xFF)
+    end
+    return table.concat(out)
+  end
+  local function ascii(s)
+    s = s:gsub("'", APOSTROPHE)
+    if #s % 2 == 1 then s = s .. " " end
+    return s
+  end
+  local function pages(list, enc) -- each page a list of lines
+    local out = {}
+    for i, lines in ipairs(list) do
+      local p = {}
+      for _, l in ipairs(lines) do p[#p + 1] = enc(l) end
+      out[#out + 1] = (i > 1 and "\x1A\0" or "") .. table.concat(p, "\x0D\0") .. "\x0D\0\0\0"
+    end
+    return table.concat(out)
+  end
+  local AT = 0x740C6 -- section 6 of script 162 (script 162 starts at 0x73000)
+  local lines = { { "Let's see what's around here." }, { "I don't like the toilet, but", "everything else seems Ok!" } }
+  local old = "\x1B\x06\x1A\0" .. pages(lines, sjis) .. "\xFE\0"
+  lines[#lines + 1] = { "Eating poop helps", "Sukamon evolve!" }
+  local new = "\x1B\x06\x1A\0" .. pages(lines, ascii) .. "\xFE\0"
+  if #new < #old then new = new .. string.rep("\0", #old - #new) end
+  local lba = game_file("DG.SCN")
+  local first, last = AT // 2048, (AT + #old - 1) // 2048
+  local data = dwrc.disc.read(lba + first, last - first + 1)
+  local o = AT - first * 2048
+  if #new ~= #old then
+    dwrc.log(string.format("Sukamon's lines and hint are %d bytes, more than %d: his hint is left out", #new, #old))
+  elseif data:sub(o + 1, o + #old) ~= old then
+    dwrc.log("Sukamon's lines in File City aren't where expected: his hint is left out")
+  else
+    dwrc.disc.write(lba + first, data:sub(1, o) .. new .. data:sub(o + #new + 1))
+  end
+end
