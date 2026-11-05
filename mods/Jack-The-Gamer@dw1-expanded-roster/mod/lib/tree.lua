@@ -1,0 +1,142 @@
+-- The evolution tree the mod uses (the user's revised chart, 2026-11-04): each
+-- Digimon's evolutions, in order (on a tie the earlier one wins). Names, not
+-- numbers: a name is one of the game's partner Digimon (types 1..61, as
+-- DIGIMON_DATA names them; `aliases` for the few the game spells otherwise)
+-- or a new Digimon from lib/backports.lua. Digimon that aren't in the mod yet
+-- (ToyAgumon, Gomamon, Renamon, MetalGarurumon...) are skipped, and take
+-- their places here as soon as they're added. The "comes from" lists are
+-- worked out from these (main.lua), and Digimon not listed as a source
+-- (the Fresh ones) keep the game's own evolutions.
+--
+-- Until the whole tree exists, main.lua keeps two of the game's routes:
+-- a game Digimon that nothing here reaches yet keeps the game's sources
+-- (Bakemon, Coelamon, Ninjamon wait for DemiDevimon, Gomamon, Renamon and
+-- Goburimon), and a Champion with none of its Ultimates here yet keeps the
+-- game's (Drimogemon, Unimon, Vegiemon).
+
+local M = {}
+
+M.aliases = { HerculesKabuterimon = "H-Kabuterimon" }
+
+M.tree = {
+  -- In-Training (Baby II)
+  { "Koromon", { "Agumon", "Guilmon", "ToyAgumon", "Biyomon", "Hagurumon" } },
+  { "Tanemon", { "Palmon", "Kunemon", "Tentomon", "Gotsumon", "Goburimon" } },
+  { "Tokomon", { "Patamon", "Tsukaimon", "Gomamon", "DemiDevimon", "Penguinmon" } },
+  { "Tsunomon", { "Gabumon", "Veemon", "Betamon", "Elecmon", "Renamon" } },
+  -- Rookie
+  { "Agumon", { "Greymon", "Monochromon", "Tyrannomon", "Tankmon" } },
+  { "Betamon", { "Seadramon", "Airdramon", "Veedramon", "Shellmon" } },
+  { "Gabumon", { "Garurumon", "Drimogemon", "Leomon", "Mojyamon", "Tortomon" } },
+  { "Elecmon", { "Leomon", "Centarumon", "Kyubimon" } },
+  { "Kunemon", { "Kuwagamon", "Kabuterimon" } },
+  { "Palmon", { "Togemon", "Woodmon", "Ogremon", "Vegiemon" } },
+  { "Patamon", { "Angemon", "Centarumon", "Unimon", "Gatomon" } },
+  { "Penguinmon", { "Frigimon", "Kokatorimon", "Angemon" } },
+  { "Biyomon", { "Birdramon", "Kokatorimon", "Meramon" } },
+  { "Guilmon", { "Growlmon", "Tyrannomon", "DarkTyrannomon", "Monochromon" } },
+  { "Veemon", { "Veedramon", "ExVeemon", "Airdramon", "Seadramon", "Deltamon" } },
+  { "Tentomon", { "Kabuterimon", "Kuwagamon" } },
+  { "Renamon", { "Kyubimon", "Garurumon", "Ninjamon", "Leomon", "Gatomon" } },
+  { "DemiDevimon", { "Devimon", "Wizardmon", "Bakemon", "Raremon", "Chrysalimon" } },
+  { "Tsukaimon", { "Devimon", "Centarumon", "Unimon" } },
+  { "Gotsumon", { "Golemon", "Starmon", "PlatinumSukamon", "Tortomon", "Frigimon" } },
+  { "Hagurumon", { "Clockmon", "Tankmon", "Centarumon", "Raremon" } },
+  { "ToyAgumon", { "Greymon", "Growlmon", "Deltamon", "Golemon" } },
+  { "Gomamon", { "Ikkakumon", "Coelamon", "Seadramon", "Mojyamon" } },
+  { "Goburimon", { "Ogremon", "Meramon", "Ninjamon", "Mojyamon", "Devimon" } },
+  -- Champion
+  { "Airdramon", { "Megadramon", "AeroVeedramon", "Kimeramon" } },
+  { "Angemon", { "MagnaAngemon", "Angewomon", "Garudamon", "Kimeramon", "Andromon" } },
+  { "Bakemon", { "Digitamamon", "SkullGreymon", "Giromon" } },
+  { "Birdramon", { "Garudamon" } },
+  { "Centarumon", { "Andromon", "MetalMamemon", "MagnaAngemon" } },
+  { "Kokatorimon", { "Garudamon" } },
+  { "Coelamon", { "Whamon", "Zudomon", "MegaSeadramon" } },
+  { "Devimon", { "LadyDevimon", "Kimeramon", "Andromon", "Mummymon" } },
+  { "Drimogemon", { "Mammothmon", "Zudomon" } },
+  { "Garurumon", { "WereGarurumon", "Kimeramon" } },
+  { "Greymon", { "MetalGreymon", "SkullGreymon", "MasterTyrannomon", "Megadramon", "Kimeramon" } },
+  { "Ninjamon", { "Mamemon", "Piximon", "Taomon", "MetalMamemon" } },
+  { "Kabuterimon", { "MegaKabuterimon", "Paildramon", "Kimeramon" } },
+  { "Kuwagamon", { "Okuwamon", "MegaKabuterimon", "Kimeramon" } },
+  { "Leomon", { "WereGarurumon", "MagnaAngemon", "Garudamon" } },
+  { "Meramon", { "Garudamon" } },
+  { "Monochromon", { "MasterTyrannomon", "Kimeramon" } },
+  { "Mojyamon", { "Zudomon", "Etemon", "Piximon", "Mammothmon" } },
+  { "Nanimon", { "Andromon", "Vademon", "Etemon" } },
+  { "Numemon", { "Monzaemon", "WaruMonzaemon" } },
+  { "Ogremon", { "Digitamamon", "Piximon", "WaruMonzaemon", "WereGarurumon" } },
+  { "Seadramon", { "MegaSeadramon", "WaruSeadramon", "Whamon" } },
+  { "Shellmon", { "WaruSeadramon", "Whamon", "MegaSeadramon" } },
+  { "Sukamon", { "KingSukamon", "Etemon" } },
+  { "Tyrannomon", { "MasterTyrannomon", "MetalTyrannomon", "Megadramon", "WarGrowlmon", "Ex-Tyrannomon" } },
+  { "Unimon", { "MagnaAngemon", "Angewomon" } },
+  { "Vegiemon", { "Cherrymon", "Lillymon" } },
+  { "Frigimon", { "Monzaemon", "WaruMonzaemon" } },
+  { "Growlmon", { "WarGrowlmon", "Megadramon", "WaruSeadramon", "SkullGreymon" } },
+  { "Veedramon", { "AeroVeedramon", "MasterTyrannomon" } },
+  { "ExVeemon", { "Paildramon", "AeroVeedramon" } },
+  { "Kyubimon", { "Taomon", "Angewomon", "LadyDevimon" } },
+  { "Gatomon", { "Angewomon", "Taomon" } },
+  { "Deltamon", { "Kimeramon", "AeroVeedramon" } },
+  { "PlatinumSukamon", { "KingSukamon", "Mamemon", "Giromon" } },
+  { "Tankmon", { "MetalGreymon", "WarGrowlmon", "Megadramon", "MetalTyrannomon" } },
+  { "DarkTyrannomon", { "MasterTyrannomon", "MetalTyrannomon", "SkullGreymon" } },
+  { "Clockmon", { "Andromon", "Vademon", "Giromon", "Mummymon", "MetalMamemon", "Etemon" } },
+  { "Golemon", { "Mamemon", "Andromon", "Mummymon" } },
+  { "Raremon", { "Ex-Tyrannomon", "MetalGreymon" } },
+  { "Tortomon", { "Mummymon", "Zudomon", "Mammothmon" } },
+  { "Starmon", { "Mamemon", "Piximon", "MetalMamemon" } },
+  { "Wizardmon", { "Piximon", "LadyDevimon", "Taomon" } },
+  { "Togemon", { "Lillymon", "Cherrymon" } },
+  { "Woodmon", { "Cherrymon", "Piximon" } },
+  { "Ikkakumon", { "Zudomon", "MegaSeadramon", "Whamon", "WereGarurumon", "Mammothmon" } },
+  { "Chrysalimon", { "Infermon", "Digitamamon", "Giromon" } },
+  -- Ultimate (Whamon is one here)
+  { "Andromon", { "HiAndromon", "Machinedramon" } },
+  { "Digitamamon", { "Armageddemon" } },
+  { "Etemon", { "KingEtemon", "MetalEtemon" } },
+  { "Giromon", { "Armageddemon" } },
+  { "Mamemon", { "HiAndromon" } },
+  { "Megadramon", { "Machinedramon" } },
+  { "MegaSeadramon", { "MetalSeadramon", "Plesiomon" } },
+  { "MetalGreymon", { "BlackWarGreymon", "Machinedramon" } },
+  { "MetalMamemon", { "HiAndromon", "Machinedramon" } },
+  { "Monzaemon", { "SaberLeomon" } },
+  { "Piximon", { "Gallantmon" } },
+  { "SkullGreymon", { "BlackWarGreymon", "SkullMammothmon" } },
+  { "Vademon", { "MetalEtemon" } },
+  { "Whamon", { "Plesiomon", "MetalSeadramon" } },
+  { "WarGrowlmon", { "Gallantmon", "AncientGreymon" } },
+  { "Paildramon", { "Imperialdramon", "GranKuwagamon" } },
+  { "AeroVeedramon", { "Imperialdramon" } },
+  { "MegaKabuterimon", { "HerculesKabuterimon" } },
+  { "Okuwamon", { "GranKuwagamon" } },
+  { "Garudamon", { "Phoenixmon" } },
+  { "Taomon", { "Sakuyamon" } },
+  { "MagnaAngemon", { "Seraphimon", "BlackSeraphimon", "Phoenixmon" } },
+  { "Angewomon", { "Seraphimon", "Sakuyamon", "Rosemon", "Phoenixmon" } },
+  { "LadyDevimon", { "BlackSeraphimon", "Sakuyamon" } },
+  { "Kimeramon", { "Machinedramon" } },
+  { "KingSukamon", { "KingEtemon" } },
+  { "WereGarurumon", { "MetalGarurumon", "SaberLeomon" } },
+  { "WaruMonzaemon", { "MetalEtemon" } },
+  { "MetalTyrannomon", { "Machinedramon" } },
+  { "MasterTyrannomon", { "AncientGreymon", "BlackWarGreymon" } },
+  { "Lillymon", { "Rosemon" } },
+  { "Cherrymon", { "Rosemon" } },
+  { "Zudomon", { "Plesiomon" } },
+  { "WaruSeadramon", { "MetalSeadramon" } },
+  { "Mammothmon", { "SkullMammothmon", "Plesiomon", "SaberLeomon" } },
+  { "Mummymon", { "Pharaohmon" } },
+  { "Ex-Tyrannomon", { "Armageddemon" } },
+  { "Infermon", { "Armageddemon" } },
+  -- Mega: HerculesKabuterimon, Machinedramon, Phoenixmon, Pharaohmon,
+  -- SkullMammothmon, MetalGarurumon, BlackWarGreymon, AncientGreymon,
+  -- Gallantmon, GranKuwagamon, Imperialdramon, Rosemon, Sakuyamon,
+  -- Seraphimon, BlackSeraphimon, HiAndromon, KingEtemon, MetalEtemon,
+  -- MetalSeadramon, SaberLeomon, Plesiomon, Armageddemon (no evolutions)
+}
+
+return M

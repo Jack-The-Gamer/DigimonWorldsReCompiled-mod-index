@@ -14,7 +14,7 @@
 -- World 2003 and Digimon World 2 discs while the mod loads (lib/dw3model.lua,
 -- lib/dw2model.lua, lib/convert.lua),
 -- with their chart icons (lib/icon.lua), finishers (lib/limits.lua) and
--- evolutions (lib/evolution.lua, lib/chart.lua).
+-- evolutions (lib/tree.lua, lib/evolution.lua, lib/chart.lua).
 
 local bin = require("lib.bin")
 local iso = require("lib.iso")
@@ -29,6 +29,7 @@ local dw2model = require("lib.dw2model")
 local dw1source = require("lib.dw1source")
 local convert = require("lib.convert")
 local chart = require("lib.chart")
+local tree = require("lib.tree")
 local icon = require("lib.icon")
 
 if dwrc.serial ~= "SLUS-01032" then
@@ -202,6 +203,13 @@ do
             if f and f.lunge and exe:byte(exe_off(data + 35 + slot) + 1) == f.from then l = f.lunge end
             alias[0x2E + slot] = l and { 0x2E + m, l.frame, l.frames, l.distance } or 0x2E + m
           end
+        elseif f and f.motion then
+          -- the finisher plays one of the source's own animations, retargeted
+          -- (a DW1 source: Machinedramon's Infinity Cannon)
+          local data = DIGIMON_DATA + b.donor * 0x34
+          for k = 0, 15 do
+            if exe:byte(exe_off(data + 35 + k) + 1) == f.from then alias = { [0x2E + k] = { motion = f.motion.anim, from = f.motion.from } } end
+          end
         elseif f and f.anim then
           local data, from_k, anim_k = DIGIMON_DATA + b.donor * 0x34, nil, nil
           for k = 0, 15 do
@@ -346,92 +354,128 @@ local function set_list(t, off, size, items, is_to)
   extras(is_to)[t] = #rest > 0 and rest or nil
 end
 
--- Adds `t` after the entries of type f's list, or to its extras when the
--- slots are full.
-local function add_to_list(f, off, size, t, is_to)
-  local r = row(f)
-  local items = {}
-  for i = 1, size do
-    local v = r[off + i]
-    if v == t then return end -- already there
-    if v ~= 0xFF then items[#items + 1] = v end
-  end
-  local more = extras(is_to)
-  for _, v in ipairs(more[f] or {}) do if v == t then return end end
-  if #items < size then
-    items[#items + 1] = t
-    write_list(r, off, size, items)
-  else
-    more[f] = more[f] or {}
-    table.insert(more[f], t)
-  end
-end
-
--- In type order (a backport may evolve from another one: Growlmon from
--- Guilmon). Each new type starts as a copy of its donor's row (as its other
--- entries do); its own lists replace the donor's, and each Digimon on them
--- gets it after its own (the pickers keep the earlier target on a tie, so
--- the game's own ones win ties).
-do
-  local types = {}
-  for t in pairs(built) do types[#types + 1] = t end
-  table.sort(types)
-  for _, t in ipairs(types) do
-    local b = built[t]
-    local copy = {}
-    for i, v in ipairs(row(b.donor)) do copy[i] = v end
-    rows[t] = copy
-    if b.evolves_from then
-      set_list(t, 0, 5, b.evolves_from, false)
-      for _, f in ipairs(b.evolves_from) do add_to_list(f, 5, 6, t, true) end
-    end
-    if b.evolutions then
-      set_list(t, 5, 6, b.evolutions, true)
-      for _, e in ipairs(b.evolutions) do add_to_list(e, 0, 5, t, false) end
-    end
-  end
-end
-
--- The game's own Digimon that change (backports.changes: HerculesKabuterimon
--- and Phoenixmon as Megas): taken off every other Digimon's targets, coming
--- only from their own list (and on those Digimon's targets), with no targets
--- of their own. A change waits for at least one of its new sources.
+-- The game's own Digimon that change (backports.changes): HerculesKabuterimon
+-- and Phoenixmon become Megas once a Digimon they come from is built
+-- (`needs`), Whamon an Ultimate, and some requirements.
 local changed = {}
-do
-  local function list_of(r, off, size)
-    local items = {}
-    for i = 1, size do if r[off + i] ~= 0xFF then items[#items + 1] = r[off + i] end end
-    return items
+local level_of = {} -- type -> its level once changed
+for t, b in pairs(built) do chart.stage[t] = b.chart_stage end -- 6 = the Mega section
+for _, c in ipairs(backports.changes) do
+  local ok = true
+  for _, n in ipairs(c.needs or {}) do if not built[n] then ok = false end end
+  if not ok then
+    dwrc.log(c.name .. " stays an Ultimate: none of the Digimon it would come from were built")
+  else
+    changed[#changed + 1] = c
+    if c.chart_stage then chart.stage[c.type] = c.chart_stage end
+    if c.level then level_of[c.type] = c.level end
   end
-  local types = {}
-  for t = 1, 62 do types[#types + 1] = t end
-  for t in pairs(built) do types[#types + 1] = t end
-  for _, c in ipairs(backports.changes) do
-    local from = {}
-    for _, f in ipairs(c.evolves_from) do if f < 180 or built[f] then from[#from + 1] = f end end
-    local new_source = false
-    for _, f in ipairs(from) do if f >= 180 then new_source = true end end
-    if not new_source then
-      dwrc.log(c.name .. " stays an Ultimate: none of the Digimon it would come from were built")
-    else
-      changed[#changed + 1] = c
-      for _, t in ipairs(types) do
-        if t ~= c.type then
-          local r, hit = row(t), false
-          local items = list_of(r, 5, 6)
-          for i = #items, 1, -1 do if items[i] == c.type then table.remove(items, i); hit = true end end
-          if hit then write_list(r, 5, 6, items) end
-          local more = evolution.extra[t]
-          for i = #(more or {}), 1, -1 do if more[i] == c.type then table.remove(more, i) end end
-          if more and #more == 0 then evolution.extra[t] = nil end
+end
+
+-- The tree (lib/tree.lua): each source's targets by name, as the game's
+-- partner Digimon (types 1..61) and the built backports are named; the
+-- others aren't in the mod yet and are skipped.
+do
+  local function level(t)
+    if level_of[t] then return level_of[t] end
+    if built[t] then return built[t].level end
+    return exe:byte(exe_off(DIGIMON_DATA + t * 0x34 + 29) + 1)
+  end
+  local function stage(t) return chart.stage[t] or level(t) end
+  local by_name = {}
+  for t = 1, 61 do by_name[bin.cstr(exe, exe_off(DIGIMON_DATA + t * 0x34))] = t end
+  for t, b in pairs(built) do by_name[b.name] = t end
+  local function resolve(n) return by_name[tree.aliases[n] or n] end
+  local function has(list, v) for _, x in ipairs(list) do if x == v then return true end end return false end
+  local game_to, all = {}, {}
+  for t = 1, 62 do
+    local r = row(t)
+    game_to[t] = {}
+    for i = 6, 11 do if r[i] ~= 0xFF then game_to[t][#game_to[t] + 1] = r[i] end end
+    all[#all + 1] = t
+  end
+  local new_types = {}
+  for t in pairs(built) do new_types[#new_types + 1] = t end
+  table.sort(new_types)
+  for _, t in ipairs(new_types) do all[#all + 1] = t end
+  local to, seq, skipped = {}, {}, {}
+  for _, e in ipairs(tree.tree) do
+    local s = resolve(e[1])
+    if s and not to[s] then
+      seq[#seq + 1] = s
+      to[s] = {}
+      for _, n in ipairs(e[2]) do
+        local x = resolve(n)
+        if x then
+          if not has(to[s], x) then to[s][#to[s] + 1] = x end
+        elseif not skipped[n] then
+          skipped[n] = true
+          skipped[#skipped + 1] = n
         end
       end
-      set_list(c.type, 0, 5, from, false)
-      set_list(c.type, 5, 6, {}, true)
-      for _, f in ipairs(from) do add_to_list(f, 5, 6, c.type, true) end
-      chart.stage[c.type] = c.chart_stage
     end
   end
+  -- not in the tree: a Fresh keeps the game's evolutions, any other has none
+  -- (Megas; Phoenixmon's row holds strays)
+  for _, t in ipairs(all) do
+    if not to[t] then
+      to[t] = {}
+      if t <= 62 and level(t) == 1 then for _, x in ipairs(game_to[t]) do to[t][#to[t] + 1] = x end end
+    end
+  end
+  local function sourced(t)
+    for _, s in ipairs(all) do if has(to[s], t) then return true end end
+    return false
+  end
+  -- Until the whole tree is in the mod: a game Digimon nothing reaches keeps
+  -- the game's sources (a stage below it), and a Champion with no Ultimate
+  -- keeps the game's Ultimates.
+  local interim = {}
+  for t = 1, 61 do
+    local st = stage(t)
+    if st >= 3 and st <= 5 and not sourced(t) then
+      for s = 1, 61 do
+        if has(game_to[s], t) and stage(s) == st - 1 then
+          to[s][#to[s] + 1] = t
+          interim[#interim + 1] = bin.cstr(exe, exe_off(DIGIMON_DATA + s * 0x34)) .. " -> " .. bin.cstr(exe, exe_off(DIGIMON_DATA + t * 0x34))
+        end
+      end
+    end
+  end
+  for t = 1, 61 do
+    if stage(t) == 4 and #to[t] == 0 then
+      for _, x in ipairs(game_to[t]) do
+        if stage(x) == 5 then
+          to[t][#to[t] + 1] = x
+          interim[#interim + 1] = bin.cstr(exe, exe_off(DIGIMON_DATA + t * 0x34)) .. " -> " .. bin.cstr(exe, exe_off(DIGIMON_DATA + x * 0x34))
+        end
+      end
+    end
+  end
+  -- each Digimon's sources: the tree's order, then the rest by type
+  local tree_sources = { table.unpack(seq) }
+  local in_seq = {}
+  for _, s in ipairs(seq) do in_seq[s] = true end
+  for _, t in ipairs(all) do if not in_seq[t] then seq[#seq + 1] = t end end
+  local from = {}
+  for _, s in ipairs(seq) do
+    for _, x in ipairs(to[s]) do
+      from[x] = from[x] or {}
+      from[x][#from[x] + 1] = s
+    end
+  end
+  -- every row: a new type's other entries start as its donor's (setup)
+  for _, t in ipairs(all) do
+    if not rows[t] then
+      local r = {}
+      for i = 1, 11 do r[i] = 0xFF end
+      rows[t] = r
+    end
+    set_list(t, 0, 5, from[t] or {}, false)
+    set_list(t, 5, 6, to[t], true)
+  end
+  dwrc.log(string.format("evolution tree: %d Digimon with evolutions; not in the mod yet: %d (%s); kept from the game for now: %s",
+    #tree_sources, #skipped, table.concat(skipped, ", "), #interim > 0 and table.concat(interim, ", ") or "none"))
 end
 
 -- The chart icons: in the mod's RAM (tables.ICONS), uploaded to the chart's
@@ -473,9 +517,9 @@ local function write_evolution(ctx, t, b)
   if b.requirements then
     local r, reqs = b.requirements, tables.entry("EVOLUTION_REQS", t)
     for i, k in ipairs({ "digimon", "hp", "mp", "offense", "defense", "speed", "brain", "care", "weight", "discipline", "happiness", "battles", "techs" }) do
-      ctx:write16(reqs + 2 * (i - 1), r[k] & 0xFFFF)
+      if r[k] then ctx:write16(reqs + 2 * (i - 1), r[k] & 0xFFFF) end -- only the fields given
     end
-    ctx:write8(reqs + 26, r.flags)
+    if r.flags then ctx:write8(reqs + 26, r.flags) end
   end
 end
 
@@ -521,7 +565,8 @@ local function setup(ctx)
       local str = tables.MOVE_STRINGS + tables.MOVE_STRING_BYTES * (id - tables.FIRST_NEW_FINISHER)
       ctx:write_bytes(str, f.name .. string.rep("\0", tables.MOVE_STRING_BYTES - #f.name))
       ctx:write32(tables.entry("MOVE_NAMES", id), str)
-      ctx:write_bytes(tables.entry("MOVE_DATA", id), ctx:read_bytes(tables.entry("MOVE_DATA", f.from), 16))
+      -- its stats: the donor finisher's, or another technique's (f.stats)
+      ctx:write_bytes(tables.entry("MOVE_DATA", id), ctx:read_bytes(tables.entry("MOVE_DATA", f.stats or f.from), 16))
       -- Move {s32 distance, s16 power, ...}: its own power (a Rookie's or an
       -- Ultimate's on a donor finisher of another level)
       if f.power then ctx:write16(tables.entry("MOVE_DATA", id) + 4, f.power) end
@@ -545,7 +590,10 @@ local function setup(ctx)
     end
   end
   -- the game's Digimon that change (backports.changes: the Megas)
-  for _, c in ipairs(changed) do write_evolution(ctx, c.type, c) end
+  for _, c in ipairs(changed) do
+    write_evolution(ctx, c.type, c)
+    if c.level then ctx:write8(tables.entry("DIGIMON_DATA", c.type) + 29, c.level) end -- DigimonPara.level
+  end
   -- the evolution lists worked out above
   for t, r in pairs(rows) do ctx:write_bytes(tables.entry("EVOLUTION_PATHS", t), string.char(table.unpack(r))) end
   if not test_clone then return end
@@ -578,7 +626,6 @@ do
   local new_types = {}
   for t, b in pairs(built) do
     new_types[#new_types + 1] = t
-    chart.stage[t] = b.chart_stage -- 6 = the Mega section (none yet)
     if dwrc.options.test_raised then limits.raised_new[t] = true end
   end
   if test_clone then new_types[#new_types + 1] = CLONE end

@@ -393,6 +393,68 @@ local function simplify(objs, nobj, budget)
   return out, collapsed
 end
 
+-- More palettes than Digimon World's 16 (Kimeramon has 18, some copies of
+-- others): merged until 16 are left (as dw1convert.py's merge_cluts). A
+-- palette's colours count where its polygons' UV boxes (inclusive) have
+-- texels; each round merges the pair (in row order, the first lowest) whose
+-- colours differ least there (squared 5-bit channel differences summed;
+-- transparent 0x0000 against any other colour counts 1 << 20), the palette
+-- with fewer polygons into the other. Rewrites the polygons' rows; returns
+-- the list ({x, y}) of those left, in their old order.
+local function merge_cluts(objs, nobj, tim, list)
+  local w0, src = tim.w, tim.px
+  local function texel(u, v)
+    return (string.unpack("<I2", src, (v * w0 + (u >> 2)) * 2 + 1) >> ((u & 3) * 4)) & 15
+  end
+  local function colour(k, i) return string.unpack("<I2", src, (list[k][2] * w0 + list[k][1] + i) * 2 + 1) end
+  local used, count, into = {}, {}, {}
+  for k = 1, #list do used[k], count[k], into[k] = {}, 0, k end
+  for o = 0, nobj - 1 do
+    for _, p in ipairs(objs[o].prims) do
+      local k = p.clut + 1
+      count[k] = count[k] + 1
+      local u0, v0, u1, v1 = 255, 255, 0, 0
+      for _, uv in ipairs(p.uv) do
+        u0, v0 = math.min(u0, uv[1]), math.min(v0, uv[2])
+        u1, v1 = math.max(u1, uv[1]), math.max(v1, uv[2])
+      end
+      for v = v0, v1 do for u = u0, u1 do used[k][texel(u, v)] = true end end
+    end
+  end
+  local function dist(a, b)
+    if (a == 0) ~= (b == 0) then return 1 << 20 end
+    local d = 0
+    for _, s in ipairs({ 0, 5, 10 }) do d = d + (((a >> s) & 31) - ((b >> s) & 31)) ^ 2 end
+    return math.tointeger(d)
+  end
+  local alive = {}
+  for k = 1, #list do alive[k] = k end
+  while #alive > 16 do
+    local best
+    for i = 1, #alive do
+      for j = i + 1, #alive do
+        local a, b = alive[i], alive[j]
+        local c = 0
+        for n = 0, 15 do if used[a][n] or used[b][n] then c = c + dist(colour(a, n), colour(b, n)) end end
+        if not best or c < best[1] then best = { c, a, b } end
+      end
+    end
+    local a, b = best[2], best[3]
+    local keep, drop = a, b
+    if count[a] < count[b] then keep, drop = b, a end
+    for n = 0, 15 do if used[drop][n] then used[keep][n] = true end end
+    count[keep] = count[keep] + count[drop]
+    for k = 1, #list do if into[k] == drop then into[k] = keep end end
+    for i = #alive, 1, -1 do if alive[i] == drop then table.remove(alive, i) end end
+  end
+  local row, out = {}, {}
+  for i, k in ipairs(alive) do row[k] = i - 1; out[i] = list[k] end
+  for o = 0, nobj - 1 do
+    for _, p in ipairs(objs[o].prims) do p.clut = row[into[p.clut + 1]] end
+  end
+  return out
+end
+
 -- The parts of a source texture the polygons use, packed into Digimon
 -- World's 256 x 128 texels (as research/tools/dw1convert.py's pack_texture):
 -- every polygon's UV box (inclusive), boxes that overlap merged into islands
@@ -488,20 +550,22 @@ end
 -- location-z key (0x8040, frames, -distance) in the keyframe group at
 -- `frame` and a stop (0x8040, 1, 0) at frame + frames, each in a new group
 -- where the animation has none at that frame (as dw1convert.py).
-local function add_root_motion(d, bones, frame, frames, distance)
-  local function u16(o) return (string.unpack("<I2", d, o + 1)) end
+-- anim_steps: an animation's instructions {offset, kind, frame} (from the
+-- animation at offset `at` of d; offsets relative to it).
+local function anim_steps(d, at, bones)
+  local function u16(o) return (string.unpack("<I2", d, at + o + 1)) end
   local fc = u16(0)
   local p = 2 + (bones - 1) * ((fc & 0x8000 ~= 0) and 18 or 12)
   fc = fc & 0x7FFF
   local steps, first = {}, true
-  while p + 2 <= #d do
+  while at + p + 2 <= #d do
     local w = u16(p)
     local kind, f = w & 0xF000, first and 1 or (w & 0xFFF)
     first = false
     steps[#steps + 1] = { p, kind, f }
     if kind == 0 then
       p = p + 2
-      while p + 2 <= #d and u16(p) & 0x8000 ~= 0 do
+      while at + p + 2 <= #d and u16(p) & 0x8000 ~= 0 do
         local bits, x = 0, u16(p) & 0x7FC0
         while x ~= 0 do bits = bits + (x & 1); x = x >> 1 end
         p = p + 4 + 2 * bits
@@ -512,6 +576,11 @@ local function add_root_motion(d, bones, frame, frames, distance)
     else break end
     if (kind == 0 or kind == 0x3000 or kind == 0x4000) and f > fc then break end
   end
+  return steps
+end
+
+local function add_root_motion(d, bones, frame, frames, distance)
+  local steps = anim_steps(d, 0, bones)
   local function place(f, value, div)
     local entry = string.pack("<I2i2i2", 0x8040, div, value)
     for _, st in ipairs(steps) do
@@ -526,10 +595,239 @@ local function add_root_motion(d, bones, frame, frames, distance)
   return d:sub(1, a1) .. b1 .. d:sub(a1 + 1, a2) .. b2 .. d:sub(a2 + 1)
 end
 
+-- --- a DW1 source's own animation on the converted model (dw1convert.py's
+-- retarget; Machinedramon's Infinity Cannon) -----------------------------------
+local function world(skel, pose, nb)
+  local w = { [0] = { IDENT4096, { 0, 0, 0 } } }
+  for i = 1, nb - 1 do
+    local par = skel[i][2]
+    local m, t = local_matrix(pose[i][1], pose[i][2], pose[i][3])
+    w[i] = { chain(w[par][1], w[par][2], m, t) }
+  end
+  return w
+end
+
+local function rots(w, nb)
+  local out = {}
+  for i = 0, nb - 1 do
+    local m = w[i][1]
+    out[i] = { { m[1][1] / 4096, m[1][2] / 4096, m[1][3] / 4096 }, { m[2][1] / 4096, m[2][2] / 4096, m[2][3] / 4096 }, { m[3][1] / 4096, m[3][2] / 4096, m[3][3] / 4096 } }
+  end
+  return out
+end
+
+local function mm(a, b)
+  local out = {}
+  for i = 1, 3 do
+    out[i] = {}
+    for j = 1, 3 do out[i][j] = a[i][1] * b[1][j] + a[i][2] * b[2][j] + a[i][3] * b[3][j] end
+  end
+  return out
+end
+
+local function mt(a) return { { a[1][1], a[2][1], a[3][1] }, { a[1][2], a[2][2], a[3][2] }, { a[1][3], a[2][3], a[3][3] } } end
+
+-- The angles (4096 a turn) of rotation m = X(rx) Y(ry) Z(rz), RotMatrix's order.
+local function euler_xyz(m)
+  local ry = math.asin(math.max(-1.0, math.min(1.0, m[1][3])))
+  local rx = math.atan(-m[2][3], m[3][3])
+  local rz = math.atan(-m[1][2], m[1][1])
+  return { rx * 2048 / math.pi, ry * 2048 / math.pi, rz * 2048 / math.pi }
+end
+
+-- A bone pose after `frame` ticks of an animation, as tickAnimation plays it
+-- (research/tools/dw1anim.py's pose_at): each tick adds every bone's channel
+-- velocities (a key's total / frames), then runs the instructions due on
+-- that frame. Bone 0 stays put.
+local function pose_at(mmd, info, anim, bones, frame)
+  local function u16(o) return (string.unpack("<I2", mmd, o + 1)) end
+  local pose = start_pose(mmd, info, anim, bones)
+  for i = 0, bones - 1 do
+    pose[i] = { { pose[i][1][1], pose[i][1][2], pose[i][1][3] }, { pose[i][2][1], pose[i][2][2], pose[i][2][3] }, { pose[i][3][1], pose[i][3][2], pose[i][3][3] } }
+  end
+  local p = info.anim_base + info.anims[anim]
+  local fc = u16(p) & 0x7FFF
+  local has_scale = u16(p) & 0x8000 ~= 0
+  p = p + 2 + (bones - 1) * (has_scale and 18 or 12)
+  local vel = {}
+  for b = 0, bones - 1 do vel[b] = { 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0 } end
+  local cur, end_frame, loop_start, loop_count = 1, 1, nil, 0
+  for _ = 1, frame do
+    for b = 1, bones - 1 do
+      for c = 0, 8 do
+        local v = vel[b][c + 1]
+        if v ~= 0 then pose[b][c // 3 + 1][c % 3 + 1] = pose[b][c // 3 + 1][c % 3 + 1] + v end
+      end
+    end
+    if p + 2 <= #mmd and u16(p) & 0x1000 ~= 0 and u16(p) & 0x2000 == 0 and (u16(p) & 0xF000) == 0x1000 then
+      loop_count = u16(p) & 0xFF; p = p + 2; loop_start = p; end_frame = u16(p) & 0xFFF
+    end
+    local guard = 0
+    while cur == end_frame and p + 2 <= #mmd and guard < 64 do
+      guard = guard + 1
+      local w = u16(p)
+      local kind = w & 0xF000
+      if kind == 0 then
+        p = p + 2
+        while p + 2 <= #mmd and u16(p) & 0x8000 ~= 0 do
+          local ins, div = u16(p), string.unpack("<i2", mmd, p + 3)
+          p = p + 4
+          local b, flag = ins & 0x3F, 0x4000
+          for c = 1, 9 do
+            if ins & flag ~= 0 then
+              local v = string.unpack("<i2", mmd, p + 1)
+              p = p + 2
+              if b < bones then vel[b][c] = div ~= 0 and v / div or 0.0 end
+            end
+            flag = flag >> 1
+          end
+        end
+      elseif kind == 0x1000 then
+        loop_count = w & 0xFF; p = p + 2; loop_start = p
+      elseif kind == 0x2000 then
+        if loop_count ~= 0xFF then loop_count = loop_count - 1 end
+        if loop_count == 0 or not loop_start then p = p + 4 else cur = u16(p + 2); p = loop_start end
+      elseif kind == 0x3000 then p = p + 8
+      elseif kind == 0x4000 then p = p + 4
+      else break end
+      if p + 2 <= #mmd then end_frame = u16(p) & 0xFFF end
+    end
+    if cur < fc then cur = cur + 1 end
+  end
+  return pose
+end
+
+-- One of a DW1 source's own animations (src: lib/dw1source.lua's model, its
+-- MMD's animation `anim`) played on the converted model, as a new animation
+-- for the donor's skeleton (dw1convert.py's retarget, the same numbers). Each
+-- source tick gives each mapped part's turn from its rest (its source bone's
+-- world rotation against rest), applied to the donor bone it rides (in its
+-- group's frame: r A r^T); the donor bone's local angles follow (XYZ). A
+-- donor bone's motion comes from the source bone that set its pivot, or
+-- motion_from {[donor bone] = source bone}; bones without one keep their
+-- rest angles. Bone 1 (the body root) also takes the source root's location
+-- change (times s). Each bone's keys at most `step` ticks apart, closer
+-- (halving) where a straight line between them would miss a tick's angle by
+-- more than `tol` (4096 a turn): per channel, a velocity reaching the
+-- rounded angle exactly at the segment's end, left out while it changes by
+-- `slack` or less; the source's sound instructions are kept.
+local function retarget(src, anim, motion_from, mapping, group, s, skel, nb, rest_pose)
+  local step, slack, tol = 8, 2, 64
+  local sinfo = donor_info(src.mmd)
+  local snb = #src.skel + 1
+  local s_rest = rots(world(src.skel, start_pose(src.mmd, sinfo, 0, snb), snb), snb)
+  local t_rest = rots(world(skel, rest_pose, nb), nb)
+  local source = {}
+  for _, b in ipairs(sorted_keys(mapping)) do
+    if mapping[b][2] ~= "follow" and not source[mapping[b][1]] then source[mapping[b][1]] = b end
+  end
+  for t, b in pairs(motion_from or {}) do source[t] = b end
+  local keyed = {}
+  for _, i in ipairs(sorted_keys(source)) do if i >= 1 and i < nb then keyed[#keyed + 1] = i end end
+  local base = sinfo.anim_base + sinfo.anims[anim]
+  local fc = string.unpack("<I2", src.mmd, base + 1) & 0x7FFF
+  local loc_rest = start_pose(src.mmd, sinfo, 0, snb)[1][3]
+  local ang, prev = {}, nil
+  local I = { { 1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 1.0 } }
+  for t = 1, fc do
+    local sp = pose_at(src.mmd, sinfo, anim, snb, t)
+    local sw = rots(world(src.skel, sp, snb), snb)
+    local W = { [0] = I }
+    local cur = {}
+    for i = 1, nb - 1 do
+      local par = skel[i][2]
+      if source[i] then
+        local b = source[i]
+        local r = group[b][3]
+        local A = mm(sw[b], mt(s_rest[b]))
+        W[i] = mm(mm(mm(r, A), mt(r)), t_rest[i])
+        local a = euler_xyz(mm(mt(W[par]), W[i]))
+        if prev then
+          for c = 1, 3 do a[c] = prev[i][c] + ((a[c] - prev[i][c] + 2048) % 4096 - 2048) end
+        end
+        if i == 1 then
+          for k = 1, 3 do a[3 + k] = rest_pose[1][3][k] + s * (sp[1][3][k] - loc_rest[k]) end
+        end
+        cur[i] = a
+      else
+        W[i] = mm(W[par], mm(mt(t_rest[par]), t_rest[i]))
+      end
+    end
+    ang[t] = {}
+    for i, a in pairs(cur) do
+      local r = {}
+      for c, x in ipairs(a) do r[c] = math.tointeger(round(x)) end
+      ang[t][i] = r
+    end
+    prev = cur
+  end
+  local out = { string.pack("<I2", fc) }
+  for i = 1, nb - 1 do
+    local rot, loc = rest_pose[i][2], rest_pose[i][3]
+    local a = ang[1][i]
+    if a then
+      rot = { a[1], a[2], a[3] }
+      if #a > 3 then loc = { a[4], a[5], a[6] } end
+    end
+    out[#out + 1] = string.pack("<i2i2i2i2i2i2", rot[1], rot[2], rot[3], loc[1], loc[2], loc[3])
+  end
+  local sounds = {}
+  for _, st in ipairs(anim_steps(src.mmd, base, snb)) do
+    if st[2] == 0x4000 then sounds[#sounds + 1] = { st[3], (string.unpack("<I2", src.mmd, base + st[1] + 3)) } end
+  end
+  local cur, last, due = {}, {}, {}
+  for _, i in ipairs(keyed) do
+    cur[i], last[i], due[i] = {}, {}, 1
+    for c, x in ipairs(ang[1][i]) do cur[i][c] = x end
+  end
+  local flags = { 0x0800, 0x0400, 0x0200, 0x0100, 0x0080, 0x0040 }
+  for g = 1, fc do
+    local group_bytes = {}
+    for _, i in ipairs(keyed) do
+      if due[i] == g and g < fc then
+        local n = math.min(step, fc - g)
+        local function misses()
+          for c = 1, #cur[i] do
+            for k = 1, n - 1 do
+              if math.abs(cur[i][c] + (ang[g + n][i][c] - cur[i][c]) * k / n - ang[g + k][i][c]) > tol then return true end
+            end
+          end
+          return false
+        end
+        while n > 1 and misses() do n = n // 2 end
+        due[i] = g + n
+        local word, vals = 0, {}
+        for c = 1, #cur[i] do
+          local total = ang[g + n][i][c] - cur[i][c]
+          local l = last[i][c]
+          if l and l[2] == n and math.abs(total - l[1]) <= slack then
+            total = l[1]
+          else
+            word = word | flags[c]
+            vals[#vals + 1] = string.pack("<i2", total)
+            last[i][c] = { total, n }
+          end
+          cur[i][c] = cur[i][c] + total
+        end
+        if word ~= 0 then group_bytes[#group_bytes + 1] = string.pack("<I2i2", 0x8000 | word | i, n) .. table.concat(vals) end
+      end
+    end
+    if #group_bytes > 0 then out[#out + 1] = string.pack("<I2", g) .. table.concat(group_bytes) end
+    for _, snd in ipairs(sounds) do
+      if snd[1] == g then out[#out + 1] = string.pack("<I2I2", 0x4000 | g, snd[2]) end
+    end
+  end
+  out[#out + 1] = string.pack("<I2", fc + 1) -- never reached: playback stops at fc
+  return table.concat(out)
+end
+
 -- anim_alias: {[animation] = other animation}: that entry of the animation
 -- table plays the other one (a finisher with another of the donor's motions;
 -- technique slot k is animation 0x2E + k); or {animation, frame, frames,
--- distance}: a copy of it with that forward travel (add_root_motion).
+-- distance}: a copy of it with that forward travel (add_root_motion); or
+-- {motion = animation, from = {...}}: the source's own animation retargeted
+-- (a DW1 source only; it replaces the last animation when nothing else plays
+-- that one).
 -- A DW1 model's bones at an animation's start pose (lib/dw1source.lua): per
 -- bone {matrix (4096 = 1, with scale), location}, chained to the parents.
 function M.dw1_pose(mmd, skel, anim)
@@ -697,7 +995,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * m3.tims[1].w + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
     end
   end
-  if #clut_list > 16 then error(#clut_list .. " CLUTs; Digimon World has room for 16") end
+  if #clut_list > 16 then clut_list = merge_cluts(objs, info.nobj, m3.tims[1], clut_list) end
 
   -- texture: 256x128 texels, CLUT rows 0..15 (the source's rows as they are
   -- when it's 256 wide and uses only the first 128, else packed)
@@ -729,6 +1027,15 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       local fc = string.unpack("<I2", anims, off + 1)
       local step = fc & 0x8000 ~= 0 and 18 or 12
       for i, loc in pairs(new_loc) do edits[off + 2 + (i - 1) * step + step - 6] = string.pack("<i2i2i2", loc[1], loc[2], loc[3]) end
+      -- Texture moves (0x3xxx {src, size, dest}: copy a block of the
+      -- Digimon's own texture, the donor's eye and face changes) would
+      -- copy across another layout: each copies its block onto itself.
+      for _, st in ipairs(anim_steps(anims, off, nb)) do
+        if st[2] == 0x3000 then
+          local src, size = string.unpack("<I2I2", anims, off + st[1] + 2 + 1)
+          edits[off + st[1] + 2] = string.pack("<I2I2I2", src, size, src)
+        end
+      end
     end
   end
   local parts, pos = {}, 0
@@ -756,10 +1063,31 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
     end
     anims = table.concat(words) .. anims:sub(4 * count + 1)
   end
+  -- A retargeted motion replacing the last animation, used nowhere else:
+  -- that one goes (its room is the TMD's).
+  for _, dst in ipairs(sorted_keys(anim_alias or {})) do
+    local src, o = anim_alias[dst], offs[dst]
+    if type(src) == "table" and src.motion and o and o ~= 0 then
+      local top, uses = 0, 0
+      for a = 0, need - 1 do
+        local x = offs[a] or 0
+        if x > top then top = x end
+        if x == o then uses = uses + 1 end
+      end
+      if o == top and uses == 1 then anims = anims:sub(1, o) end
+    end
+  end
   for _, dst in ipairs(sorted_keys(anim_alias or {})) do
     local src = anim_alias[dst]
     local off
-    if type(src) == "table" then
+    if type(src) == "table" and src.motion then
+      local rest_pose = {}
+      for i = 0, nb - 1 do rest_pose[i] = { pose1[i][1], pose1[i][2], new_loc[i] or pose1[i][3] } end
+      local blob = retarget(m3, src.motion, src.from, mapping, group, s, skel, nb, rest_pose)
+      anims = anims .. string.rep("\0", (4 - #anims % 4) % 4)
+      off = #anims
+      anims = anims .. blob
+    elseif type(src) == "table" then
       local start, stop = offs[src[1]], #anims
       for a = 0, need - 1 do
         local o = offs[a]

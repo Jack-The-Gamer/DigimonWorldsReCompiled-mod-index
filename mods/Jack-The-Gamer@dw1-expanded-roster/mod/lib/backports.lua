@@ -41,19 +41,15 @@ M.list = {
     gains = { 900, 450, 110, 40, 70, 40 },
     -- Becoming it (EvoRequirements): a Koromon (2) whose highest stat is
     -- Offense or Speed (1 = "this one is highest", -1 = don't care) at
-    -- weight 25 +- 5, any care mistakes. Agumon and Gabumon (also from
-    -- Koromon) want weight 15 +- 5; ties keep the earlier of Koromon's
-    -- evolutions, and Guilmon comes after them.
+    -- weight 25 +- 5, any care mistakes. Agumon and Biyomon (also from
+    -- Koromon, lib/tree.lua) want weight 15 +- 5; ties keep the earlier of
+    -- Koromon's evolutions.
     requirements = { digimon = 2, hp = -1, mp = -1, offense = 1, defense = -1, speed = 1, brain = -1,
       care = 0, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
-    evolves_from = { 2 }, -- Koromon
     -- Its chart icon (lib/icon.lua): the head (DW1 bones 3, 4) at its own
     -- size, so both ears show as two points, and the first frame's head
     -- taken from the second frame (it reads better there).
     icon_head = { 3, 4 }, icon_head_scale = 1.0, icon_head_from_second = true,
-    -- Its own evolutions: Growlmon (only from Guilmon, not Agumon), Greymon,
-    -- Tyrannomon, Airdramon. Ties keep the earlier one.
-    evolutions = { 181, 5, 8, 7 },
     -- The Digimon page's camera stays the donor's (RAISE_DATA viewX/Y/Z:
     -- Agumon's 550, 230, -1870 frames it whole; a more negative z comes
     -- closer and moves it left, a larger y moves it down). `view = {x, y, z}`
@@ -89,12 +85,7 @@ M.list = {
     -- 90), which Guilmon can also become.
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = -1,
       care = 3, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
-    evolves_from = { 180 }, -- Guilmon
     icon_head = { 4, 5 }, -- Greymon's head and jaw
-    -- WarGrowlmon, SkullGreymon (Greymon's other Ultimate) or Megadramon
-    -- (SkullGreymon's own source list is full, so its chart page doesn't
-    -- name Growlmon; Megadramon's has room)
-    evolutions = { 182, 26, 54 },
     source = { ["SLES-03936"] = { file = 625, bones = 50, motions = 0 } }, -- M367GRAW
     donor = 5, donor_file = "GREY.MMD", -- Greymon
     -- Its model is bigger than Greymon's: lib/convert.lua slims it to fit
@@ -124,7 +115,6 @@ M.list = {
     -- battles, 30 techniques.
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 300, speed = 500, brain = 300,
       care = 10, weight = 65, discipline = 80, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
-    evolves_from = { 181, 5, 8 }, -- Growlmon, Greymon, Tyrannomon
     -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw: stats
     -- and animation) as WarGrowlmon's Atomic Blaster, with the effect of
     -- Vademon's Abduction Beam (0x43) fired from the chest: the torso (bone
@@ -171,8 +161,6 @@ M.list = {
     -- or Speed at weight 15).
     requirements = { digimon = 16, hp = -1, mp = -1, offense = 1, defense = -1, speed = -1, brain = 1,
       care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
-    evolves_from = { 16 }, -- Tsunomon
-    evolutions = { 185, 184, 10 }, -- Veedramon, ExVeemon, Seadramon
     source = { ["SLES-03936"] = { file = 526, bones = 44, motions = 0 } }, -- M145VMON (fighter 0x91)
     donor = 17, donor_file = "GABU.MMD", -- Gabumon (Agumon's skeleton)
     mapping = {
@@ -199,8 +187,6 @@ M.list = {
     -- 10 battles, 30 techniques
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = -1,
       care = 3, weight = 25, discipline = -1, happiness = -1, battles = 10, techs = 30, flags = 0x10 },
-    evolves_from = { 183 }, -- Veemon
-    evolutions = { 186, 187, 13 }, -- Paildramon, AeroVeedramon, Mamemon
     source = { ["SLES-03936"] = { file = 575, bones = 54, motions = 0 } }, -- M259EXVM (fighter 0x103)
     donor = 48, donor_file = "LEOM.MMD", -- Leomon (a tail, 4-bone legs)
     mapping = {
@@ -228,8 +214,6 @@ M.list = {
     -- discipline 70, 30 techniques
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = 100, speed = -1, brain = 80,
       care = 3, weight = 30, discipline = 70, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
-    evolves_from = { 183 }, -- Veemon
-    evolutions = { 12, 187 }, -- MetalGreymon, AeroVeedramon
     icon_head = { 4, 5 },     -- Greymon's head and jaw
     source = { ["SLUS-01193"] = { model = 135, anim = 26 } }, -- DW2 Digimon 128 (its first animation file)
     donor = 5, donor_file = "GREY.MMD", -- Greymon
@@ -258,7 +242,6 @@ M.list = {
     -- 8 care mistakes, weight 50, discipline 90, 30 battles, 35 techniques
     requirements = { digimon = -1, hp = 300, mp = 200, offense = 400, defense = 300, speed = 400, brain = 300,
       care = 8, weight = 50, discipline = 90, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
-    evolves_from = { 184, 19, 7 }, -- ExVeemon, Kabuterimon, Airdramon
     icon_head = { 3 },      -- Andromon has no jaw
     source = { ["SLES-03936"] = { file = 601, bones = 54, motions = 0 } }, -- M254PLDR (fighter 0xFE)
     donor = 40, donor_file = "ANDR.MMD", -- Andromon (no tail or jaw)
@@ -292,7 +275,6 @@ M.list = {
     -- 10 care mistakes, weight 60, discipline 90, 30 battles, 30 techniques
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 400, speed = 400, brain = 300,
       care = 10, weight = 60, discipline = 90, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
-    evolves_from = { 185, 184, 5, 7, 8 }, -- Veedramon, ExVeemon, Greymon, Airdramon, Tyrannomon
     icon_head = { 4, 5 },   -- MetalGreymon's head and jaw
     source = { ["SLUS-01193"] = { model = 114, anim = 27 } }, -- DW2 Digimon 180
     donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (as WarGrowlmon: arms keep their own stance, feet flat)
@@ -329,8 +311,6 @@ M.list = {
     -- and Betamon, before it, want MP/Speed/Brains or HP/MP/Defense at 15).
     requirements = { digimon = 44, hp = -1, mp = -1, offense = 1, defense = -1, speed = -1, brain = -1,
       care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
-    evolves_from = { 44 },     -- Tanemon
-    evolutions = { 19, 51 },   -- Kabuterimon, Kuwagamon
     -- A Rookie's care (meals, sleep, weight, food, training, Digimon page
     -- camera) from Kunemon (32), not Kabuterimon's
     raise_from = 32,
@@ -362,8 +342,6 @@ M.list = {
     -- weight 55, 30 battles, 35 techniques (Okuwamon: Offense and Speed)
     requirements = { digimon = -1, hp = 500, mp = -1, offense = 400, defense = 500, speed = 300, brain = -1,
       care = 5, weight = 55, discipline = -1, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
-    evolves_from = { 19, 51 },  -- Kabuterimon, Kuwagamon
-    evolutions = { 60 },        -- HerculesKabuterimon (a Mega)
     icon_head = { 3, 4 },
     source = { ["SLUS-01193"] = { model = 115, anim = 28 } }, -- DW2 Digimon 181
     donor = 60, donor_file = "HKAB.MMD", -- HerculesKabuterimon (its wing bones stay empty)
@@ -408,8 +386,6 @@ M.list = {
     -- mistakes, weight 45, 30 battles, 30 techniques
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 300, speed = 500, brain = -1,
       care = 10, weight = 45, discipline = -1, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
-    evolves_from = { 19, 51 },  -- Kabuterimon, Kuwagamon
-    evolutions = { 60 },        -- HerculesKabuterimon (a Mega)
     raise_from = 60,            -- an Ultimate's care (Centarumon is a Champion)
     icon_head = { 4 },
     source = { ["SLES-03936"] = { file = 832, bones = 58, motions = 0 } }, -- M226OKWA (enemy fighter 0xE2)
@@ -443,8 +419,6 @@ M.list = {
     -- 5 care mistakes, weight 40, discipline 90, 35 techniques
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 400, defense = 300, speed = 400, brain = 300,
       care = 5, weight = 40, discipline = 90, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
-    evolves_from = { 21, 20, 50 }, -- Birdramon, Angemon, Kokatorimon
-    evolutions = { 59 },           -- Phoenixmon (a Mega)
     icon_head = { 3 },             -- Andromon has no jaw
     source = { ["SLUS-01193"] = { model = 226, anim = 225 } }, -- DW2 Digimon 187
     donor = 40, donor_file = "ANDR.MMD", -- Andromon (as Paildramon)
@@ -458,20 +432,139 @@ M.list = {
       [24] = { 18, "limb", 25, 19, true }, [25] = { 19, "leaf" }, [26] = { 19, "follow" }, [27] = { 20, "core" }, -- leg (-x)
     },
   },
+  -- --- Deltamon, Kimeramon (DW2003) and Machinedramon (DW1's own) -----------------
+  {
+    type = 192, name = "Deltamon", file = "DELT", level = 4, height = 420,
+    attribute = 3, specialties = { 1, 5, 3 }, radius = 230, -- Virus; Battle, Mech, Earth
+    -- Tyrannomon's techniques; its finisher (58 Blaze Blast: stats, motion) as
+    -- Triplex Force with Meramon's Fireball (0x3D), whose three start points
+    -- (Meramon's body and hands) are its three mouths: the head's (bone 3) and
+    -- the hand heads' (on the hand, bone 7, and the forearm, bone 12), the
+    -- front of each snout at rest, in bone space
+    finisher = { name = "Triplex Force", from = 58, effect = 0x3D,
+      origin = { { 3, 126, -48, 0 }, { 7, 124, 35, -59 }, { 12, 206, -1, -8 } } },
+    gains = { 1800, 1200, 250, 200, 150, 150 },
+    -- HP, Offense and Defense 100, at most 10 care mistakes (flags 0x10),
+    -- weight 35, 15 battles or 28 techniques
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = 100, defense = 100, speed = -1, brain = -1,
+      care = 10, weight = 35, discipline = -1, happiness = -1, battles = 15, techs = 28, flags = 0x10 },
+    icon_head = { 3, 4 },      -- Tyrannomon's head and jaw
+    source = { ["SLES-03936"] = { file = 662, bones = 54, motions = 0 } }, -- M138DELT (enemy fighter 0x8A)
+    donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon (its fingers and left hand stay empty)
+    -- hybrid: arms keep their own stance (each ends in a head: on a finger,
+    -- the hand heads' jaws gaped as Tyrannomon's fingers curl, so they ride
+    -- the hand); its two tail halves ride the first tail bone
+    mapping = {
+      [1] = { 2, "core" },                                                                       -- chest
+      [9] = { 3, "core" }, [10] = { 3, "follow" }, [11] = { 4, "core" },                         -- neck + head, jaw
+      [2] = { 5, "core" }, [3] = { 6, "core" }, [4] = { 7, "core" }, [5] = { 7, "follow" },      -- arm (+x): hand head and its jaw
+      [6] = { 11, "core" }, [7] = { 12, "core" }, [8] = { 12, "follow" },                        -- arm (-x): forearm head and its jaw
+      [12] = { 17, "core" },                                                                     -- pelvis
+      [21] = { 18, "core" }, [22] = { 18, "follow" }, [23] = { 18, "follow" },                   -- tail half (-x)
+      [24] = { 18, "core" }, [25] = { 18, "follow" }, [26] = { 18, "follow" },                   -- tail half (+x)
+      [17] = { 21, "limb", 18, 22, true }, [18] = { 22, "leaf" }, [19] = { 22, "follow" }, [20] = { 23, "core" }, -- leg (+x)
+      [13] = { 24, "limb", 14, 25, true }, [14] = { 25, "leaf" }, [15] = { 25, "follow" }, [16] = { 26, "core" }, -- leg (-x)
+    },
+  },
+  {
+    type = 193, name = "Kimeramon", file = "KIME", level = 5, height = 480,
+    attribute = 1, specialties = { 0, 2, 1 }, radius = 280, -- Data; Fire, Air, Battle
+    -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw: stats,
+    -- motion) as Heat Viper with Phoenixmon's Crimson Flare (0x6D), whose four
+    -- start points (Phoenixmon's wings and feet) are its four hands: the
+    -- raised ones (riding the chest, bone 2), then the claws (bones 9, 13),
+    -- each hand's centre at rest, in bone space
+    finisher = { name = "Heat Viper", from = 79, effect = 0x6D,
+      origin = { { 2, 277, -45, -188 }, { 2, 277, -47, 188 }, { 9, 43, -7, 13 }, { 13, 46, -54, -40 } } },
+    gains = { 5000, 4500, 550, 450, 500, 450 },
+    -- HP 400, MP 400, Offense 450, Defense 400, Speed 400, Brains 400, at most
+    -- 15 care mistakes, weight 55, 50 battles or 40 techniques
+    requirements = { digimon = -1, hp = 400, mp = 400, offense = 450, defense = 400, speed = 400, brain = 400,
+      care = 15, weight = 55, discipline = -1, happiness = -1, battles = 50, techs = 40, flags = 0x10 },
+    icon_head = { 4, 5 },      -- MetalGreymon's head and jaw
+    -- The Digimon page: MetalGreymon's model position (-30, 390, -780; the
+    -- page's camera is at (1300, 0, -3280) looking at the origin) at the same
+    -- distance, ~9 px lower and ~6 px left on screen so its horn clears the
+    -- panel's title
+    view = { -63, 440, -793 },
+    source = { ["SLES-03936"] = { file = 1055, bones = 66, motions = 0 } }, -- M237CHMR (enemy fighter 0xED)
+    donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon
+    -- 18 palettes, merged to 16 (lib/convert.lua). Its forward (Kabuterimon)
+    -- claws ride MetalGreymon's arms, the raised (Devimon) arms the chest (on
+    -- the arms they flailed as it walked), both wing pairs the wing bones.
+    mapping = {
+      [9] = { 2, "core" }, [13] = { 2, "follow" }, [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 2, "follow" }, [17] = { 2, "follow" }, [18] = { 2, "follow" }, -- chest, raised arms
+      [10] = { 3, "core" }, [11] = { 4, "core" }, [12] = { 5, "core" },                          -- neck, head, jaw
+      [19] = { 7, "core" }, [20] = { 8, "core" }, [21] = { 9, "core" },                          -- claw arm (+x)
+      [22] = { 11, "core" }, [23] = { 12, "core" }, [24] = { 13, "core" },                       -- claw arm (-x)
+      [25] = { 15, "core" }, [27] = { 15, "core" }, [26] = { 17, "core" }, [28] = { 17, "core" }, -- wings (+x, -x)
+      [1] = { 18, "core" },                                                                      -- pelvis -> hips
+      [6] = { 19, "limb", 7, 20 }, [7] = { 20, "limb", 8, 21 }, [8] = { 21, "leaf" },            -- tail
+      [2] = { 23, "limb", 3, 24, true }, [3] = { 24, "leaf" }, [4] = { 24, "follow" }, [5] = { 25, "core" },      -- leg (+x)
+      [29] = { 27, "limb", 30, 28, true }, [30] = { 28, "leaf" }, [31] = { 28, "follow" }, [32] = { 29, "core" }, -- leg (-x)
+    },
+  },
+  {
+    -- Digimon World's own Machinedramon (type 115, the last boss: its model has
+    -- battle motions only) on MetalGreymon's skeleton (the same build: its back
+    -- cannons ride the wing bones), at its own size. A Mega.
+    type = 194, name = "Machinedramon", file = "MCDR", level = 5, height = 600, model_height = 650, game = "dw1",
+    chart_stage = 6,
+    attribute = 3, specialties = { 5, 0, 1 }, radius = 320, -- Virus; Mech, Fire, Battle
+    -- MetalGreymon's techniques; its finisher (in place of 79 Giga Scissor
+    -- Claw) its own Infinity Cannon (0x6A: stats and effect) at a Mega's power
+    -- (the boss's is 777), playing its own Infinity Cannon motion (its
+    -- animation 0x34, retargeted by lib/convert.lua: the cannons swing
+    -- forward over its shoulders, it leans in and fires): MetalGreymon's torso
+    -- moves with its chest (3), the cannons with their middle segments (9,
+    -- 12), the body root with its root. The effect starts in front of it and
+    -- at the two cannon ends (its bones 10 and 13 at 220 along x: on
+    -- MetalGreymon's wing bones 15 and 17).
+    finisher = { name = "Infinity Cannon", from = 79, stats = 0x6A, power = 280, effect = 0x6A,
+      motion = { anim = 0x34, from = { [1] = 1, [2] = 3, [15] = 9, [17] = 12 } },
+      origin = { { 0, 0, 0, 0 }, { 15, 162, 178, -349 }, { 17, 162, 177, 349 } } },
+    gains = { 8000, 6000, 800, 900, 500, 600 },
+    -- HP 800, MP 500, Offense 700, Defense 800, Speed 400, Brains 600, at most
+    -- 10 care mistakes, weight 80, 80 battles or 45 techniques
+    requirements = { digimon = -1, hp = 800, mp = 500, offense = 700, defense = 800, speed = 400, brain = 600,
+      care = 10, weight = 80, discipline = -1, happiness = -1, battles = 80, techs = 45, flags = 0x10 },
+    icon_head = { 4, 5 },      -- MetalGreymon's head and jaw
+    -- The Digimon page: 650 tall, it can't fit at MetalGreymon's distance, so
+    -- it stands farther back (by its height over MetalGreymon's) at the same
+    -- place on screen
+    view = { -709, 590, 500 },
+    source = { ["SLUS-01032"] = { type = 115, file = "MUGE.MMD" } },
+    donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon
+    -- DW1 bone -> MetalGreymon bone (bone 1, the root, has no mesh)
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 2, "follow" },                         -- root, waist, chest
+      [4] = { 3, "core" }, [5] = { 3, "follow" }, [6] = { 4, "core" }, [7] = { 5, "core" },      -- neck, head, jaw
+      [8] = { 15, "core" }, [9] = { 15, "follow" }, [10] = { 15, "follow" },                     -- cannon (+x)
+      [11] = { 17, "core" }, [12] = { 17, "follow" }, [13] = { 17, "follow" },                   -- cannon (-x)
+      [14] = { 7, "core" }, [15] = { 8, "core" }, [16] = { 9, "core" },                          -- arm (+x)
+      [17] = { 11, "core" }, [18] = { 12, "core" }, [19] = { 13, "core" }, [20] = { 13, "core" }, [21] = { 13, "core" }, -- arm (-x), claws
+      [22] = { 18, "core" },                                                                     -- pelvis
+      [23] = { 19, "limb", 24, 20 }, [24] = { 20, "limb", 25, 21 }, [25] = { 21, "leaf" },       -- tail
+      [26] = { 23, "limb", 27, 24, true }, [27] = { 24, "leaf" }, [28] = { 25, "core" },         -- leg (+x)
+      [29] = { 27, "limb", 30, 28, true }, [30] = { 28, "leaf" }, [31] = { 29, "core" },         -- leg (-x)
+    },
+  },
 }
 
--- The game's own Digimon that change: HerculesKabuterimon and Phoenixmon become
--- Megas (the chart's sixth section; DIGIMON_DATA keeps level 5, which so much
--- of the game reads that a level 6 isn't safe). Each is taken off every other
--- Digimon's targets (Kabuterimon, Kuwagamon, Shellmon; Birdramon, Angemon,
--- Airdramon, Kokatorimon, Unimon), comes from `evolves_from` only, has no
--- targets (Phoenixmon's sixth slot holds a stray 0), and gets Mega
--- requirements and gains. An Ultimate becomes a Mega like a Champion becomes
--- an Ultimate (lib/evolution.lua: M.MEGA_HOURS).
+-- The game's own Digimon that change (their evolution lists come from
+-- lib/tree.lua). `requirements` replaces only the fields given.
+--
+-- HerculesKabuterimon and Phoenixmon become Megas (the chart's sixth section;
+-- DIGIMON_DATA keeps level 5, which so much of the game reads that a level 6
+-- isn't safe) with Mega requirements and gains, once a Digimon they come from
+-- in the tree is built (`needs`); until then they stay Ultimates. An Ultimate
+-- becomes a Mega like a Champion becomes an Ultimate (lib/evolution.lua:
+-- M.MEGA_HOURS). Whamon is an Ultimate in the tree: level 5 (a Champion's
+-- evolution into it adds an Ultimate's lifetime) with an Ultimate's
+-- requirements and gains.
 M.changes = {
   {
-    type = 60, name = "HerculesKabuterimon", chart_stage = 6,
-    evolves_from = { 189, 190 }, -- MegaKabuterimon, Okuwamon
+    type = 60, name = "HerculesKabuterimon", chart_stage = 6, needs = { 189 }, -- MegaKabuterimon
     -- HP 700, MP 400, Offense 600, Defense 700, Speed 500, at most 5 care
     -- mistakes, weight 60, 50 battles, 45 techniques
     requirements = { digimon = -1, hp = 700, mp = 400, offense = 600, defense = 700, speed = 500, brain = -1,
@@ -479,14 +572,39 @@ M.changes = {
     gains = { 7000, 6000, 700, 800, 600, 500 },
   },
   {
-    type = 59, name = "Phoenixmon", chart_stage = 6,
-    evolves_from = { 191, 55 }, -- Garudamon, Piximon
+    type = 59, name = "Phoenixmon", chart_stage = 6, needs = { 191 }, -- Garudamon
     -- HP 600, MP 700, Offense 500, Defense 500, Speed 700, Brains 700, at most
     -- 3 care mistakes, weight 35, discipline 100, 45 techniques
     requirements = { digimon = -1, hp = 600, mp = 700, offense = 500, defense = 500, speed = 700, brain = 700,
       care = 3, weight = 35, discipline = 100, happiness = -1, battles = -1, techs = 45, flags = 0x10 },
     gains = { 7000, 8000, 600, 500, 800, 800 },
   },
+  {
+    type = 24, name = "Whamon", level = 5, chart_stage = 5,
+    -- HP 400, Defense 400, Brains 400, at most 10 care mistakes, weight 50,
+    -- discipline 70 or 30 techniques (as a Champion: HP and Brains 100)
+    requirements = { digimon = -1, hp = 400, mp = -1, offense = -1, defense = 400, speed = -1, brain = 400,
+      care = 10, weight = 50, discipline = 70, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
+    gains = { 5000, 3000, 400, 550, 300, 500 },
+  },
+  -- Vademon comes from Nanimon in the tree; the game has no requirements for
+  -- it (it only comes from an event): MP 400, Brains 500, at most 15 care
+  -- mistakes, weight 20, 35 techniques
+  { type = 28, name = "Vademon",
+    requirements = { digimon = -1, hp = -1, mp = 400, offense = -1, defense = -1, speed = -1, brain = 500,
+      care = 15, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = 35, flags = 0x10 } },
+  -- The Rookies' new In-Training (the tree): `digimon` names it. Kunemon
+  -- (no requirements in the game: it came from an event) wants HP or Defense
+  -- highest at weight 10 (Palmon, before it, MP, Speed or Brains at 15);
+  -- Elecmon now wants weight 10 (Veemon, before it, takes Offense at 15..25).
+  { type = 32, name = "Kunemon",
+    requirements = { digimon = 44, hp = 1, mp = -1, offense = -1, defense = 1, speed = -1, brain = -1,
+      care = 0, weight = 10, discipline = -1, happiness = -1, battles = -2, techs = 0, flags = 0 } },
+  { type = 18, name = "Elecmon", requirements = { weight = 10 } },
+  { type = 45, name = "Biyomon", requirements = { digimon = 2 } },     -- Koromon
+  { type = 4, name = "Betamon", requirements = { digimon = 16 } },     -- Tsunomon
+  { type = 17, name = "Gabumon", requirements = { digimon = 16 } },    -- Tsunomon
+  { type = 57, name = "Penguinmon", requirements = { digimon = 30 } }, -- Tokomon
 }
 
 return M

@@ -54,7 +54,8 @@ function M.read(mmd, skel, tim_entry)
     end
     objs[i] = o
   end
-  local m = { bones = {} }
+  -- its own MMD and skeleton too: lib/convert.lua can retarget its animations
+  local m = { bones = {}, mmd = mmd, skel = skel }
   for b = 1, #skel do
     local o = skel[b][1]
     local src = o >= 0 and objs[o] or { verts = {}, normals = {}, polys = {} }
