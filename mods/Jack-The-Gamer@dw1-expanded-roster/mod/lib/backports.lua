@@ -2417,6 +2417,182 @@ M.list = {
       [2] = { 22, "limb", 3, 23, true }, [3] = { 23, "leaf" }, [4] = { 24, "core" }, [5] = { 24, "follow" }, -- leg (-x)
     },
   },
+  {
+    type = 248, name = "Gomamon", file = "GOMA", level = 3, height = 230, game = "dw2",
+    attribute = 2, specialties = { 4, 255, 255 }, radius = 120, -- Vaccine; Ice (Water)
+    techniques = { auto = true },
+    -- Its finisher (in Betamon's 0x42 Electric Shock slot: its motion) as
+    -- Marching Fishes: Shellmon's Hydro Pressure (0x57: a jet of water) from
+    -- its mouth, at a Rookie's power
+    finisher = { name = "Marching Fishes", from = 0x42, power = 95, effect = 0x57, origin = { 3, -57, 0, -98 } },
+    gains = { 900, 600, 80, 90, 60, 70 },
+    -- a Tokomon (30) whose highest stat is HP, at weight 30 +- 5 (with
+    -- Defense too it took Penguinmon's share: a tie goes to the earlier in
+    -- the tree, and Gomamon comes first)
+    requirements = { digimon = 30, hp = 1, mp = -1, offense = -1, defense = -1, speed = -1, brain = -1,
+      care = 0, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    icon_head = { 3 },           -- Betamon's head
+    source = { ["SLUS-01193"] = { model = 210, anim = 207 } }, -- DW2 Digimon 182
+    -- Betamon: low on four limbs, the same crawl (Penguinmon flapped its
+    -- flippers about); chest with the body, tufts with the head
+    donor = 4, donor_file = "BETA.MMD",
+    mapping = {
+      [1] = { 14, "core" }, [5] = { 14, "core" }, [2] = { 15, "core" },                             -- hips, chest, tail
+      [10] = { 3, "core" }, [11] = { 3, "follow" }, [12] = { 3, "follow" },                         -- head, tufts
+      [8] = { 9, "core" }, [9] = { 10, "core" },                                                    -- front flipper (+x)
+      [6] = { 12, "core" }, [7] = { 13, "core" },                                                   -- front flipper (-x)
+      [3] = { 19, "core" }, [4] = { 22, "core" },                                                   -- rear flippers
+    },
+  },
+  {
+    type = 249, name = "Ikkakumon", file = "IKKA", level = 4, height = 380, game = "dw2",
+    attribute = 2, specialties = { 4, 255, 255 }, radius = 220, -- Vaccine; Ice (Water)
+    techniques = { auto = true },
+    -- Its finisher (in Garurumon's 0x40 Howling Blaster slot: its motion) as
+    -- Harpoon Torpedo: MetalGreymon's missiles (0x4F) from its horn, at a
+    -- Champion's power
+    finisher = { name = "Harpoon Torpedo", from = 0x40, power = 170, effect = 0x4F, origin = { 2, 57, -2, 89 } },
+    gains = { 2000, 1200, 180, 280, 120, 200 },
+    -- HP 100, Defense 100, Brains 80, at most 5 care mistakes, weight 35,
+    -- discipline 50 or 25 techniques
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = -1, defense = 100, speed = -1, brain = 80,
+      care = 5, weight = 35, discipline = 50, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
+    -- The Digimon page: Garurumon's camera cut its horn off; a little lower
+    view = { 150, 360, -1100 },
+    icon_head = { 2 }, icon_head_scale = 1.0, -- its head is one with its body
+    source = { ["SLUS-01193"] = { model = 1546, anim = 1547 } }, -- DW2 Digimon 209
+    -- Garurumon: on all fours, its feet stepping clearly (Monochromon tipped
+    -- it forward); snout, jaw and whiskers with the body (its head is part of
+    -- it), hybrid front legs, the rear flippers turned to the hind legs
+    donor = 22, donor_file = "GARU.MMD",
+    mapping = {
+      [2] = { 2, "core" }, [3] = { 2, "follow" }, [4] = { 2, "follow" }, [5] = { 2, "follow" }, [6] = { 2, "follow" }, -- body, snout, jaw, whiskers
+      [1] = { 14, "core" }, [13] = { 14, "core" },                                                  -- hips
+      [7] = { 7, "limb", 8, 8, true }, [8] = { 8, "leaf" }, [9] = { 9, "core" },                    -- front leg (+x)
+      [10] = { 11, "limb", 11, 12, true }, [11] = { 12, "leaf" }, [12] = { 13, "core" },            -- front leg (-x)
+      [14] = { 19, "limb", 15, 20, true }, [15] = { 20, "core" },                                   -- rear flipper (+x)
+      [16] = { 23, "limb", 17, 24, true }, [17] = { 24, "core" },                                   -- rear flipper (-x)
+    },
+  },
+  {
+    type = 250, name = "Zudomon", file = "ZUDO", level = 5, height = 450, game = "dw2",
+    attribute = 2, specialties = { 4, 1, 2 }, radius = 180, -- Vaccine; Ice (Water), Battle, Air
+    techniques = { auto = true },
+    -- Its finisher (Frigimon's 0x69 Subzero Ice Punch: its close-range stats,
+    -- so it walks up to the foe, and its blow) as Vulcan's Hammer: Elecmon's
+    -- Super Thunder Strike (0x65) from the head of its hammer, at an
+    -- Ultimate's power
+    finisher = { name = "Vulcan's Hammer", from = 0x69, power = 230, effect = 0x65, origin = { 11, -88, -161, -83 } },
+    gains = { 6000, 3500, 600, 600, 300, 350 },
+    -- HP 400, Offense 400, Defense 400, at most 10 care mistakes, weight 50,
+    -- 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = -1, offense = 400, defense = 400, speed = -1, brain = -1,
+      care = 10, weight = 50, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    -- The Digimon page: MetalGreymon's camera cut its horn and hammer off;
+    -- a little lower and to the left
+    view = { -60, 440, -700 },
+    icon_head = { 3 },
+    source = { ["SLUS-01193"] = { model = 116, anim = 29 } }, -- DW2 Digimon 185
+    -- Frigimon: upright and stocky, its hammer over its shoulder (Ogremon and
+    -- Leomon pitched it forward, Andromon flung the hammer out); the hammer
+    -- in its left hand, tail with the body, legs hybrid
+    donor = 23, donor_file = "YUKI.MMD",
+    mapping = {
+      [1] = { 2, "core" }, [11] = { 2, "core" }, [12] = { 2, "follow" }, [13] = { 2, "follow" }, [14] = { 2, "follow" }, -- body, hips, tail
+      [5] = { 3, "core" }, [6] = { 3, "follow" }, [7] = { 3, "follow" },                            -- neck, head, jaw
+      [2] = { 9, "core" }, [3] = { 10, "core" }, [4] = { 11, "core" },                              -- arm (-x), hammer
+      [8] = { 5, "core" }, [9] = { 6, "core" }, [10] = { 7, "core" },                               -- arm (+x)
+      [15] = { 14, "limb", 16, 15, true }, [16] = { 15, "leaf" }, [17] = { 15, "core" },            -- leg (+x)
+      [18] = { 17, "limb", 19, 18, true }, [19] = { 18, "leaf" }, [20] = { 18, "core" },            -- leg (-x)
+    },
+  },
+  {
+    -- WaruSeadramon: Digimon World's own (type 112), on MegaSeadramon's very
+    -- skeleton: bone for bone, MegaSeadramon's motions, at its own size
+    type = 251, name = "WaruSeadramon", file = "WSEA", level = 5, height = 390, scale = 1, game = "dw1",
+    attribute = 3, specialties = { 4, 2, 255 }, radius = 200, -- Virus; Ice (Water), Air
+    techniques = { auto = true },
+    -- Its finisher (MegaSeadramon's 0x6F Mail Strome slot: its motion) as
+    -- Evil Icicle: Seadramon's Ice Blast (0x58) from its mouth, at an
+    -- Ultimate's power
+    finisher = { name = "Evil Icicle", from = 0x6F, power = 220, effect = 0x58, origin = { 3, -19, 0, 215 } },
+    gains = { 5000, 4500, 550, 400, 450, 400 },
+    -- HP 400, MP 300, Offense 400, Speed 300, at least 15 care mistakes,
+    -- weight 45, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 400, defense = -1, speed = 300, brain = -1,
+      care = 15, weight = 45, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
+    -- The Digimon page: MegaSeadramon's camera, a little lower
+    view = { 110, 370, -1180 },
+    icon_head = { 3, 4 },        -- MegaSeadramon's head and jaw
+    source = { ["SLUS-01032"] = { type = 112, file = "WRSE.MMD" } },
+    donor = 61, donor_file = "MGSD.MMD",
+  },
+  {
+    type = 252, name = "Plesiomon", file = "PLES", level = 5, height = 480, game = "dw2",
+    chart_stage = 6,
+    attribute = 2, specialties = { 4, 1, 255 }, radius = 300, -- Vaccine; Ice (Water), Battle
+    techniques = { auto = true },
+    -- Its finisher (Monochromon's 0x68 Volcanic Strike slot: its motion) as
+    -- Sorrow Blue: Garurumon's Howling Blaster (0x40, blue fire) from its
+    -- mouth, at a Mega's power
+    finisher = { name = "Sorrow Blue", from = 0x68, power = 280, effect = 0x40, origin = { 3, 2, -213, -341 } },
+    gains = { 8000, 7000, 700, 800, 600, 700 },
+    -- HP 700, MP 600, Offense 600, Defense 600, Speed 500, Brains 600, at
+    -- most 10 care mistakes, weight 55, discipline 60 or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 600, offense = 600, defense = 600, speed = 500, brain = 600,
+      care = 10, weight = 55, discipline = 60, happiness = -1, battles = -1, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: at Phoenixmon's camera its head was cut off; farther
+    -- back, as Mammothmon
+    view = { -300, 500, -500 },
+    icon_head = { 3 },           -- its neck and head (rigid on Monochromon's neck)
+    source = { ["SLUS-01193"] = { model = 812, anim = 810 } }, -- DW2 Digimon 232 (Preciomon there)
+    -- Monochromon: it walks on its flippers, its neck up (Seadramon bent the
+    -- neck down, Whamon flicked its tail out); the long neck and head rigid on
+    -- Monochromon's neck, the tail on its tail
+    donor = 47, donor_file = "MONO.MMD",
+    mapping = {
+      [1] = { 2, "core" },                                                                          -- body
+      [14] = { 3, "core" }, [15] = { 3, "follow" }, [16] = { 3, "follow" }, [17] = { 3, "follow" }, -- neck
+      [18] = { 3, "follow" }, [19] = { 3, "follow" }, [20] = { 3, "follow" },                       -- head, jaw
+      [6] = { 7, "core" }, [7] = { 8, "core" }, [8] = { 10, "core" }, [9] = { 11, "core" },         -- front flippers
+      [2] = { 18, "core" }, [3] = { 19, "core" }, [4] = { 21, "core" }, [5] = { 22, "core" },       -- rear flippers
+      [10] = { 14, "core" }, [11] = { 15, "core" }, [12] = { 16, "core" }, [13] = { 16, "follow" }, -- tail
+    },
+  },
+  {
+    type = 253, name = "MetalSeadramon", file = "MTSD", level = 5, height = 450,
+    chart_stage = 6,
+    attribute = 1, specialties = { 5, 4, 255 }, radius = 250, -- Data; Mech, Ice (Water)
+    techniques = { auto = true },
+    -- Its finisher (MegaSeadramon's 0x6F Mail Strome slot: its motion) as
+    -- River of Power: Machinedramon's Infinity Cannon (0x6A) from its head's
+    -- cannon, at a Mega's power
+    finisher = { name = "River of Power", from = 0x6F, power = 280, effect = 0x6A, origin = { 3, 13, 0, 166 } },
+    gains = { 8000, 6000, 800, 800, 600, 600 },
+    -- HP 800, MP 500, Offense 700, Defense 700, Speed 500, Brains 500, at
+    -- most 10 care mistakes, weight 60, 70 battles or 45 techniques
+    requirements = { digimon = -1, hp = 800, mp = 500, offense = 700, defense = 700, speed = 500, brain = 500,
+      care = 10, weight = 60, discipline = -1, happiness = -1, battles = 70, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: farther back than Phoenixmon's camera, as Plesiomon
+    view = { -300, 500, -500 },
+    icon_head = { 3, 4 },        -- MegaSeadramon's head and jaw
+    source = { ["SLES-03936"] = { file = 1149, bones = 36, motions = 0 } }, -- M204MSDR (enemy fighter 0xCC)
+    -- MegaSeadramon, its rearing stance kept (DW2003's): head, jaw and cannon
+    -- on MegaSeadramon's head, the body's segments turned along its body
+    -- (each toward the next, keeping its roll), fins on its fins
+    donor = 61, donor_file = "MGSD.MMD",
+    mapping = {
+      [15] = { 2, "core" }, [16] = { 3, "core" }, [18] = { 3, "follow" }, [17] = { 4, "core" },     -- neck, head, cannon, jaw
+      [11] = { 5, "core" }, [12] = { 5, "limb", 1, 6, true }, [13] = { 13, "core" }, [14] = { 14, "core" }, -- front, body, fins
+      [1] = { 6, "limb", 2, 7, true }, [9] = { 6, "follow" }, [10] = { 6, "follow" },               -- body, fins
+      [2] = { 7, "limb", 3, 8, true }, [3] = { 8, "limb", 4, 9, true }, [4] = { 9, "limb", 5, 10, true },
+      [5] = { 10, "limb", 6, 11, true }, [6] = { 11, "limb", 7, 12, true },
+      [7] = { 12, "core" }, [8] = { 12, "follow" },                                                 -- tail fins
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from

@@ -3,7 +3,7 @@ id = "dw1-expanded-roster"
 name = "DW1 Expanded Roster"
 version = "0.22.0"
 author = "Jack-The-Gamer"
-description = "Digimon from Digimon World 2003 and Digimon World 2 come to Digimon World, built from your own copies: Guilmon, Growlmon and WarGrowlmon; Veemon, ExVeemon, Veedramon, Paildramon and AeroVeedramon; Deltamon, Kimeramon and Raremon; Renamon, Kyubimon, Taomon and Sakuyamon; WereGarurumon, MetalGarurumon and SaberLeomon; DarkTyrannomon, MasterTyrannomon, MetalTyrannomon and Ex-Tyrannomon; KingEtemon and MetalEtemon; Chrysalimon, Infermon and Armageddemon; Clockmon, Golemon, Tortomon, Starmon, Wizardmon and HiAndromon; DemiDevimon, Gatomon, MagnaAngemon, Angewomon, LadyDevimon, Seraphimon and BlackSeraphimon; AncientGreymon, BlackWarGreymon, Gallantmon and Imperialdramon; Mummymon, Pharaohmon, Mammothmon and SkullMammothmon; Woodmon, Togemon, Cherrymon, Lillymon and Rosemon; MegaKabuterimon, Okuwamon, GranKuwagamon and Garudamon. Digimon World's own Tentomon, Goburimon, Gotsumon, Hagurumon, ToyAgumon, Tankmon, Tsukaimon, PlatinumSukamon, WaruMonzaemon and KingSukamon become raisable, Machinedramon, HerculesKabuterimon and Phoenixmon become Megas alongside Sakuyamon, MetalGarurumon, SaberLeomon, KingEtemon, MetalEtemon, Armageddemon, GranKuwagamon, HiAndromon, Seraphimon, BlackSeraphimon, AncientGreymon, BlackWarGreymon, Gallantmon, Imperialdramon, Pharaohmon, SkullMammothmon and Rosemon, and every Digimon follows a revised evolution tree. Work in progress."
+description = "Digimon from Digimon World 2003 and Digimon World 2 come to Digimon World, built from your own copies: Guilmon, Growlmon and WarGrowlmon; Veemon, ExVeemon, Veedramon, Paildramon and AeroVeedramon; Deltamon, Kimeramon and Raremon; Renamon, Kyubimon, Taomon and Sakuyamon; WereGarurumon, MetalGarurumon and SaberLeomon; DarkTyrannomon, MasterTyrannomon, MetalTyrannomon and Ex-Tyrannomon; KingEtemon and MetalEtemon; Chrysalimon, Infermon and Armageddemon; Clockmon, Golemon, Tortomon, Starmon, Wizardmon and HiAndromon; DemiDevimon, Gatomon, MagnaAngemon, Angewomon, LadyDevimon, Seraphimon and BlackSeraphimon; AncientGreymon, BlackWarGreymon, Gallantmon and Imperialdramon; Mummymon, Pharaohmon, Mammothmon and SkullMammothmon; Woodmon, Togemon, Cherrymon, Lillymon and Rosemon; Gomamon, Ikkakumon, Zudomon, Plesiomon and MetalSeadramon; MegaKabuterimon, Okuwamon, GranKuwagamon and Garudamon. Digimon World's own Tentomon, Goburimon, Gotsumon, Hagurumon, ToyAgumon, Tankmon, Tsukaimon, PlatinumSukamon, WaruMonzaemon, KingSukamon and WaruSeadramon become raisable, Machinedramon, HerculesKabuterimon and Phoenixmon become Megas alongside Sakuyamon, MetalGarurumon, SaberLeomon, KingEtemon, MetalEtemon, Armageddemon, GranKuwagamon, HiAndromon, Seraphimon, BlackSeraphimon, AncientGreymon, BlackWarGreymon, Gallantmon, Imperialdramon, Pharaohmon, SkullMammothmon, Rosemon, Plesiomon and MetalSeadramon, and every Digimon follows a revised evolution tree. Work in progress."
 game = "dw1"
 serials = ["SLUS-01032"]
 script = "main.lua"
@@ -28,7 +28,7 @@ id = "test_clone"
 name = "Test Digimon (for developers)"
 type = "bool"
 default = false
-description = "Adds Digimon number 249, a copy of Agumon named Test Agumon, to test new Digimon numbers."
+description = "Adds Digimon number 259, a copy of Agumon named Test Agumon, to test new Digimon numbers."
 
 [[option]]
 id = "check_evolution"

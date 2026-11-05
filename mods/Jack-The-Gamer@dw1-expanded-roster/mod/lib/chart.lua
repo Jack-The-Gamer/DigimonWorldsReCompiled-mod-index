@@ -75,8 +75,10 @@ local ACTIVE_ORDERING_TABLE = 0x80134ED0 -- GsOT * (org at +4)
 local CONFIRM, CANCEL = 64, 16      -- isKeyDown codes
 local LEFT, RIGHT, UP, DOWN = 0x8000, 0x2000, 0x1000, 0x4000
 
--- The area the panels share (screen pixels; the game's panels span these).
-local X0, X1, Y0, Y1 = 0x15, 0x129, 0x27, 0xD7
+-- The area the panels share (screen pixels): the window's dark inside (x 14..305,
+-- y 34..217) less 2 pixels a side. The game's panels span 0x15..0x129, 0x27..0xD7;
+-- the extra room lets more fit at a bigger size (the user's idea, 2026-11-05).
+local X0, X1, Y0, Y1 = 16, 304, 36, 216
 local GAP = 3                        -- between panels
 local PANEL_COLORS = {               -- {light, dark, r, g, b} per stage, the game's
   { 0xaaa0c8, 0x5a3c8c, 0xa5, 0x5a, 0x73 }, -- Fresh

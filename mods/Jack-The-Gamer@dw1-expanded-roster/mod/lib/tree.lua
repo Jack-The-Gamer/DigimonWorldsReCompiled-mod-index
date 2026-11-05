@@ -2,16 +2,15 @@
 -- Digimon's evolutions, in order (on a tie the earlier one wins). Names, not
 -- numbers: a name is one of the game's partner Digimon (types 1..61, as
 -- DIGIMON_DATA names them; `aliases` for the few the game spells otherwise)
--- or a new Digimon from lib/backports.lua. Digimon that aren't in the mod yet
--- (Gomamon, Gatomon, Mammothmon...) are skipped, and take
--- their places here as soon as they're added. The "comes from" lists are
--- worked out from these (main.lua), and Digimon not listed as a source
+-- or a new Digimon from lib/backports.lua. Every Digimon named here is in the
+-- mod (2026-11-05, with Gomamon's line); one left out (its game's disc isn't
+-- in the library, or it couldn't be built) is skipped. The "comes from" lists
+-- are worked out from these (main.lua), and Digimon not listed as a source
 -- (the Fresh ones) keep the game's own evolutions.
 --
--- Until the whole tree exists, main.lua keeps two of the game's routes:
--- a game Digimon that nothing here reaches yet keeps the game's sources
--- (Bakemon and Coelamon wait for DemiDevimon and Gomamon), and a Champion with none of its Ultimates here yet keeps the
--- game's (Drimogemon, Unimon, Vegiemon).
+-- When Digimon are left out, main.lua keeps two of the game's routes: a game
+-- Digimon that nothing here reaches keeps the game's sources, and a Champion
+-- with none of its Ultimates here keeps the game's Ultimates.
 
 local M = {}
 
