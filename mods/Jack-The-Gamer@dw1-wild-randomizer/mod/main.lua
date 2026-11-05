@@ -92,12 +92,14 @@ local LIMIT_SLTI, VANILLA_TYPES = 0x800A1F98, 180
 local PARA_SIZE = 0x34
 local MAX_MODEL = 0x18800       -- the partner model buffer: no Digimon's model is bigger
 local NPC_TAG = 0x0043504E      -- "NPC\0": Expanded Roster's map copy of a model, its size after it
+local ARENA_TAG = 0x41          -- "A" at +5: Expanded Roster draws it in the Arena's bracket
 local MARGIN = 0x2000           -- heap kept free beyond what the map still needs
 local WILD, CHOSEN, LIST_SIGN = 0x4000, 0x8000, 0x5A
 
 local EVERY_VISIT = dwrc.options.reroll ~= "Fixed"
 local WITH_ROSTER = dwrc.options.expanded_roster ~= false
 local RANDOM_TECHNIQUES = dwrc.options.techniques ~= "Matched"
+local ARENA = dwrc.options.arena ~= false
 
 if not dwrc.data.seed then
   dwrc.data.seed = math.random(1, 0x7FFFFFFF)
@@ -337,6 +339,7 @@ local function read_types(ctx)
     local file = cstring(ctx, name_at, 8)
     local size = file_sizes[file .. ".MMD"]
     local kept_slots   -- Expanded Roster's map copy: bit k = technique slot k there
+    local arena = t >= VANILLA_TYPES and file ~= "" and ctx:read8(name_at + 5) == ARENA_TAG
     if not size and t >= VANILLA_TYPES and file ~= "" then
       -- Expanded Roster's map copy (NAME.NPC), its size and techniques beside the name
       local npc = ctx:read32(name_at + 12)
@@ -363,7 +366,7 @@ local function read_types(ctx)
     end
     types[t] = {
       t = t, name = raw:sub(o + 1, o + 20):match("^[^%z]*"), level = raw:byte(o + 30), spec = spec,
-      techs = techs, ready = ready, bones = string.unpack("<i4", raw, o + 21), size = size,
+      techs = techs, ready = ready, bones = string.unpack("<i4", raw, o + 21), size = size, arena = arena,
       light = t < VANILLA_TYPES and light[file .. ".MMD"] and light[file .. ".MMD"].size or nil,
     }
   end
@@ -757,6 +760,108 @@ if next(light) then
     ctx:set_reg("sp", ctx:reg("sp") + 40)  -- undo the first instruction
     ctx:ret(1)
     return true
+  end)
+end
+
+-- The Arena -----------------------------------------------------------------------------
+--
+-- File City's Arena (maps 169 and 173, scripts 209 and 213 in DG.SCN):
+-- startTournament (0x800E6928) reads the cup number (PStat 3), takes the
+-- cup's opponent pool from the map script (section 10: a JUMP_TO per cup,
+-- each cup a JUMP_TO table; entry 4 is the pool, types to 0xFE/0xFF, or
+-- 0xFE first: types 0..111) and keeps the Digimon recruited to File City
+-- (trigger 200 + type), picks seven into sp+60 {cup, types[7]} and calls
+-- the stadium overlay's STD_tournamentMain (STD_REL.BIN, 0x800579D8) with
+-- it. Its STD_setupParticipants puts them in the bracket, and
+-- STD_initializeOpponent (0x80056E2C) loads each opponent's model, gives
+-- it the cup tier's stats scaled by its stage and three of its own
+-- techniques at random. The bracket draws types 0..111 (a 112-picture
+-- sheet; the USA release never draws the names): Expanded Roster 0.21.0
+-- draws its new Digimon there too and marks them ("A" at +5 of the file
+-- name's 16 bytes), and those may join the grade cups (0..5, open to every
+-- Digimon of a stage), not the version or theme cups. The mod reads the pool where startTournament
+-- reads it (0x800E6980, `addiu s4, v0, 2`) and replaces the seven at the
+-- call (0x800E6C14) with other Digimon of the same stage sharing two
+-- specialties, from the cup's pool (so a Fire Cup keeps its fire
+-- Digimon; a stage with none of them sharing two takes any of that stage
+-- from the pool), all different and none the partner's own. The pool is
+-- used whole: being recruited is no longer needed.
+
+local POOL_READ = 0x800E6980
+local POOL_WORD = 0x24540002
+local CALL_STD = 0x800E6C14
+local CALL_STD_WORDS = { [0x800E6C14] = 0x0C015E76, [0x800E6C18] = 0x27A4003C }  -- jal STD_tournamentMain; addiu a0, sp, 60
+local ARENA_TYPES = 112
+local LAST_GRADE_CUP = 5         -- cups 0..5: Grade D, C, B, A, S, R (STD_GRADES); 6..10 versions, 11..22 themes
+local PARTNER_TYPE = 0x801557A8  -- PARTNER_ENTITY: Entity.type (s32) first
+local cup_pool    -- the current cup's pool (set of types), or false: any Digimon
+local tournaments = 0
+
+local std_call = words_match(CALL_STD_WORDS)
+
+local function arena_pick(types, limit, orig, cup, pool, used, nonce)
+  local tiers = { {}, {} }  -- sharing specialties, then any of the stage
+  for t = 0, limit - 1 do
+    local c = types[t]
+    -- the game's Digimon from the cup's pool; Expanded Roster's own new
+    -- Digimon (not its versions of the game's) in the grade cups
+    local allowed
+    if t < ARENA_TYPES then allowed = not pool or pool[t]
+    else allowed = WITH_ROSTER and cup <= LAST_GRADE_CUP and c.arena and c.group == t end
+    if allowed and t ~= orig.t and not used[t] and c.name ~= "" then
+      if fits(orig, c) then tiers[1][#tiers[1] + 1] = c
+      elseif c.ready and c.level == orig.level and #c.techs > 0 then tiers[2][#tiers[2] + 1] = c end
+    end
+  end
+  for _, list in ipairs(tiers) do
+    if #list > 0 then
+      for _, c in ipairs(list) do c.order = mix(nonce * 0x100000 + cup * 0x1000 + orig.t * 0x10 + c.t * 0x10000000) end
+      table.sort(list, function(a, b) return a.order < b.order end)
+      return list[1]
+    end
+  end
+  return nil
+end
+
+if ARENA then
+  dwrc.on_exec(POOL_READ, function(ctx)
+    if ctx:read32(POOL_READ) ~= POOL_WORD then return false end
+    local p = ctx:reg("v0") + 2
+    if ctx:read8(p) >= 0xFE then cup_pool = false return false end
+    cup_pool = {}
+    for i = 0, 255 do
+      local t = ctx:read8(p + i)
+      if t >= 0xFE then break end
+      cup_pool[t] = true
+    end
+    return false
+  end)
+  dwrc.on_exec(CALL_STD, function(ctx)
+    if not std_call(ctx) then return false end
+    local at = ctx:reg("sp") + 60
+    local cup = ctx:read8(at)
+    local types, limit = read_types(ctx)
+    tournaments = tournaments + 1
+    local nonce = EVERY_VISIT and (session + tournaments * 0x9E3779B9) or dwrc.data.seed
+    local used, out, names = { [ctx:read32(PARTNER_TYPE)] = true }, {}, {}  -- not the partner's own Digimon
+    for i = 1, 7 do out[i] = ctx:read8(at + i) end
+    for i = 1, 7 do
+      local o = types[out[i]]
+      if o and out[i] < ARENA_TYPES then
+        local pick = arena_pick(types, limit, o, cup, cup_pool, used, nonce)
+        if pick then
+          used[pick.t] = true
+          ctx:write8(at + i, pick.t)
+          names[#names + 1] = o.name .. " -> " .. pick.name
+        else
+          used[o.t] = true
+          names[#names + 1] = o.name .. " stays"
+        end
+      end
+    end
+    dwrc.log(string.format("DW1 Wild Randomizer: Arena cup %d: %s", cup, table.concat(names, ", ")))
+    cup_pool = nil
+    return false
   end)
 end
 

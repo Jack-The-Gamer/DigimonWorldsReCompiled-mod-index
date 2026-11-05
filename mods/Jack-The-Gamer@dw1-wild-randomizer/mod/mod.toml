@@ -31,6 +31,13 @@ default = "Random"
 choices = ["Random", "Matched"]
 
 [[option]]
+id = "arena"
+name = "Arena opponents"
+description = "The Digimon you meet in File City's Arena tournaments become other Digimon of the same stage that share two specialties, from the cup's own line-up, so a Fire Cup still has fire Digimon."
+type = "bool"
+default = true
+
+[[option]]
 id = "expanded_roster"
 name = "Include Expanded Roster Digimon"
 description = "With DW1 Expanded Roster installed, its new Digimon can be wild Digimon too."

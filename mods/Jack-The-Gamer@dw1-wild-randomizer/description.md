@@ -7,6 +7,7 @@ The wild Digimon roaming the File Island maps become **other Digimon of the same
 - **Random techniques**: each wild Digimon fights with techniques drawn at random from all of its own, and its own finisher where the original had one. Two Greymon in one area can fight differently, and a wild Digimon that stays itself gets new techniques too. It has as many techniques as the original had.
 - **Same difficulty**: HP, MP, stats and the bits you win stay those of the area, so the game's balance doesn't change.
 - **Only wild Digimon**: story Digimon, bosses, recruits (such as the Coelamon at the Beach) and the Digimon in File City stay as they are.
+- **The Arena too**: the opponents in File City's Arena tournaments are picked the same way, and each cup's rules hold: a replacement comes from that cup's own line-up and keeps the stage of the Digimon it replaces, so a Rookie Cup stays Rookies and a Fire Cup or Mech Cup keeps its fire or machine Digimon. Opponents no longer have to be Digimon you recruited, and none is your partner's own Digimon. The usual stats, prizes and medals apply.
 
 **Options**
 
@@ -16,6 +17,7 @@ The wild Digimon roaming the File Island maps become **other Digimon of the same
 - **Techniques**
   - **Random** (default): techniques drawn at random from all of the Digimon's own.
   - **Matched**: a replacement keeps a technique the original also knew, otherwise it uses one of its own of the same kind; a wild Digimon that stays itself keeps its techniques.
+- **Arena opponents** (default on): randomize the Arena's tournament opponents too (see above). With **Every visit** each tournament draws new ones; with **Fixed** a cup always turns the same Digimon into the same replacement.
 - **Include Expanded Roster Digimon** (default on): with DW1 Expanded Roster installed, its new Digimon can be picked too (see below).
 
 **Notes**
@@ -25,8 +27,8 @@ The wild Digimon roaming the File Island maps become **other Digimon of the same
 - The PlayStation has little memory for the Digimon on a map. A replacement is only picked when its model fits next to everything else the area needs, so bigger Digimon turn up less often in crowded areas, and sometimes a wild Digimon stays itself. ClearAgumon always does: no other Rookie shares its specialties.
 - To fit more, a replacement loads a lighter copy of its model, made when the game starts, with only what a wild Digimon uses: Greymon, Angemon or Patamon leave out their care, training and menu motions and take about half the memory. The mod also remembers which Digimon each area actually loads (many list more kinds than they bring out) and, from the second visit on, keeps room only for those and one more.
 - Some of the game's Digimon exist only as cut-down copies made for one story scene (Kuwagamon's, Elecmon's, Leomon's and others). Those copies can't walk and fight like wild Digimon, so the mod uses the full versions of those Digimon instead, when they fit.
-- **DW1 Expanded Roster**: the two mods work together in either order. The randomizer reads the Digimon tables where Expanded Roster moves them, and its new Digimon are part of the pool: a Guilmon pack in Toy Mansion, Renamon in Freezeland, Growlmon in Toy Town. On a map, Expanded Roster loads a lighter copy of each one, with all of its techniques from 0.20.0 on (its finisher and three others before). With Expanded Roster 0.18.0 or older, whose data takes part of the memory wild Digimon share, its Digimon fit less often, and with 0.11.0 or older, which has no such copies, rarely. Where Digimon World has its own model of a Digimon (Gotsumon, Goburimon, Tankmon...), the randomizer uses that one.
+- **DW1 Expanded Roster**: the two mods work together in either order. The randomizer reads the Digimon tables where Expanded Roster moves them, and its new Digimon are part of the pool: a Guilmon pack in Toy Mansion, Renamon in Freezeland, Growlmon in Toy Town. On a map, Expanded Roster loads a lighter copy of each one, with all of its techniques from 0.20.0 on (its finisher and three others before). With Expanded Roster 0.18.0 or older, whose data takes part of the memory wild Digimon share, its Digimon fit less often, and with 0.11.0 or older, which has no such copies, rarely. Where Digimon World has its own model of a Digimon (Gotsumon, Goburimon, Tankmon...), the randomizer uses that one. In the Arena, Expanded Roster's new Digimon (0.21.0 or newer, which draws them in the bracket) can take an opponent's place in the grade cups (Grade D to Grade R), which are open to every Digimon of a stage; the version and theme cups keep their own line-ups.
 
-Made for Digimon World (USA, SLUS-01032) and checked there, alone and with DW1 Expanded Roster: areas from Native Forest to the Back Dimension, battles against the replacements, and the game's check mode.
+Made for Digimon World (USA, SLUS-01032) and checked there, alone and with DW1 Expanded Roster: areas from Native Forest to the Back Dimension, battles against the replacements, Arena cups (Rookie, Champion, Ultimate, Fire, Ice, Air and Mech), and the game's check mode.
 
 Needs Re:Compiled 1.6 or newer.
