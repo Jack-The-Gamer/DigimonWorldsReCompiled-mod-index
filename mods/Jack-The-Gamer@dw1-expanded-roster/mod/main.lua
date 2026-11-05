@@ -33,6 +33,7 @@ local tree = require("lib.tree")
 local icon = require("lib.icon")
 local techniques = require("lib.techniques")
 local special = require("lib.special")
+local names = require("lib.names")
 
 if dwrc.serial ~= "SLUS-01032" then
   dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
@@ -717,6 +718,14 @@ do
   else
     dwrc.log("the special evolutions are left out: unexpected code at " .. why)
   end
+end
+
+-- Long names on the Digimon page squeezed into the box (lib/names.lua):
+-- MasterTyrannomon, MetalTyrannomon and PlatinumSukamon were cut off, and a
+-- 120-pixel name ran under the specialty icons.
+do
+  local ok, why = names.check(function(a) return bin.u32(exe, exe_off(a)) end)
+  if ok then names.install() else dwrc.log("long names are left as they were: unexpected code at " .. why) end
 end
 
 -- Sukamon's hint in File City. Once recruited (trigger 239) he stands on map

@@ -1122,6 +1122,123 @@ M.list = {
       [10] = { 11, "core" }, [11] = { 13, "core" },                                             -- legs
     },
   },
+  -- --- the Tyrannomon family (DW2, DW2003), all on Tyrannomon -----------------------
+  -- Hybrid legs; arms turned to Tyrannomon's (upper arm and forearm keeping
+  -- their roll, hands and claws their own): held out in their battle
+  -- stances, they jutted sideways through the walk.
+  {
+    type = 211, name = "DarkTyrannomon", file = "DTYR", level = 4, height = 400, game = "dw2",
+    attribute = 3, specialties = { 0, 1, 255 }, radius = 230, -- Virus; Fire, Combat
+    -- Fire and Combat techniques; Fire ones that don't list Tyrannomon from its mouth
+    techniques = { auto = true, points = { [0] = { 3, 145, -39, 0 } } },
+    -- Its finisher (Tyrannomon's 58 Blaze Blast: stats, motion, the flames) as Fire Blast
+    finisher = { name = "Fire Blast", from = 58 },
+    gains = { 1800, 1200, 250, 200, 180, 120 },
+    -- HP, Offense, Defense and Speed 100, at least 15 care mistakes, weight 35,
+    -- 30 battles
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = 100, defense = 100, speed = 100, brain = -1,
+      care = 15, weight = 35, discipline = -1, happiness = -1, battles = 30, techs = -1, flags = 0 },
+    icon_head = { 3, 4 },        -- Tyrannomon's head and jaw
+    source = { ["SLUS-01193"] = { model = 1829, anim = 1832 } }, -- DW2 Digimon 133
+    donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
+    mapping = {
+      [1] = { 2, "core" }, [20] = { 3, "core" }, [21] = { 4, "core" },                          -- chest, head, jaw
+      [16] = { 5, "limb", 17, 6, true }, [17] = { 6, "limb", 18, 7, true }, [18] = { 7, "core" }, [19] = { 7, "follow" },     -- arm (+x), claws
+      [12] = { 11, "limb", 13, 12, true }, [13] = { 12, "limb", 14, 13, true }, [14] = { 13, "core" }, [15] = { 13, "follow" }, -- arm (-x), claws
+      [2] = { 17, "core" }, [3] = { 18, "core" }, [4] = { 19, "core" }, [5] = { 20, "core" },  -- hips, tail
+      [6] = { 21, "limb", 7, 22, true }, [7] = { 22, "leaf" }, [8] = { 23, "core" },           -- leg (+x)
+      [9] = { 24, "limb", 10, 25, true }, [10] = { 25, "leaf" }, [11] = { 26, "core" },        -- leg (-x)
+    },
+  },
+  {
+    type = 212, name = "MasterTyrannomon", file = "MSTY", level = 5, height = 450, model_height = 480,
+    attribute = 1, specialties = { 0, 1, 255 }, radius = 250, -- Data; Fire, Combat
+    -- Fire and Combat techniques; Fire ones that don't list Tyrannomon from its mouth
+    techniques = { auto = true, points = { [0] = { 3, 241, -13, -6 } } },
+    -- Its finisher (Tyrannomon's 58 Blaze Blast: stats, motion) as Master Fire,
+    -- Greymon's Mega Flame (0x3F) from its mouth, at an Ultimate's power
+    finisher = { name = "Master Fire", from = 58, power = 220, effect = 0x3F, origin = { 3, 241, -13, -6 } },
+    gains = { 5000, 3000, 550, 450, 350, 300 },
+    -- HP 400, MP 300, Offense 500, Defense 400, Speed 300, at most 10 care
+    -- mistakes, weight 50, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 400, speed = 300, brain = -1,
+      care = 10, weight = 50, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon; Tyrannomon is a Champion)
+    -- The Digimon page: 480 tall, it stands back by its height over
+    -- Tyrannomon's (400) at the same place on screen
+    view = { -200, 408, -472 },
+    icon_head = { 3, 4 },
+    source = { ["SLES-03936"] = { file = 768, bones = 56, motions = 0 } }, -- M124TIRS (enemy fighter 0x7C)
+    donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
+    -- its three claws on Tyrannomon's three fingers, its toes with the feet
+    mapping = {
+      [13] = { 2, "core" }, [14] = { 3, "core" }, [15] = { 4, "core" },                         -- chest, head, jaw
+      [16] = { 5, "limb", 17, 6, true }, [17] = { 6, "limb", 18, 7, true }, [18] = { 7, "core" },
+      [19] = { 8, "core" }, [20] = { 9, "core" }, [21] = { 10, "core" },                        -- arm (+x), claws
+      [22] = { 11, "limb", 23, 12, true }, [23] = { 12, "limb", 24, 13, true }, [24] = { 13, "core" },
+      [25] = { 14, "core" }, [26] = { 15, "core" }, [27] = { 16, "core" },                      -- arm (-x), claws
+      [1] = { 17, "core" }, [2] = { 18, "core" }, [3] = { 19, "core" }, [4] = { 20, "core" },  -- hips, tail
+      [5] = { 21, "limb", 6, 22, true }, [6] = { 22, "leaf" }, [7] = { 23, "core" }, [8] = { 23, "follow" },   -- leg (+x)
+      [9] = { 24, "limb", 10, 25, true }, [10] = { 25, "leaf" }, [11] = { 26, "core" }, [12] = { 26, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 213, name = "MetalTyrannomon", file = "MTTY", level = 5, height = 450, model_height = 480,
+    attribute = 3, specialties = { 5, 1, 255 }, radius = 250, -- Virus; Mech, Combat
+    -- Mech and Combat techniques; the Mech ones (none list Tyrannomon) from its arm cannon
+    techniques = { auto = true, points = { [5] = { 12, 112, -50, -5 } } },
+    -- Its finisher (Tyrannomon's 58 Blaze Blast: stats, motion) as Nuclear
+    -- Laser, Centarumon's Solar Ray (0x56) beam from its arm cannon (its -x
+    -- forearm), at an Ultimate's power
+    finisher = { name = "Nuclear Laser", from = 58, power = 220, effect = 0x56, origin = { 12, 112, -50, -5 } },
+    gains = { 5500, 2500, 450, 550, 300, 350 },
+    -- HP 500, Offense 400, Defense 500, Brains 300, at most 10 care mistakes,
+    -- weight 60, 30 battles or 35 techniques
+    requirements = { digimon = -1, hp = 500, mp = -1, offense = 400, defense = 500, speed = -1, brain = 300,
+      care = 10, weight = 60, discipline = -1, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    view = { -200, 408, -472 },  -- 480 tall: back by its height over Tyrannomon's
+    icon_head = { 3, 4 },
+    source = { ["SLES-03936"] = { file = 917, bones = 50, motions = 0 } }, -- M140MTRN (enemy fighter 0x8C)
+    donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
+    -- two-bone arms (shoulder, forearm), their three claws on Tyrannomon's
+    -- fingers; the cable on its chest
+    mapping = {
+      [1] = { 2, "core" }, [12] = { 2, "follow" }, [13] = { 3, "core" }, [14] = { 4, "core" },  -- chest, cable, head, jaw
+      [7] = { 5, "limb", 8, 6, true }, [8] = { 6, "core" }, [9] = { 8, "core" }, [10] = { 9, "core" }, [11] = { 10, "core" },     -- arm (+x)
+      [2] = { 11, "limb", 3, 12, true }, [3] = { 12, "core" }, [4] = { 14, "core" }, [5] = { 15, "core" }, [6] = { 16, "core" },  -- arm (-x)
+      [15] = { 17, "core" }, [19] = { 18, "core" }, [20] = { 19, "core" }, [21] = { 20, "core" }, -- hips, tail
+      [22] = { 21, "limb", 23, 22, true }, [23] = { 22, "leaf" }, [24] = { 23, "core" },          -- leg (+x)
+      [16] = { 24, "limb", 17, 25, true }, [17] = { 25, "leaf" }, [18] = { 26, "core" },          -- leg (-x)
+    },
+  },
+  {
+    type = 214, name = "Ex-Tyrannomon", file = "EXTY", level = 5, height = 410, model_height = 430, game = "dw2",
+    attribute = 1, specialties = { 1, 6, 0 }, radius = 250, -- Data; Combat, Filth, Fire
+    -- Combat, Filth and Fire techniques; Filth and Fire ones that don't list
+    -- Tyrannomon from inside its open mouth
+    techniques = { auto = true, points = { [6] = { 3, 147, 31, 0 }, [0] = { 3, 147, 31, 0 } } },
+    -- Its finisher (Tyrannomon's 58 Blaze Blast: stats, motion) as Prism Fire,
+    -- Kokatorimon's Frozen Fire Shot (0x61) from its mouth, at an Ultimate's power
+    finisher = { name = "Prism Fire", from = 58, power = 220, effect = 0x61, origin = { 3, 147, 31, 0 } },
+    gains = { 5500, 3500, 450, 450, 300, 300 },
+    -- HP 500, MP 300, Offense and Defense 400, at least 15 care mistakes,
+    -- weight 55, 30 battles or 30 techniques
+    requirements = { digimon = -1, hp = 500, mp = 300, offense = 400, defense = 400, speed = -1, brain = -1,
+      care = 15, weight = 55, discipline = -1, happiness = -1, battles = 30, techs = 30, flags = 0 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    view = { -44, 366, -764 },   -- 430 tall: back by its height over Tyrannomon's
+    icon_head = { 3 },           -- its great head (Tyrannomon's jaw stays empty)
+    source = { ["SLUS-01193"] = { model = 1807, anim = 1806 } }, -- DW2 Digimon 142
+    donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
+    -- every part hangs off its root: body (and the small piece in front of
+    -- it) on the chest, its great head (jaw and all) on the head, one-piece
+    -- arms, legs on the thighs
+    mapping = {
+      [1] = { 2, "core" }, [5] = { 2, "core" }, [8] = { 3, "core" }, [4] = { 18, "core" },     -- body, head, tail
+      [7] = { 5, "core" }, [6] = { 11, "core" }, [3] = { 21, "core" }, [2] = { 24, "core" },   -- arms, legs
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from
