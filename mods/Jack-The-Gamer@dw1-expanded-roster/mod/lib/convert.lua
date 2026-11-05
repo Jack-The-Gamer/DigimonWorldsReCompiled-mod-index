@@ -653,6 +653,53 @@ local function scale_leap(d, bones, leap)
   return table.concat(parts)
 end
 
+-- An animation (at offset `off` of the block d, ending by `stop`, where the
+-- next one starts) with the rotations of the bones in `damp` ({bone = k})
+-- pulled toward `rest` ({bone = {rx, ry, rz}}) by k: the start pose's angles
+-- to rest + k * (angle - rest) (the difference taken the short way round),
+-- every rotation key's total times k (Infermon's long legs on Monochromon's
+-- walk). Only keys before `stop`: anim_steps reads on past an animation's
+-- end into the next one. As dw1convert.py's damp_anim.
+local function damp_anim(d, off, stop, bones, damp, rest)
+  local function bits(x) local n = 0; while x ~= 0 do n = n + (x & 1); x = x >> 1 end return n end
+  local edits = {}
+  local fc = string.unpack("<I2", d, off + 1)
+  local step = fc & 0x8000 ~= 0 and 18 or 12
+  for i, k in pairs(damp) do
+    local at = off + 2 + (i - 1) * step + step - 12
+    local r = { string.unpack("<i2i2i2", d, at + 1) }
+    local out = {}
+    for c = 1, 3 do out[c] = clamp16(rest[i][c] + k * (((r[c] - rest[i][c] + 2048) % 4096) - 2048)) end
+    edits[at] = string.pack("<i2i2i2", out[1], out[2], out[3])
+  end
+  for _, st in ipairs(anim_steps(d:sub(1, stop), off, bones)) do
+    if st[2] == 0 then
+      local p = off + st[1] + 2
+      while p + 2 <= stop and string.unpack("<I2", d, p + 1) & 0x8000 ~= 0 do
+        local w = string.unpack("<I2", d, p + 1)
+        local flags, bone = w & 0x7FC0, w & 0x3F
+        if damp[bone] then
+          for _, flag in ipairs({ 0x800, 0x400, 0x200 }) do
+            if flags & flag ~= 0 then
+              local at = p + 4 + 2 * bits(flags & (0x7FC0 & ~(2 * flag - 1)))
+              if at + 2 <= stop then edits[at] = string.pack("<i2", clamp16(string.unpack("<i2", d, at + 1) * damp[bone])) end
+            end
+          end
+        end
+        p = p + 4 + 2 * bits(flags)
+      end
+    end
+  end
+  local parts, pos = {}, 0
+  for _, o in ipairs(sorted_keys(edits)) do
+    parts[#parts + 1] = d:sub(pos + 1, o)
+    parts[#parts + 1] = edits[o]
+    pos = o + #edits[o]
+  end
+  parts[#parts + 1] = d:sub(pos + 1)
+  return table.concat(parts)
+end
+
 -- --- a DW1 source's own animation on the converted model (dw1convert.py's
 -- retarget; Machinedramon's Infinity Cannon) -----------------------------------
 local function world(skel, pose, nb)
@@ -995,7 +1042,7 @@ function M.npc_model(mmd, slots)
   return mmd:sub(1, anim_at) .. anims
 end
 
-function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias, keep, prune)
+function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias, keep, prune, damp)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)
   local pose1 = start_pose(donor_mmd, info, 0, nb)
@@ -1232,6 +1279,25 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   end
   parts[#parts + 1] = anims:sub(pos + 1)
   anims = table.concat(parts)
+  -- `damp` ({donor bone = k}): those bones' motions damped in every animation
+  if damp then
+    local rest = {}
+    for i in pairs(damp) do rest[i] = pose1[i][2] end
+    local seen, starts = {}, {} -- once each (table entries can share one)
+    for a = 0, #info.anims do
+      local off = info.anims[a]
+      if off and off ~= 0 then starts[#starts + 1] = off end
+    end
+    for a = 0, #info.anims do
+      local off = info.anims[a]
+      if off and off ~= 0 and not seen[off] then
+        seen[off] = true
+        local stop = #anims
+        for _, o in ipairs(starts) do if o > off and o < stop then stop = o end end
+        anims = damp_anim(anims, off, stop, nb, damp, rest)
+      end
+    end
+  end
   -- An alias past the table's end (techniques from another Digimon with more
   -- of them than the donor has slots): the table grows, everything after it
   -- moves down.

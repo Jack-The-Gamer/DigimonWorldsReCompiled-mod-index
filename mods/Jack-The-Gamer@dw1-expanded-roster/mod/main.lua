@@ -306,7 +306,9 @@ do
         -- nothing plays dropped (`prune`)
         local keep
         if b.keep then keep = {}; for _, k in ipairs(b.keep) do keep[k] = true end end
-        local mmd, tim, info = convert.convert(mapping, m3, mats, skel, read_game_file(b.donor_file), entry, size, alias, keep, b.prune)
+        -- `damp` ({donor bone = k}): those bones' motions damped (legs far longer
+        -- than the donor's: Infermon, Armageddemon, GranKuwagamon)
+        local mmd, tim, info = convert.convert(mapping, m3, mats, skel, read_game_file(b.donor_file), entry, size, alias, keep, b.prune, b.damp)
         if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
         -- the evolution scene shatters it (lib/limits.lua: 6 bytes a vertex and a polygon)
         if 6 * (info.verts + info.prims) > tables.EVL_SCRATCH_SIZE then
@@ -374,7 +376,7 @@ do
   end
 end
 
--- Developer option: the last type (219), a copy of Agumon, for testing new type numbers.
+-- Developer option: the last type (229), a copy of Agumon, for testing new type numbers.
 local test_clone = dwrc.options.test_clone
 local CLONE, CLONE_OF, CLONE_FILE = tables.CAPACITY - 1, 3, "XAGU"
 if test_clone then

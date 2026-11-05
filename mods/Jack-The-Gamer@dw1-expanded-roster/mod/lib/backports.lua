@@ -1318,6 +1318,167 @@ M.list = {
       [14] = { 24, "limb", 15, 25, true }, [15] = { 25, "leaf" }, [16] = { 26, "core" }, [17] = { 26, "follow" }, -- leg (-x)
     },
   },
+  {
+    type = 217, name = "Chrysalimon", file = "CHRY", level = 4, height = 260,
+    attribute = 3, specialties = { 5, 255, 255 }, radius = 150, -- Virus; Mech
+    techniques = { auto = true }, -- all eight Mech techniques
+    -- Its finisher (Kabuterimon's 93 Electro Shocker: stats, motion, effect)
+    -- as Data Crusher, the charge gathering at its four upper tentacle tips
+    -- (on Kabuterimon's hands: bones 7, 13, 10, 16) and in front of it
+    finisher = { name = "Data Crusher", from = 93,
+      origin = { { 0, 0, -200, -340 }, { 7, 129, -42, 32 }, { 13, 55, -33, 108 }, { 10, 140, 24, -34 }, { 16, 55, -58, -106 } } },
+    gains = { 1500, 2000, 150, 250, 150, 250 },
+    -- MP 200, Defense 150, Brains 200, at least 15 care mistakes, weight 20,
+    -- 30 battles. In the tree it comes from DemiDevimon; until DemiDevimon is
+    -- in the mod, from Tokomon's other Rookies (`interim_from`)
+    requirements = { digimon = -1, hp = -1, mp = 200, offense = -1, defense = 150, speed = -1, brain = 200,
+      care = 15, weight = 20, discipline = -1, happiness = -1, battles = 30, techs = -1, flags = 0 },
+    interim_from = { "Patamon", "Penguinmon" },
+    -- The Digimon page: a little up and left of Kabuterimon's camera (210,
+    -- 360, -1290; it hovered low and half under the panel) and a little closer
+    view = { 60, 250, -1400 },
+    icon_head = { 2 }, icon_head_scale = 1.0, -- its face is on the pod
+    source = { ["SLES-03936"] = { file = 504, bones = 74, motions = 0 } }, -- M175KRSR (enemy fighter 0xAF)
+    -- Kabuterimon: it hovers as Chrysalimon does, and its four arms and two
+    -- legs carry the six tentacles
+    donor = 19, donor_file = "KABU.MMD",
+    -- pod and crest on the body, tail on the pelvis; the top tentacles on the
+    -- upper arms, the middle ones on the lower arms, the lowest on the legs,
+    -- each tentacle's last two bones with its third (own stance: they sway)
+    mapping = {
+      [1] = { 2, "core" }, [35] = { 2, "follow" },                                                -- pod, crest
+      [32] = { 21, "core" }, [33] = { 21, "follow" }, [34] = { 21, "follow" },                      -- tail
+      [27] = { 11, "core" }, [28] = { 12, "core" }, [29] = { 13, "core" }, [30] = { 13, "follow" }, [31] = { 13, "follow" }, -- top (+x)
+      [2] = { 14, "core" }, [3] = { 15, "core" }, [4] = { 16, "core" }, [5] = { 16, "follow" }, [6] = { 16, "follow" },      -- top (-x)
+      [22] = { 5, "core" }, [23] = { 6, "core" }, [24] = { 7, "core" }, [25] = { 7, "follow" }, [26] = { 7, "follow" },      -- middle (+x)
+      [12] = { 8, "core" }, [13] = { 9, "core" }, [14] = { 10, "core" }, [15] = { 10, "follow" }, [16] = { 10, "follow" },  -- middle (-x)
+      [17] = { 22, "core" }, [18] = { 23, "core" }, [19] = { 24, "core" }, [20] = { 24, "follow" }, [21] = { 24, "follow" }, -- lowest (+x)
+      [7] = { 25, "core" }, [8] = { 26, "core" }, [9] = { 27, "core" }, [10] = { 27, "follow" }, [11] = { 27, "follow" },   -- lowest (-x)
+    },
+  },
+  {
+    type = 218, name = "Infermon", file = "INFR", level = 5, height = 400,
+    attribute = 3, specialties = { 5, 1, 255 }, radius = 220, -- Virus; Mech, Battle
+    techniques = { auto = true },
+    -- Its finisher (Monochromon's 0x68 Volcanic Strike: stats, motion) as
+    -- Spider Shooter: Megadramon's Genocide Attack (0x4E) from its head, at
+    -- an Ultimate's power
+    finisher = { name = "Spider Shooter", from = 0x68, power = 220, effect = 0x4E, origin = { 4, 0, -71, -106 } },
+    gains = { 5000, 5000, 550, 400, 600, 450 },
+    -- HP 400, MP 400, Offense 400, Speed 500, Brains 300, at least 15 care
+    -- mistakes, weight 30, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = 400, offense = 400, defense = -1, speed = 500, brain = 300,
+      care = 15, weight = 30, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon; Monochromon is a Champion)
+    -- The Digimon page: its legs ran past the panel at Monochromon's camera
+    -- (0, 350, -870): it stands back a little (farther also moves it right)
+    view = { -350, 420, -550 },
+    icon_head = { 4, 5 },        -- head and jaw
+    source = { ["SLES-03936"] = { file = 1809, bones = 52, motions = 0 } }, -- M245INFR (enemy fighter 0xF5)
+    -- Monochromon: four legs and a level body. Each spider leg is rigid from
+    -- the hip on a thigh (front and middle legs on the front thighs, rear
+    -- legs on the rear ones), those thighs' motions damped to 0.3 (`damp`:
+    -- at full swing its long legs threw their feet up to 180 into the air
+    -- and sank into the ground; damped they lift about a step, ~60)
+    donor = 47, donor_file = "MONO.MMD",
+    damp = { [7] = 0.3, [10] = 0.3, [18] = 0.3, [21] = 0.3 },
+    mapping = {
+      [1] = { 2, "core" }, [25] = { 2, "follow" },                                               -- body (two halves)
+      [5] = { 3, "core" }, [6] = { 3, "follow" }, [7] = { 4, "core" }, [8] = { 5, "core" },       -- neck, head, jaw
+      [13] = { 7, "core" }, [14] = { 7, "follow" }, [15] = { 7, "follow" },                       -- front leg (+x)
+      [10] = { 7, "core" }, [11] = { 7, "follow" }, [12] = { 7, "follow" },                       -- middle leg (+x)
+      [22] = { 10, "core" }, [23] = { 10, "follow" }, [24] = { 10, "follow" },                    -- front leg (-x)
+      [16] = { 10, "core" }, [17] = { 10, "follow" }, [18] = { 10, "follow" },                    -- middle leg (-x)
+      [2] = { 18, "core" }, [3] = { 18, "follow" }, [4] = { 18, "follow" },                       -- rear leg (+x)
+      [19] = { 21, "core" }, [20] = { 21, "follow" }, [21] = { 21, "follow" },                    -- rear leg (-x)
+    },
+  },
+  {
+    type = 219, name = "Armageddemon", file = "ARMG", level = 5, height = 520,
+    chart_stage = 6,
+    attribute = 3, specialties = { 1, 0, 255 }, radius = 280, -- Virus; Battle, Fire
+    techniques = { auto = true },
+    -- Its finisher (Monochromon's 0x68 Volcanic Strike: stats, motion) as
+    -- Ultimate Flare: Phoenixmon's Crimson Flare (0x6D), all four of its
+    -- start points in its mouth, at a Mega's power
+    finisher = { name = "Ultimate Flare", from = 0x68, power = 280, effect = 0x6D,
+      origin = { { 5, 0, 7, -51 }, { 5, 0, 7, -51 }, { 5, 0, 7, -51 }, { 5, 0, 7, -51 } } },
+    gains = { 9000, 7000, 900, 800, 600, 600 },
+    -- HP 800, MP 600, Offense 800, Defense 700, Speed 500, Brains 500, at
+    -- least 15 care mistakes, weight 60, 80 battles or 45 techniques
+    requirements = { digimon = -1, hp = 800, mp = 600, offense = 800, defense = 700, speed = 500, brain = 500,
+      care = 15, weight = 60, discipline = -1, happiness = -1, battles = 80, techs = 45, flags = 0 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: legs and tail span far past the panel at Monochromon's
+    -- camera; stands back (as Machinedramon) and to the left
+    view = { -850, 660, 250 },
+    icon_head = { 4, 5 },        -- head and jaw
+    source = { ["SLES-03936"] = { file = 1606, bones = 54, motions = 0 } }, -- M382ARMG (enemy fighter 0x17E)
+    -- Monochromon as Infermon (rigid legs, thighs damped), the tail on its
+    -- tail (damped to 0.5: it is twice as long). 1004 polygons fit only
+    -- slimmed: the thin shins and the tail kept whole (`keep`; slimmed, the
+    -- shins vanished and the legs fell apart, then the tail went), the cuts
+    -- on thighs, feet and body, and Monochromon's motions no technique plays
+    -- dropped (`prune`)
+    donor = 47, donor_file = "MONO.MMD",
+    damp = { [7] = 0.3, [10] = 0.3, [18] = 0.3, [21] = 0.3, [14] = 0.5, [15] = 0.5, [16] = 0.5 },
+    keep = { 5, 6, 7, 8, 10, 13, 16, 19, 22, 25 }, prune = true,
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" }, [3] = { 4, "core" }, [4] = { 5, "core" },         -- body, neck, head, jaw
+      [5] = { 14, "core" }, [6] = { 15, "core" }, [7] = { 16, "core" }, [8] = { 16, "follow" },   -- tail
+      [15] = { 7, "core" }, [16] = { 7, "follow" }, [17] = { 7, "follow" },                       -- front leg (+x)
+      [12] = { 7, "core" }, [13] = { 7, "follow" }, [14] = { 7, "follow" },                       -- middle leg (+x)
+      [24] = { 10, "core" }, [25] = { 10, "follow" }, [26] = { 10, "follow" },                    -- front leg (-x)
+      [18] = { 10, "core" }, [19] = { 10, "follow" }, [20] = { 10, "follow" },                    -- middle leg (-x)
+      [9] = { 18, "core" }, [10] = { 18, "follow" }, [11] = { 18, "follow" },                     -- rear leg (+x)
+      [21] = { 21, "core" }, [22] = { 21, "follow" }, [23] = { 21, "follow" },                    -- rear leg (-x)
+    },
+  },
+  {
+    type = 220, name = "GranKuwagamon", file = "GKWA", level = 5, height = 480,
+    chart_stage = 6,
+    attribute = 3, specialties = { 1, 3, 2 }, radius = 250, -- Virus; Battle, Earth, Air
+    techniques = { auto = true },
+    -- Its finisher as Okuwamon's (Centarumon's 0x56 slot, Electro Shocker's
+    -- stats, Kuwagamon's Scissor Claw lunge retargeted, Kuwagamon's Scissor
+    -- Claw effect 0x64) at a Mega's power: Dimension Scissor. The effect
+    -- strikes from between its pincers (head bone 4) rather than Okuwamon's
+    -- fixed point 425 ahead of it: a foe closer to a Digimon this big took
+    -- nothing there, even uninterrupted.
+    finisher = { name = "Dimension Scissor", from = 0x56, stats = 93, power = 280, effect = 0x64, origin = { 4, -52, 0, -348 },
+      motion = { file = "KUWA.MMD", type = 51, anim = 0x38, travel = 1,
+        from = { [1] = 1, [2] = 23, [16] = 23, [3] = 2, [4] = 3, [5] = 7, [6] = 8, [7] = 9, [8] = 10, [9] = 11,
+          [10] = 24, [11] = 25, [12] = 26, [13] = 27, [14] = 28, [15] = 29 } } },
+    gains = { 8000, 5000, 900, 700, 700, 500 },
+    -- HP 700, MP 400, Offense 800, Defense 600, Speed 600, at most 10 care
+    -- mistakes, weight 50, 70 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 400, offense = 800, defense = 600, speed = 600, brain = -1,
+      care = 10, weight = 50, discipline = -1, happiness = -1, battles = 70, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    -- The Digimon page: wings and legs far past the panel at Centarumon's
+    -- camera (310, 370, -1370); stands back and to the left
+    view = { -500, 550, -100 },
+    icon_head = { 4 },           -- head and pincers
+    source = { ["SLES-03936"] = { file = 508, bones = 1, motions = 0 } }, -- M230GKWA (partner fighter 0xE6)
+    -- Centarumon, as Okuwamon: four legs and two arms. Legs in their own
+    -- stance, their motions damped to 0.35 and the bodies' (root, horse
+    -- body, hind body) to 0.3: in full, Centarumon's gallop pitched its long
+    -- splayed legs 250 into the air and sank it 200 into the ground
+    donor = 36, donor_file = "CENT.MMD",
+    damp = { [10] = 0.35, [11] = 0.35, [12] = 0.35, [13] = 0.35, [14] = 0.35, [15] = 0.35,
+      [19] = 0.35, [20] = 0.35, [21] = 0.35, [22] = 0.35, [23] = 0.35, [24] = 0.35, [25] = 0.35, [26] = 0.35,
+      [1] = 0.3, [2] = 0.3, [16] = 0.3 },
+    mapping = {
+      [8] = { 2, "core" }, [1] = { 16, "core" },                                                  -- body, hips
+      [23] = { 3, "core" }, [24] = { 3, "follow" }, [25] = { 3, "follow" }, [26] = { 3, "follow" }, -- wings
+      [9] = { 4, "core" }, [10] = { 4, "follow" }, [11] = { 4, "follow" }, [12] = { 4, "follow" }, -- head, jaw, pincers
+      [19] = { 5, "core" }, [20] = { 6, "core" }, [21] = { 8, "core" }, [22] = { 9, "core" },     -- arms
+      [13] = { 10, "core" }, [14] = { 11, "core" }, [15] = { 12, "core" },                        -- front leg (+x)
+      [16] = { 13, "core" }, [17] = { 14, "core" }, [18] = { 15, "core" },                        -- front leg (-x)
+      [5] = { 19, "core" }, [6] = { 20, "core" }, [7] = { 22, "core" },                           -- hind leg (+x)
+      [2] = { 23, "core" }, [3] = { 24, "core" }, [4] = { 26, "core" },                           -- hind leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from
