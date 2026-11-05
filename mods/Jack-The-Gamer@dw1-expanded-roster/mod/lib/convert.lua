@@ -585,6 +585,20 @@ local function anim_steps(d, at, bones)
   return steps
 end
 
+-- Whether any of an MMD's animations changes its texture (0x3xxx).
+local function has_texture_moves(mmd, bones)
+  local a = string.unpack("<I4", mmd, 5)
+  for i = 0, string.unpack("<I4", mmd, a + 1) // 4 - 1 do
+    local o = string.unpack("<I4", mmd, a + 4 * i + 1)
+    if o ~= 0 then
+      for _, st in ipairs(anim_steps(mmd, a + o, bones)) do
+        if st[2] == 0x3000 then return true end
+      end
+    end
+  end
+  return false
+end
+
 local function add_root_motion(d, bones, frame, frames, distance)
   local steps = anim_steps(d, 0, bones)
   local function place(f, value, div)
@@ -907,10 +921,11 @@ end
 -- bone {matrix (4096 = 1, with scale), location}, chained to the parents.
 -- rest_from: another MMD on the same skeleton whose rotations (and scales)
 -- to take, keeping this one's bone locations.
-function M.dw1_pose(mmd, skel, anim, rest_from)
+function M.dw1_pose(mmd, skel, anim, rest_from, rest_rot)
   local nb = #skel + 1
   local info = donor_info(mmd)
   local pose = start_pose(mmd, info, anim or 0, nb)
+  for b, r in pairs(rest_rot or {}) do pose[b] = { pose[b][1], { r[1], r[2], r[3] }, pose[b][3] } end
   if rest_from then
     local other = start_pose(rest_from, donor_info(rest_from), 0, nb)
     for i = 1, nb - 1 do pose[i] = { other[i][1], other[i][2], pose[i][3] } end
@@ -1042,11 +1057,14 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
 
   -- size: the target height, then the feet on the ground
   local lo, hi = y_range(groups(1.0), 1.0)
-  -- {scale = k}: k times the source's own size (PlatinumSukamon: 1, Sukamon's)
-  local s = type(target_height) == "table" and target_height.scale or target_height / (hi - lo)
+  -- {scale = k}: k times the source's own size (PlatinumSukamon: 1, Sukamon's);
+  -- {height = h, float = f}: h tall, its lowest point f above the ground
+  -- (Hagurumon hovers)
+  local th = type(target_height) == "table" and target_height or { height = target_height }
+  local s = th.scale or th.height / (hi - lo)
   local group = groups(s)
   lo, hi = y_range(group, s)
-  local lift = same_rig and 0 or -hi
+  local lift = same_rig and 0 or -hi - (th.float or 0)
   local lifted = {}
   for b, g in pairs(group) do lifted[b] = { g[1], { g[2][1], g[2][2] + lift, g[2][3] }, g[3] } end
   group = lifted
@@ -1161,8 +1179,10 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   -- then the aliases (before the TMD: it gets whatever room they leave)
   local anims = donor_mmd:sub(info.anim_base + 1)
   -- a same-rig source's texture has the donor's layout (the Sukamon family's
-  -- four eye blocks in the same places): its face changes work as they are
-  local keep_moves = same_rig and packed == nil
+  -- four eye blocks in the same places): its face changes work as they are,
+  -- if it has face changes of its own (ToyAgumon on Agumon has none: its
+  -- blocks are elsewhere)
+  local keep_moves = same_rig and packed == nil and has_texture_moves(m3.mmd, #m3.skel + 1)
   local edits = {}
   for a = 0, #info.anims do
     local off = info.anims[a]

@@ -11,7 +11,7 @@
 
 local M = {}
 
-M.CAPACITY = 210            -- Digimon types after the move (the game has 180)
+M.CAPACITY = 220            -- Digimon types after the move (the game has 180)
 M.INIT_HEAP3 = 0x80090F24   -- InitHeap3(start, size), called by initializeHeap()
 M.HEAP_START = 0x801BFB70   -- what initializeHeap() passes (from _end)
 

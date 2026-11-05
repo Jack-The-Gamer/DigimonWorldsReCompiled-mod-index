@@ -190,7 +190,7 @@ do
           end
           local donor_mmd = same and read_game_file(b.donor_file) or nil
           m3 = dw1source.read(mmd1, skel1, alltim:sub(spec.type * TEXTURE_SIZE + 1, (spec.type + 1) * TEXTURE_SIZE), same)
-          mats = dw1source.pose(mmd1, skel1, donor_mmd)
+          mats = dw1source.pose(mmd1, skel1, donor_mmd, b.rest_anim, b.rest_rot)
           if same and not mapping then
             mapping = {}
             for i = 1, #skel do mapping[i] = { i, "core" } end
@@ -262,8 +262,9 @@ do
           if from_k and anim_k then alias = { [0x2E + from_k] = l and { 0x2E + anim_k, l.frame, l.frames, l.distance } or 0x2E + anim_k }
           else dwrc.log(string.format("%s: its donor has no technique %d or %d; %s keeps its own motion", b.name, f.from, f.anim, f.name)) end
         end
-        -- its size: `scale` times its own (PlatinumSukamon: 1), else model_height or height
-        local size = b.scale and { scale = b.scale } or b.model_height or b.height
+        -- its size: `scale` times its own (PlatinumSukamon: 1), else model_height or
+        -- height; `float`: its lowest point that far above the ground (Hagurumon)
+        local size = { scale = b.scale, height = b.model_height or b.height, float = b.float }
         -- parts the slimming leaves alone (`keep`, DW3 bones), the donor motions
         -- nothing plays dropped (`prune`)
         local keep
@@ -330,7 +331,7 @@ do
   end
 end
 
--- Developer option: the last type (209), a copy of Agumon, for testing new type numbers.
+-- Developer option: the last type (219), a copy of Agumon, for testing new type numbers.
 local test_clone = dwrc.options.test_clone
 local CLONE, CLONE_OF, CLONE_FILE = tables.CAPACITY - 1, 3, "XAGU"
 if test_clone then

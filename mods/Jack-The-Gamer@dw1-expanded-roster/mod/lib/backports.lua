@@ -641,8 +641,9 @@ M.list = {
     finisher = { name = "Rare Metal Poop", from = 0x41, power = 170, effect = 0x33 },
     gains = { 2000, 1500, 150, 300, 150, 200 },
     -- MP 100, Defense 100, Brains 100, at most 10 care mistakes, weight 20, 28
-    -- techniques. In the tree it comes from Gotsumon, not in the mod yet;
-    -- until then from Tanemon's other Rookies (`interim_from`)
+    -- techniques. In the tree it comes from Gotsumon; without Gotsumon (its
+    -- model needs the DW1 disc's own files, always there) from Tanemon's
+    -- other Rookies (`interim_from`)
     requirements = { digimon = -1, hp = -1, mp = 100, offense = -1, defense = 100, speed = -1, brain = 100,
       care = 10, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = 28, flags = 0x10 },
     interim_from = { "Palmon", "Kunemon", "Tentomon" },
@@ -694,7 +695,7 @@ M.list = {
   {
     -- A Rookie that meets no evolution's requirements becomes Raremon instead
     -- of Numemon a quarter of the time (lib/special.lua); in the tree it
-    -- comes from DemiDevimon and Hagurumon, not in the mod yet.
+    -- comes from DemiDevimon (not in the mod yet) and Hagurumon.
     type = 197, name = "Raremon", file = "RARE", level = 4, height = 330,
     attribute = 3, specialties = { 6, 5, 255 }, radius = 230, -- Virus; Filth, Mech (as PlatinumSukamon)
     -- Filth and Mech techniques (lib/techniques.lua); none list Shellmon,
@@ -959,6 +960,168 @@ M.list = {
       [19] = { 23, "limb", 20, 24, true }, [20] = { 24, "leaf" }, [21] = { 25, "core" }, [22] = { 25, "follow" }, -- hind leg (-x)
     },
   },
+  -- --- Digimon World's own enemies -------------------------------------------------
+  -- Their models have battle motions only, so each goes onto a partner donor
+  -- (lib/dw1source.lua) at its own size (`scale = 1`).
+  {
+    type = 205, name = "Goburimon", file = "GOBM", level = 3, height = 280, scale = 1, game = "dw1",
+    attribute = 3, specialties = { 1, 0, 255 }, radius = 125, -- Virus; Battle, Fire (as the enemy, type 80)
+    -- Battle and Fire techniques; Fire ones that don't list Ogremon from its mouth
+    techniques = { auto = true, points = { [0] = { 4, 52, 32, 26 } } },
+    -- Its finisher (Ogremon's 0x51 Pummel Whack: stats, the club swing) as
+    -- Goblin Strike, Meramon's Fireball (0x3D) hurled from the head of its
+    -- club (in its left hand, on Ogremon's club hand 10), at a Rookie's power
+    finisher = { name = "Goblin Strike", from = 0x51, power = 95, effect = 0x3D, origin = { 10, 97, -132, 27 } },
+    gains = { 800, 500, 100, 50, 80, 50 },
+    -- a Tanemon (44) whose highest stat is Offense or Speed, at weight 30 +- 5
+    requirements = { digimon = 44, hp = -1, mp = -1, offense = 1, defense = -1, speed = 1, brain = -1,
+      care = 0, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    raise_from = 32,             -- a Rookie's care (Kunemon, also from Tanemon)
+    view = { 280, 340, -1390 },  -- the donor's camera (Ogremon's)
+    icon_head = { 3, 4 },        -- Ogremon's head and jaw
+    -- its idle holds the club overhead in both hands; its walk (0x24) carries
+    -- it forward in one hand, as Ogremon does: that is its rest pose
+    rest_anim = 0x24,
+    source = { ["SLUS-01032"] = { type = 80, file = "GOBR.MMD" } },
+    donor = 34, donor_file = "OGRE.MMD", -- Ogremon: the same club, carried the same way
+    -- hybrid; arms turned to Ogremon's (upper arm and forearm keeping their
+    -- roll), hands their own; bones without a mesh ride their parent
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 2, "follow" }, [4] = { 3, "core" }, [5] = { 4, "core" }, -- root, torso, neck, head, jaw
+      [6] = { 2, "follow" }, [7] = { 5, "limb", 8, 6, true }, [8] = { 6, "limb", 9, 7, true }, [9] = { 7, "core" },          -- arm (+x)
+      [10] = { 2, "follow" }, [11] = { 8, "limb", 12, 9, true }, [12] = { 9, "limb", 13, 10, true }, [13] = { 10, "core" }, -- arm (-x), club
+      [14] = { 11, "core" }, [15] = { 11, "follow" }, [19] = { 11, "follow" },                                             -- hips
+      [16] = { 12, "limb", 17, 13, true }, [17] = { 13, "leaf" }, [18] = { 14, "core" },                                   -- leg (+x)
+      [20] = { 15, "limb", 21, 16, true }, [21] = { 16, "leaf" }, [22] = { 17, "core" },                                   -- leg (-x)
+    },
+  },
+  {
+    type = 206, name = "Gotsumon", file = "GOTM", level = 3, height = 280, scale = 1, game = "dw1",
+    attribute = 1, specialties = { 3, 1, 255 }, radius = 110, -- Data; Earth, Battle (as the enemy, type 68)
+    -- Earth and Battle techniques; the Earth ones (none list Gabumon) from its right fist
+    techniques = { auto = true, points = { [3] = { 8, 24, -13, -2 } } },
+    -- Its finisher (Gabumon's 0x63 Blue Blaster: stats) as Rock Fist:
+    -- Megaton Punch's punch (`anim`) with Monochromon's Volcanic Strike
+    -- (0x68) rocks from its right fist
+    finisher = { name = "Rock Fist", from = 0x63, anim = 0x2E, effect = 0x68, origin = { 8, 24, -13, -2 } },
+    gains = { 900, 400, 70, 110, 40, 60 },
+    -- a Tanemon (44) whose highest stat is HP or Defense, at weight 30 +- 5
+    requirements = { digimon = 44, hp = 1, mp = -1, offense = -1, defense = 1, speed = -1, brain = -1,
+      care = 0, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    icon_head = { 3, 4 },        -- Gabumon's head and jaw
+    source = { ["SLUS-01032"] = { type = 68, file = "GOTU.MMD" } },
+    donor = 17, donor_file = "GABU.MMD", -- Gabumon: Agumon's and Gabumon's bone layout
+    -- bone for bone, hybrid; bones without a mesh ride their parent
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 3, "core" }, [4] = { 4, "core" },          -- root, torso, head, jaw
+      [5] = { 2, "follow" }, [6] = { 6, "core" }, [7] = { 7, "core" }, [8] = { 8, "core" },          -- arm (+x)
+      [9] = { 2, "follow" }, [10] = { 10, "core" }, [11] = { 11, "core" }, [12] = { 12, "core" },    -- arm (-x)
+      [13] = { 13, "core" }, [14] = { 13, "follow" }, [18] = { 13, "follow" },                       -- hips
+      [15] = { 15, "limb", 16, 16, true }, [16] = { 16, "leaf" }, [17] = { 17, "core" },             -- leg (+x)
+      [19] = { 19, "limb", 20, 20, true }, [20] = { 20, "leaf" }, [21] = { 21, "core" },             -- leg (-x)
+    },
+  },
+  {
+    -- Factorial Town's NPC (type 122, its record unfinished: level 0, no
+    -- techniques); a Virus as in the other games
+    type = 207, name = "Hagurumon", file = "HAGM", level = 3, height = 300, scale = 1, game = "dw1",
+    -- it hovers: its lowest point 105 above the ground, as the NPC
+    float = 105,
+    attribute = 3, specialties = { 5, 2, 255 }, radius = 120, -- Virus; Mech, Air
+    -- Mech and Air techniques (Giromon's own kinds); any that don't list
+    -- Giromon from its face
+    techniques = { auto = true, points = { [5] = { 2, -3, 62, 0 }, [2] = { 2, -3, 62, 0 } } },
+    -- Its finisher (Giromon's 0x4A Deadly Bomb: stats, motion) as Darkness
+    -- Gear, Mojyamon's spinning Bone Boomerang (0x55) from its face, at a
+    -- Rookie's power
+    finisher = { name = "Darkness Gear", from = 0x4A, power = 95, effect = 0x55, origin = { 2, -3, 62, 0 } },
+    gains = { 600, 800, 50, 70, 60, 110 },
+    -- a Koromon (2) whose highest stat is Brains, at weight 20 +- 5
+    requirements = { digimon = 2, hp = -1, mp = -1, offense = -1, defense = -1, speed = -1, brain = 1,
+      care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    raise_from = 3,              -- a Rookie's care (Agumon, also from Koromon)
+    view = { 370, 270, -1610 },  -- the donor's camera (Giromon's)
+    icon_head = { 2 },           -- the gear (Giromon's body)
+    source = { ["SLUS-01032"] = { type = 122, file = "HAGU.MMD" } },
+    donor = 41, donor_file = "GIRO.MMD", -- Giromon: floats steadily, two arms
+    -- the gear on Giromon's body, the side gears on its upper arms
+    mapping = { [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 4, "core" }, [4] = { 8, "core" } },
+  },
+  {
+    -- Agumon's very skeleton: every bone on itself (lib/convert.lua same_rig),
+    -- Agumon's motions; Agumon's eye changes left out (its texture has no eyes
+    -- there: lib/convert.lua keeps them only for a source with its own)
+    type = 208, name = "ToyAgumon", file = "TOYM", level = 3, height = 250, scale = 1, game = "dw1",
+    attribute = 1, specialties = { 0, 5, 255 }, radius = 140, -- Data; Fire, Mech (as the enemy, type 84)
+    -- Fire and Mech techniques; the Mech ones (none list Agumon) from its mouth
+    techniques = { auto = true, points = { [5] = { 4, 86, 1, 17 } } },
+    -- Its finisher (Agumon's 0x3B Pepper Breath: stats, motion) as Toy Flame
+    -- with Biyomon's Spiral Twister (0x46) flames from its mouth
+    finisher = { name = "Toy Flame", from = 0x3B, effect = 0x46, origin = { 4, 86, 1, 17 } },
+    gains = { 800, 600, 90, 90, 50, 60 },
+    -- a Koromon (2) whose highest stat is Defense, at weight 30 +- 5
+    requirements = { digimon = 2, hp = -1, mp = -1, offense = -1, defense = 1, speed = -1, brain = -1,
+      care = 0, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    icon_head = { 3, 4 }, icon_head_scale = 1.0, -- Agumon's head and jaw
+    source = { ["SLUS-01032"] = { type = 84, file = "TOYA.MMD" } },
+    donor = 3, donor_file = "AGUM.MMD", -- Agumon
+  },
+  {
+    type = 209, name = "Tankmon", file = "TNKM", level = 4, height = 450, scale = 1, game = "dw1",
+    attribute = 1, specialties = { 5, 1, 0 }, radius = 200, -- Data; Mech, Battle, Fire (as the enemy, type 76)
+    -- Mech, Battle and Fire techniques; the Fire ones (none list Giromon)
+    -- from the muzzle of its head cannon
+    techniques = { auto = true, points = { [0] = { 2, -57, 178, 0 } } },
+    -- Its finisher (Giromon's 0x4A Deadly Bomb: stats, motion) as Hyper
+    -- Cannon, MetalMamemon's Energy Bomb (0x4D) fired from its head cannon,
+    -- at a Champion's power
+    finisher = { name = "Hyper Cannon", from = 0x4A, power = 170, effect = 0x4D, origin = { 2, -57, 178, 0 } },
+    gains = { 2500, 1200, 250, 250, 80, 120 },
+    -- HP, Offense, Defense and Brains 100, at most 5 care mistakes, weight
+    -- 45, 20 battles or 35 techniques
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = 100, defense = 100, speed = -1, brain = 100,
+      care = 5, weight = 45, discipline = -1, happiness = -1, battles = 20, techs = 35, flags = 0x10 },
+    raise_from = 47,             -- a Champion's care (Monochromon; Giromon is an Ultimate)
+    -- The Digimon page: 430 tall, it can't fit at Giromon's distance; it
+    -- stands back by its height over Giromon's (300) at the same place
+    view = { -39, 389, -875 },
+    icon_head = { 2 },           -- all of it is on Giromon's body
+    source = { ["SLUS-01032"] = { type = 76, file = "TANK.MMD" } },
+    donor = 41, donor_file = "GIRO.MMD", -- Giromon: glides without steps, as a tank does
+    -- hull, treads, torso and head one body on Giromon's; its arms on Giromon's
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 2, "follow" }, [4] = { 2, "follow" }, [5] = { 2, "follow" }, [6] = { 2, "follow" }, -- hull, torso, head, cannon
+      [11] = { 2, "follow" }, [12] = { 2, "follow" }, [13] = { 2, "follow" }, [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 2, "follow" }, -- treads
+      [7] = { 4, "core" }, [8] = { 5, "core" }, [9] = { 8, "core" }, [10] = { 9, "core" },       -- arms
+    },
+  },
+  {
+    type = 210, name = "WaruMonzaemon", file = "WRMZ", level = 5, height = 410, scale = 1, game = "dw1",
+    attribute = 3, specialties = { 1, 255, 255 }, radius = 150, -- Virus; Battle (as the enemy, type 70)
+    techniques = { auto = true },
+    -- Its finisher (Monzaemon's 0x3C Lovely Attack: stats, motion, the hearts)
+    -- as Heartbreak Attack
+    finisher = { name = "Heartbreak Attack", from = 0x3C },
+    gains = { 5000, 3500, 550, 450, 350, 350 },
+    -- HP 500, MP 300, Offense 500, Defense 500, at least 15 care mistakes,
+    -- weight 45, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 500, mp = 300, offense = 500, defense = 500, speed = -1, brain = -1,
+      care = 15, weight = 45, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
+    -- The Digimon page: 425 tall, its head was cut off at Monzaemon's
+    -- distance; it stands back by its height over Monzaemon's (330)
+    view = { 64, 386, -936 },
+    icon_head = { 4 },           -- Monzaemon's head
+    -- its idle stands turned 39 degrees (root) with its head turned back:
+    -- straightened, it walks facing forward
+    rest_rot = { [1] = { 0, 0, 0 }, [3] = { 7, 0, 4 } },
+    source = { ["SLUS-01032"] = { type = 70, file = "WARU.MMD" } },
+    donor = 14, donor_file = "MONZ.MMD", -- Monzaemon
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 4, "core" }, [4] = { 2, "follow" }, [5] = { 2, "follow" }, -- root, body, head, back piece
+      [6] = { 6, "core" }, [7] = { 6, "follow" }, [8] = { 6, "follow" }, [9] = { 8, "core" },   -- claw arm (+x), arm (-x)
+      [10] = { 11, "core" }, [11] = { 13, "core" },                                             -- legs
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from
@@ -1003,6 +1166,13 @@ M.changes = {
   { type = 28, name = "Vademon",
     requirements = { digimon = -1, hp = -1, mp = 400, offense = -1, defense = -1, speed = -1, brain = 500,
       care = 15, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = 35, flags = 0x10 } },
+  -- Devimon comes from Goburimon in the tree (DemiDevimon and Tsukaimon aren't
+  -- here); the game has no requirements for it (it only comes from an
+  -- event): MP, Offense and Brains 100, at least 10 care mistakes, weight 30,
+  -- 30 battles
+  { type = 6, name = "Devimon",
+    requirements = { digimon = -1, hp = -1, mp = 100, offense = 100, defense = -1, speed = -1, brain = 100,
+      care = 10, weight = 30, discipline = -1, happiness = -1, battles = 30, techs = -1, flags = 0 } },
   -- The Rookies' new In-Training (the tree): `digimon` names it. Kunemon
   -- (no requirements in the game: it came from an event) wants HP or Defense
   -- highest at weight 10 (Palmon, before it, MP, Speed or Brains at 15);

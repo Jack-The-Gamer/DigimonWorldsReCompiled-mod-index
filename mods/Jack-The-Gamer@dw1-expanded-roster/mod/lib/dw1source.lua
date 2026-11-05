@@ -11,7 +11,9 @@
 -- (0, 128 + row) as convert.lua reads CLUTs from inside a texture.
 -- Polygons: 0x34/0x36 (gouraud textured triangles, 0x36 semi-transparent)
 -- and 0x3C/0x3E (quads): u0 v0 cba, u1 v1 tsb, u2 v2, [u3 v3], then normal |
--- vertex << 16 per corner (cba = 0x7A00 + CLUT row << 6). A semi-transparent
+-- vertex << 16 per corner (cba = 0x7A00 + CLUT row << 6); flat ones
+-- 0x24/0x26/0x2C/0x2E (ToyAgumon's blocks, Hagurumon) have one normal, put on
+-- every corner. A semi-transparent
 -- one keeps its blend mode (tsb bits 5-6) as `blend` (lib/dw3model.lua's `abr` is another thing).
 
 local convert = require("lib.convert")
@@ -37,16 +39,24 @@ function M.read(mmd, skel, tim_entry, same_rig)
       local ilen, mode = mmd:byte(p + 2), mmd:byte(p + 4)
       local w = {}
       for k = 1, ilen do w[k] = string.unpack("<I4", mmd, p + 4 + 4 * (k - 1) + 1) end
-      if mode ~= 0x34 and mode ~= 0x36 and mode ~= 0x3C and mode ~= 0x3E then
+      if mode & 0xE5 ~= 0x24 then -- textured polygons: 0x24/0x26/0x2C/0x2E flat, 0x34/0x36/0x3C/0x3E gouraud
         error(string.format("object %d: polygon mode %02X isn't supported", i, mode))
       end
       local n = (mode & 8 ~= 0) and 4 or 3
       local uv, idx, nrm = {}, {}, {}
       for k = 1, n do uv[k] = { w[k] & 0xFF, (w[k] >> 8) & 0xFF } end
-      local first = n == 3 and 4 or 5
-      for k = 1, n do
-        local c = w[first + k - 1]
-        idx[k], nrm[k] = c >> 16, c & 0xFFFF
+      local first = n + 1
+      if mode & 0x10 ~= 0 then
+        for k = 1, n do
+          local c = w[first + k - 1]
+          idx[k], nrm[k] = c >> 16, c & 0xFFFF
+        end
+      else
+        -- flat: normal | v0 << 16, v1 | v2 << 16[, v3]; its one normal on every corner
+        local a, b = w[first], w[first + 1]
+        idx = { a >> 16, b & 0xFFFF, b >> 16 }
+        if n == 4 then idx[4] = w[first + 2] & 0xFFFF end
+        for k = 1, n do nrm[k] = a & 0xFFFF end
       end
       local row = ((w[1] >> 16) >> 6) - 488
       local poly = { quad = n == 4, textured = true, lit = true, gouraud = true, idx = idx, nrm = nrm, uv = uv, tex = { 0, 0, 0, 0, 128 + row, 0 } }
@@ -63,8 +73,14 @@ function M.read(mmd, skel, tim_entry, same_rig)
     local src = o >= 0 and objs[o] or { verts = {}, normals = {}, polys = {} }
     m.bones[b] = { parent = skel[b][2], verts = src.verts, normals = src.normals, polys = src.polys }
   end
-  local rows = { tim_entry:sub(8 + 524 + 12 + 1, 8 + 524 + 12 + 64 * 128 * 2) }
-  for r = 0, 15 do rows[#rows + 1] = tim_entry:sub(20 + 32 * r + 1, 20 + 32 * r + 32) .. string.rep("\0", 96) end
+  -- the entry's own header: most have 16 CLUTs and 128 rows, Hagurumon's
+  -- (122) 6 CLUTs and 104 rows (the rest zero, as in VRAM unused)
+  local clen, cn = string.unpack("<I4", tim_entry, 9), string.unpack("<I2", tim_entry, 19)
+  local ph = string.unpack("<I2", tim_entry, 8 + clen + 10 + 1)
+  local rows = { tim_entry:sub(8 + clen + 12 + 1, 8 + clen + 12 + 64 * ph * 2), string.rep("\0", 64 * (128 - ph) * 2) }
+  for r = 0, 15 do
+    rows[#rows + 1] = (r < cn and tim_entry:sub(20 + 32 * r + 1, 20 + 32 * r + 32) or string.rep("\0", 32)) .. string.rep("\0", 96)
+  end
   m.tims = { { w = 64, h = 144, px = table.concat(rows) } }
   return m
 end
@@ -73,9 +89,12 @@ end
 -- at animation 0's start pose; with the donor's MMD (rest_from, the same
 -- skeleton), its rotations and this model's bone locations, so each bone's
 -- mesh lands on the same donor bone as it is (KingSukamon's raised arm is a
--- pose, not its mesh).
-function M.pose(mmd, skel, rest_from)
-  local w = convert.dw1_pose(mmd, skel, 0, rest_from)
+-- pose, not its mesh). `rest_anim`: another animation's start instead
+-- (Goburimon's walk carries its club forward; its idle holds it overhead);
+-- `rest_rot`: {[bone] = {rx, ry, rz}} replacing those rest rotations
+-- (WaruMonzaemon's idle stands turned 39 degrees, its head turned back).
+function M.pose(mmd, skel, rest_from, rest_anim, rest_rot)
+  local w = convert.dw1_pose(mmd, skel, rest_anim or 0, rest_from, rest_rot)
   local out = {}
   for b = 1, #skel do
     local m, t = w[b][1], w[b][2]
