@@ -2231,6 +2231,192 @@ M.list = {
       [17] = { 21, "core" }, [18] = { 22, "core" }, [19] = { 23, "core" },                          -- rear leg (-x)
     },
   },
+  {
+    type = 243, name = "Woodmon", file = "WOOD", level = 4, height = 400,
+    attribute = 3, specialties = { 3, 255, 255 }, radius = 200, -- Virus; Earth
+    techniques = { auto = true },
+    -- Its finisher (Ogremon's 0x51 Pummel Whack as it is: the overhead swing
+    -- of its branch arm) as Branch Drill
+    finisher = { name = "Branch Drill", from = 0x51 },
+    gains = { 2200, 1000, 200, 300, 100, 150 },
+    -- HP 100, Offense 80, Defense 120, at least 10 care mistakes, weight 35,
+    -- 25 battles
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = 80, defense = 120, speed = -1, brain = -1,
+      care = 10, weight = 35, discipline = -1, happiness = -1, battles = 25, techs = -1, flags = 0 },
+    -- The Digimon page: Ogremon's camera cut its crown off; a little lower
+    -- and to the left
+    view = { 200, 420, -1300 },
+    icon_head = { 2 }, icon_head_scale = 1.0, -- its face is on its trunk
+    source = { ["SLES-03936"] = { file = 686, bones = 48, motions = 0 } }, -- M222WOOD (enemy fighter 0xDE)
+    -- Ogremon: its long arms hang as Ogremon's do (Mojyamon and Frigimon
+    -- flung them out, Monzaemon tipped it over). Its six roots are rigid,
+    -- each side's three on that side's thigh
+    donor = 34, donor_file = "OGRE.MMD",
+    mapping = {
+      [1] = { 2, "core" },                                                                          -- trunk
+      [2] = { 5, "core" }, [3] = { 6, "core" },                                                     -- arm (+x)
+      [13] = { 8, "core" }, [14] = { 9, "core" },                                                   -- arm (-x)
+      [4] = { 12, "core" }, [5] = { 12, "follow" }, [6] = { 12, "follow" },                         -- roots (+x)
+      [18] = { 12, "core" }, [19] = { 12, "follow" }, [20] = { 12, "follow" },
+      [21] = { 12, "core" }, [22] = { 12, "follow" }, [23] = { 12, "follow" },
+      [15] = { 15, "core" }, [16] = { 15, "follow" }, [17] = { 15, "follow" },                      -- roots (-x)
+      [7] = { 15, "core" }, [8] = { 15, "follow" }, [9] = { 15, "follow" },
+      [10] = { 15, "core" }, [11] = { 15, "follow" }, [12] = { 15, "follow" },
+    },
+  },
+  {
+    type = 244, name = "Togemon", file = "TOGE", level = 4, height = 380, game = "dw2",
+    attribute = 1, specialties = { 3, 1, 255 }, radius = 170, -- Data; Earth, Battle
+    techniques = { auto = true },
+    -- Its finisher (in Frigimon's 0x69 Subzero Ice Punch slot: the punch) as
+    -- Needle Spray: Airdramon's Spinning Needle (0x45: its stats and needles)
+    -- from its chest, at a Champion's power
+    finisher = { name = "Needle Spray", from = 0x69, stats = 0x45, power = 170, effect = 0x45, origin = { 2, 139, -85, 7 } },
+    gains = { 1800, 1000, 280, 180, 220, 120 },
+    -- HP 100, Offense 120, Speed 80, at most 5 care mistakes, weight 30,
+    -- discipline 50 or 25 techniques
+    requirements = { digimon = -1, hp = 100, mp = -1, offense = 120, defense = -1, speed = 80, brain = -1,
+      care = 5, weight = 30, discipline = 50, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
+    icon_head = { 2 }, icon_head_scale = 1.0, -- its face is on its body
+    source = { ["SLUS-01193"] = { model = 621, anim = 618 } }, -- DW2 Digimon 184
+    -- Frigimon: round, a stomping walk and punches (Monzaemon tipped it,
+    -- Mojyamon's walk was looser); eyes, spines and crown with the body,
+    -- hybrid legs
+    donor = 23, donor_file = "YUKI.MMD",
+    mapping = {
+      [1] = { 2, "core" }, [6] = { 2, "follow" }, [7] = { 2, "follow" }, [8] = { 2, "follow" }, [9] = { 2, "follow" }, -- body, eyes, spines, crown
+      [2] = { 5, "core" }, [3] = { 6, "core" },                                                     -- arm (+x)
+      [4] = { 9, "core" }, [5] = { 10, "core" },                                                    -- arm (-x)
+      [10] = { 14, "limb", 11, 15, true }, [11] = { 15, "core" },                                   -- leg (+x)
+      [12] = { 17, "limb", 13, 18, true }, [13] = { 18, "core" },                                   -- leg (-x)
+    },
+  },
+  {
+    type = 245, name = "Cherrymon", file = "CHRM", level = 5, height = 480, game = "dw2",
+    attribute = 3, specialties = { 3, 255, 255 }, radius = 220, -- Virus; Earth
+    techniques = { auto = true },
+    -- Its finisher (in Centarumon's 0x56 Solar Ray slot: its motion) as Pit
+    -- Pelter: Piximon's Bit Bomb (0x49) from its mouth, at an Ultimate's
+    -- power
+    finisher = { name = "Pit Pelter", from = 0x56, power = 220, effect = 0x49, origin = { 2, 80, -2, 11 } },
+    gains = { 5500, 4500, 400, 550, 300, 550 },
+    -- HP 400, MP 300, Defense 400, Brains 400, at least 15 care mistakes,
+    -- weight 50, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = -1, defense = 400, speed = -1, brain = 400,
+      care = 15, weight = 50, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    -- The Digimon page: its crown filled the window at MetalGreymon's camera;
+    -- farther back, as Mammothmon
+    view = { -700, 540, -100 },
+    icon_head = { 2 }, icon_head_scale = 1.0, -- its face is on its trunk
+    -- DW2's model (DW2003's M121JURE is the same one; the user's pick over
+    -- Digimon World's own Misty Trees NPC, type 121, which it also replaces:
+    -- `npc` below)
+    source = { ["SLUS-01193"] = { model = 2825, anim = 2824 } }, -- DW2 Digimon 121
+    -- Centarumon: four legs for its roots, and it stays upright (Mojyamon
+    -- and Frigimon tipped the crown about, Vegiemon hops); the crown with the
+    -- trunk, each side's three branch arms on that side's arm, the eight
+    -- roots rigid on the legs
+    donor = 36, donor_file = "CENT.MMD",
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 2, "follow" },                                                   -- trunk, crown
+      [3] = { 5, "core" }, [4] = { 6, "core" }, [5] = { 6, "follow" },                              -- branch arms (+x)
+      [6] = { 5, "core" }, [7] = { 6, "core" }, [8] = { 6, "follow" },
+      [9] = { 5, "core" }, [10] = { 6, "core" }, [11] = { 6, "follow" },
+      [12] = { 8, "core" }, [13] = { 9, "core" }, [14] = { 9, "follow" },                           -- branch arms (-x)
+      [15] = { 8, "core" }, [16] = { 9, "core" }, [17] = { 9, "follow" },
+      [18] = { 8, "core" }, [19] = { 9, "core" }, [20] = { 9, "follow" },
+      [21] = { 10, "core" }, [22] = { 10, "follow" }, [23] = { 10, "core" }, [24] = { 10, "follow" }, -- roots, front (+x)
+      [25] = { 10, "core" }, [26] = { 10, "follow" },
+      [29] = { 13, "core" }, [30] = { 13, "follow" }, [31] = { 13, "core" }, [32] = { 13, "follow" }, -- roots, front (-x)
+      [27] = { 19, "core" }, [28] = { 19, "follow" },                                               -- roots, back (+x)
+      [33] = { 23, "core" }, [34] = { 23, "follow" }, [35] = { 23, "core" }, [36] = { 23, "follow" }, -- roots, back (-x)
+    },
+    -- The game's own Cherrymon (the Misty Trees NPC, type 121) gets this
+    -- model too: on its own skeleton and its three animations (idle 0, 29,
+    -- 30), at its own size (its mesh 1,193 tall); its texture is this one's
+    -- (ALLTIM entry 121 had 2 colour tables; an NPC slot takes 16)
+    npc = {
+      type = 121, file = "JURE.MMD", height = 1190,
+      mapping = {
+        [1] = { 2, "core" }, [2] = { 2, "follow" },                                                 -- trunk, crown
+        [9] = { 9, "core" }, [10] = { 10, "core" }, [11] = { 11, "core" },                          -- branch arms (+x): front
+        [6] = { 9, "core" }, [7] = { 10, "core" }, [8] = { 11, "core" },
+        [3] = { 15, "core" }, [4] = { 16, "core" }, [5] = { 17, "core" },                           -- back
+        [18] = { 6, "core" }, [19] = { 7, "core" }, [20] = { 8, "core" },                           -- branch arms (-x): front
+        [15] = { 6, "core" }, [16] = { 7, "core" }, [17] = { 8, "core" },
+        [12] = { 12, "core" }, [13] = { 13, "core" }, [14] = { 14, "core" },                        -- back
+        [21] = { 20, "core" }, [22] = { 20, "follow" }, [23] = { 20, "core" }, [24] = { 20, "follow" }, -- roots (+x): front
+        [25] = { 24, "core" }, [26] = { 24, "follow" }, [27] = { 24, "core" }, [28] = { 24, "follow" }, -- back
+        [29] = { 18, "core" }, [30] = { 18, "follow" }, [31] = { 18, "core" }, [32] = { 18, "follow" }, -- roots (-x): front
+        [33] = { 22, "core" }, [34] = { 22, "follow" }, [35] = { 22, "core" }, [36] = { 22, "follow" }, -- back
+      },
+    },
+  },
+  {
+    type = 246, name = "Lillymon", file = "LILY", level = 5, height = 330, game = "dw2",
+    attribute = 1, specialties = { 3, 2, 255 }, radius = 120, -- Data; Earth, Air
+    techniques = { auto = true },
+    -- Its finisher (in Angemon's 0x52 Hand of Fate slot: both hands drive
+    -- forward) as Flower Cannon: Centarumon's Solar Ray (0x56) from its
+    -- hands, at an Ultimate's power
+    finisher = { name = "Flower Cannon", from = 0x52, power = 220, effect = 0x56, origin = { { 9, 16, -2, -8 }, { 6, 15, -1, 9 } } },
+    gains = { 4000, 5500, 450, 350, 550, 550 },
+    -- MP 300, Offense 200, Speed 300, Brains 300, at most 10 care mistakes,
+    -- weight 20, discipline 60 or 35 techniques
+    requirements = { digimon = -1, hp = -1, mp = 300, offense = 200, defense = -1, speed = 300, brain = 300,
+      care = 10, weight = 20, discipline = 60, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    icon_head = { 3 },
+    source = { ["SLUS-01193"] = { model = 117, anim = 30 } }, -- DW2 Digimon 186
+    -- Angemon, as the angels: its four petal wings on Angemon's wings,
+    -- legs hybrid and damped
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" }, [13] = { 18, "core" },                              -- body, head, hips
+      [6] = { 10, "core" }, [5] = { 15, "core" }, [4] = { 12, "core" }, [3] = { 17, "core" },       -- wings (+x, -x)
+      [10] = { 4, "core" }, [11] = { 5, "core" }, [12] = { 6, "core" },                             -- arm (+x)
+      [7] = { 7, "core" }, [8] = { 8, "core" }, [9] = { 9, "core" },                                -- arm (-x)
+      [17] = { 19, "limb", 18, 20, true }, [18] = { 20, "leaf" }, [19] = { 21, "core" },            -- leg (+x)
+      [14] = { 22, "limb", 15, 23, true }, [15] = { 23, "leaf" }, [16] = { 24, "core" },            -- leg (-x)
+    },
+  },
+  {
+    type = 247, name = "Rosemon", file = "ROSE", level = 5, height = 440,
+    chart_stage = 6,
+    attribute = 1, specialties = { 3, 2, 1 }, radius = 150, -- Data; Earth, Air, Battle
+    techniques = { auto = true },
+    -- Its finisher (in Angemon's 0x52 Hand of Fate slot: its motion) as
+    -- Thorn Whipping: Palmon's Poison Ivy (0x62: its close-range stats, so it
+    -- walks up to the foe, and its vines) from its whip hand, at a Mega's
+    -- power
+    finisher = { name = "Thorn Whipping", from = 0x52, stats = 0x62, power = 280, effect = 0x62, origin = { 5, 109, -18, -26 } },
+    gains = { 7000, 8000, 800, 600, 800, 800 },
+    -- HP 600, MP 600, Offense 500, Defense 400, Speed 600, Brains 500, at
+    -- most 10 care mistakes, weight 35, discipline 60 or 45 techniques
+    requirements = { digimon = -1, hp = 600, mp = 600, offense = 500, defense = 400, speed = 600, brain = 500,
+      care = 10, weight = 35, discipline = 60, happiness = -1, battles = -1, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    view = { 120, 400, -1230 },  -- as Seraphimon
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 1739, bones = 66, motions = 0 } }, -- M144ROSE (partner fighter 0x2A)
+    -- Angemon, as the angels: cape and shoulders with the chest, hair and
+    -- petals with the head, the whip in its right hand; legs hybrid and
+    -- damped
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [1] = { 18, "core" }, [10] = { 2, "core" }, [25] = { 2, "follow" }, [26] = { 2, "follow" },   -- hips, torso, cape
+      [21] = { 3, "core" }, [22] = { 3, "follow" }, [23] = { 3, "follow" }, [24] = { 3, "follow" }, -- head, hair
+      [27] = { 3, "follow" }, [28] = { 3, "follow" }, [29] = { 3, "follow" }, [30] = { 3, "follow" }, [31] = { 3, "follow" }, [32] = { 3, "follow" }, -- petals
+      [11] = { 2, "follow" }, [12] = { 7, "core" }, [13] = { 8, "core" }, [14] = { 9, "follow" },   -- arm (-x), its stem
+      [15] = { 2, "follow" }, [16] = { 4, "core" }, [17] = { 5, "core" },                           -- arm (+x)
+      [18] = { 5, "follow" }, [19] = { 5, "follow" }, [20] = { 5, "follow" },                       -- whip
+      [6] = { 19, "limb", 7, 20, true }, [7] = { 20, "leaf" }, [8] = { 21, "core" }, [9] = { 21, "follow" }, -- leg (+x)
+      [2] = { 22, "limb", 3, 23, true }, [3] = { 23, "leaf" }, [4] = { 24, "core" }, [5] = { 24, "follow" }, -- leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from

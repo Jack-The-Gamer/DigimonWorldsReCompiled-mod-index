@@ -113,8 +113,10 @@ end
 for name in pairs(extra) do error("patches for " .. name .. ", which isn't one of the game's code files") end
 
 -- One texture per type, read at type * 9 sectors: the new types' entries go
--- after the game's 180. `textures[type]` = a TIM for a new type.
-local textures = {}
+-- after the game's 180. `textures[type]` = a TIM for a new type;
+-- `replaced[type]` = one for a game Digimon whose model a backport replaces
+-- (`npc`: the Misty Trees Cherrymon).
+local textures, replaced = {}, {}
 
 -- --- the Digimon from Digimon World 2003 and Digimon World 2 ---------------------
 local DIGIMON_DATA = 0x8012CEB4      -- the game's own copy (USA: boneCount at +20)
@@ -322,6 +324,26 @@ do
         else
           textures[b.type] = flat.draw(tim, info.faces)
         end
+        -- The game's own Digimon of this kind takes the model too (`npc`): the
+        -- source again (read afresh) on that Digimon's skeleton and with its
+        -- own animations, at its own size. The texture is this one's: the
+        -- conversion's pixels don't depend on the donor, and this entry has
+        -- the 16 colour tables an NPC slot takes (uploadModelTexture loads
+        -- the TIM's own CLUT rows).
+        if b.npc and game ~= "dw1" then
+          local n, n3, nmats = b.npc, nil, nil
+          if game == "dw2" then
+            n3 = dw2model.read(src.file(spec.model))
+            nmats = dw2model.pose(n3, src.file(spec.anim), 0, 0)
+          else
+            n3 = dw3model.read(src.file(spec.file), spec.bones, spec.motions)
+            nmats = dw3model.pose(n3, n3.idle_frame)
+          end
+          local nmmd = convert.convert(n.mapping, n3, nmats, skeleton(n.type), read_game_file(n.file), entry, { height = n.height })
+          files.add(n.file, nmmd)
+          replaced[n.type] = textures[b.type]
+          dwrc.log(string.format("%s: the game's own (type %d, %s) now has this model too, %d bytes (checksum %08X)", b.name, n.type, n.file, #nmmd, fnv(nmmd)))
+        end
       end)
       if not ok then dwrc.log(b.name .. " couldn't be built: " .. tostring(err)) end
     end
@@ -382,6 +404,9 @@ end
 if next(textures) then
   local alltim = read_game_file("ALLTIM.TIM")
   assert(#alltim == 180 * TEXTURE_SIZE, "ALLTIM.TIM isn't 180 textures")
+  for t, tim in pairs(replaced) do
+    alltim = alltim:sub(1, t * TEXTURE_SIZE) .. tim .. alltim:sub((t + 1) * TEXTURE_SIZE + 1)
+  end
   local extra = {}
   for t = 180, tables.CAPACITY - 1 do extra[#extra + 1] = textures[t] or string.rep("\0", TEXTURE_SIZE) end
   files.add("ALLTIM.TIM", alltim .. table.concat(extra))
