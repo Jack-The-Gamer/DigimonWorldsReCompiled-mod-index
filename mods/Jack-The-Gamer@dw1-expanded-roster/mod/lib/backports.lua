@@ -32,7 +32,12 @@ M.list = {
     -- Its entries start as the donor's; these replace them (DW1 values:
     -- attribute 1 Data, 2 Vaccine, 3 Virus; specialties 0 Fire, 1 Battle,
     -- 2 Air, 3 Earth, 4 Ice, 5 Mech, 6 Filth, 255 none).
-    attribute = 3, specialties = { 0, 255, 1 }, radius = 140,
+    attribute = 3, specialties = { 0, 1, 255 }, radius = 140,
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from Fire from Agumon's mouth (its jaw 4), the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true, points = { [0] = { 4, 4, 34, 0 } } },
     -- Techniques: Agumon's; its finisher (59 Pepper Breath, a fireball, on
     -- Agumon's animation) becomes Guilmon's own Pyro Sphere with the same
     -- stats (lib/tables.lua: new finishers from 0x71).
@@ -74,9 +79,14 @@ M.list = {
   {
     type = 181, name = "Growlmon", file = "GRAW", level = 4, height = 410,
     attribute = 3, specialties = { 0, 1, 255 }, radius = 230, -- Virus; Fire, Battle
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
     -- Greymon's gains (Agumon's Champion line)
     gains = { 2000, 1500, 200, 200, 200, 200 },
-    -- Greymon's techniques; its finisher (63 Mega Flame) as Exhaust Flame
+    -- Its finisher (63 Mega Flame) as Exhaust Flame
     finisher = { name = "Exhaust Flame", from = 63 },
     -- Becoming it (a Champion: every stat it names, then care/weight/...):
     -- Offense and Speed 100, at most 3 care mistakes (flags 0x10: "care" is
@@ -106,7 +116,12 @@ M.list = {
   },
   {
     type = 182, name = "WarGrowlmon", file = "WGRW", level = 5, height = 460,
-    attribute = 3, specialties = { 0, 5, 1 }, radius = 280, -- Virus; Fire, Mech, Battle
+    attribute = 3, specialties = { 0, 1, 5 }, radius = 280, -- Virus; Fire, Battle, Mech
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from Fire from its chest (Atomic Blaster's), the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true, points = { [0] = { 2, 95, -15, 0 } } },
     -- MetalGreymon's gains
     gains = { 5000, 5000, 500, 500, 500, 500 },
     -- Becoming it (Ultimate; as MetalGreymon's, with Offense and Speed
@@ -115,7 +130,7 @@ M.list = {
     -- battles, 30 techniques.
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 300, speed = 500, brain = 300,
       care = 10, weight = 65, discipline = 80, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
-    -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw: stats
+    -- Its finisher (79 Giga Scissor Claw: stats
     -- and animation) as WarGrowlmon's Atomic Blaster, with the effect of
     -- Vademon's Abduction Beam (0x43) fired from the chest: the torso (bone
     -- 2), in its own space 95 forward of the pivot.
@@ -145,16 +160,23 @@ M.list = {
   -- --- the Veemon line (DW2003) and the Veedramon line (DW2) ----------------------
   {
     type = 183, name = "Veemon", file = "VMON", level = 3, height = 260,
-    attribute = 2, -- Vaccine
-    -- Gabumon's techniques; its finisher (99 Blue Blaster's stats) as
-    -- V-Headbutt with Buster Dive's effect (0x2F), placed in front of it
-    -- (bone 0, as that effect's own users: 100 up, 550 forward, where the foe
-    -- stands). No Digimon with Gabumon's skeleton has Buster Dive's dive, so
-    -- it plays Gabumon's Megaton Punch (0x2E, `anim`) with the dive's travel
-    -- added (`lunge`: the whole Digimon moves 450 forward over frames 4..10,
-    -- the punch, as MetalGreymon's Buster Dive moves it ~630).
-    finisher = { name = "V-Headbutt", from = 99, anim = 0x2E, lunge = { frame = 4, frames = 6, distance = 450 },
-      effect = 0x2F, origin = { 0, 0, -100, -550 } },
+    attribute = 2, specialties = { 1, 255, 255 }, -- Vaccine; Battle
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (Gabumon's 99 Blue Blaster's stats) as V-Headbutt: a real
+    -- Buster Dive, Tyrannomon's (TYRA.MMD animation 0x34: it crouches and
+    -- dives head first about 400 forward), retargeted onto Gabumon's skeleton
+    -- (`motion.file`: another Digimon's motion; `from` its bone for each of
+    -- Gabumon's: chest, head, jaw, arms and legs, its tail and fingers left
+    -- out; the dive's travel kept, `travel`), with Buster Dive's effect (0x2F)
+    -- where the foe stands (bone 0, 100 up, 550 forward).
+    finisher = { name = "V-Headbutt", from = 99, effect = 0x2F, origin = { 0, 0, -100, -550 },
+      motion = { file = "TYRA.MMD", type = 8, anim = 0x34, travel = 1,
+        from = { [1] = 1, [2] = 2, [3] = 3, [4] = 4, [6] = 5, [7] = 6, [8] = 7, [10] = 11, [11] = 12, [12] = 13,
+          [13] = 17, [15] = 21, [16] = 22, [17] = 23, [19] = 24, [20] = 25, [21] = 26 } } },
     gains = { 800, 500, 100, 70, 80, 50 },
     -- Becoming it: a Tsunomon (16) whose highest stat is Offense or Brains, at
     -- weight 20 +- 5, any care mistakes (Elecmon, before it, wants HP, Offense
@@ -177,8 +199,13 @@ M.list = {
   },
   {
     type = 184, name = "ExVeemon", file = "EXVM", level = 4, height = 420,
-    attribute = 2,
-    -- Leomon's techniques; its finisher (91 Fist of the Beast King) as V-Laser
+    attribute = 2, specialties = { 1, 2, 255 }, -- Battle, Air
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (91 Fist of the Beast King) as V-Laser
     -- with Howling Blaster's effect (0x40) from the chest (bone 0: 290 up,
     -- 70 forward)
     finisher = { name = "V-Laser", from = 91, effect = 0x40, origin = { 0, 0, -290, -70 } },
@@ -204,8 +231,13 @@ M.list = {
   },
   {
     type = 185, name = "Veedramon", file = "VDRA", level = 4, height = 400, game = "dw2",
-    attribute = 2,
-    -- Greymon's techniques; its finisher (63 Mega Flame) as V-Nova Blast with
+    attribute = 2, specialties = { 0, 1, 255 }, -- Fire, Battle
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (63 Mega Flame) as V-Nova Blast with
     -- Howling Blaster's effect (0x40) from the mouth (Greymon's jaw, bone 5,
     -- where Mega Flame starts)
     finisher = { name = "V-Nova Blast", from = 63, effect = 0x40, origin = { 5, 40, -30, 0 } },
@@ -232,8 +264,13 @@ M.list = {
   },
   {
     type = 186, name = "Paildramon", file = "PLDR", level = 5, height = 470,
-    attribute = 2,
-    -- Andromon's techniques; its finisher (102 Spiral Sword) as Death Parade
+    attribute = 2, specialties = { 1, 5, 255 }, -- Battle, Mech
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (102 Spiral Sword) as Death Parade
     -- Blaster with Giga Scissor Claw's effect (0x4F), set up as for
     -- MetalGreymon (bone 0, no offset)
     finisher = { name = "Death Parade Blaster", from = 102, effect = 0x4F, origin = { 0, 0, 0, 0 } },
@@ -263,8 +300,13 @@ M.list = {
   },
   {
     type = 187, name = "AeroVeedramon", file = "AVDR", level = 5, height = 470, game = "dw2",
-    attribute = 2,
-    -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw) as Dragon
+    attribute = 2, specialties = { 1, 2, 0 }, -- Battle, Air, Fire
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (79 Giga Scissor Claw) as Dragon
     -- Impulse with Crimson Flare's effect (0x6D), whose four start points
     -- (Phoenixmon's wings and feet) are its wings (torso, bone 2) and hands
     -- (bones 9, 13): the centres of those parts at rest, in bone space.
@@ -296,8 +338,13 @@ M.list = {
     -- four-armed beetle rig), at its own size (`model_height`: the mesh's
     -- height at rest, antennae included; `height` is DIGIMON_DATA's, as the NPC's).
     type = 188, name = "Tentomon", file = "TNTO", level = 3, height = 220, model_height = 277, game = "dw1",
-    attribute = 1, specialties = { 3, 255, 255 }, radius = 140, -- Data; Earth (as the NPC)
-    -- Kabuterimon's techniques; its finisher (93 Electro Shocker: animation,
+    attribute = 1, specialties = { 2, 1, 255 }, radius = 140, -- Data; Air, Battle
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (93 Electro Shocker: animation,
     -- effect) as Super Shocker at a Rookie's power (Kunemon's Electric
     -- Thread is 94, Electro Shocker 170). Electro Shocker gathers in front
     -- (bone 0: 200 up, 340 forward for Kabuterimon) from the four hands
@@ -333,8 +380,13 @@ M.list = {
   },
   {
     type = 189, name = "MegaKabuterimon", file = "MKAB", level = 5, height = 460, game = "dw2",
-    attribute = 2, specialties = { 3, 1, 255 }, radius = 280, -- Vaccine; Earth, Battle
-    -- HerculesKabuterimon's techniques; its finisher (93 Electro Shocker) as
+    attribute = 2, specialties = { 2, 1, 255 }, radius = 280, -- Vaccine; Air, Battle
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (93 Electro Shocker) as
     -- Horn Buster at an Ultimate's power
     finisher = { name = "Horn Buster", from = 93, power = 225 },
     gains = { 5000, 4000, 500, 600, 400, 400 },
@@ -359,28 +411,28 @@ M.list = {
   },
   {
     type = 190, name = "Okuwamon", file = "OKWA", level = 5, height = 430,
-    attribute = 3, specialties = { 3, 1, 2 }, radius = 280, -- Virus; Earth, Battle, Air
-    -- Centarumon's skeleton and motions (four legs and two arms, like it) with
-    -- HerculesKabuterimon's techniques (`techniques`): each plays one of
-    -- Centarumon's technique motions (`motions`: HerculesKabuterimon's slot k
-    -- -> Centarumon's slot, a list from slot 0: Prominence Beam and Red
-    -- Inferno on their own, Megaton Punch, Buster Dive and the claws on Dynamite
-    -- Kick and Counter, Green Trap on Magma Bomb, the powders from the mouth on
-    -- Spit Fire and Fire Tower, Bug on Heat Laser, Charm Perfume on Meltdown,
-    -- Mass Morph and Muscle Charge on Muscle Charge). Where an effect starts
-    -- from HerculesKabuterimon's bones and doesn't list Centarumon, its start
-    -- point moves to the matching part (`bones`: its bone -> {bone, x, y, z},
-    -- the part's place in bone space at rest; lib/limits.lua: borrow).
-    techniques = { from = 60, motions = { 3, 5, 7, 8, 7, 9, 8, 7, 2, 0, 4, 6, 1, 9, 8 },
-      bones = { [2] = { 3, 66, -1, 72 }, [3] = { 4, -41, 1, -230 }, [4] = { 4, -41, 1, -230 },
-        [6] = { 7, 92, -51, -130 }, [11] = { 7, 92, -51, -130 }, [8] = { 9, 142, 0, -296 }, [14] = { 9, 142, 0, -296 } } },
-    -- Its finisher as Double Scissor Claw: Electro Shocker's stats at an
-    -- Ultimate's power, Counter's strike with a dash (`lunge`: 450 forward over
-    -- frames 4..11; Counter's root keys move nothing, so the dash isn't
-    -- overridden) and Kuwagamon's Scissor Claw (0x64) striking where Kuwagamon's
-    -- does (bone 0, 140 up, 425 forward)
-    finisher = { name = "Double Scissor Claw", from = 93, power = 230, lunge = { frame = 4, frames = 7, distance = 450 },
-      effect = 0x64, origin = { 0, 0, -140, -425 } },
+    attribute = 3, specialties = { 1, 2, 255 }, radius = 280, -- Virus; Battle, Air
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Centarumon's skeleton and motions (four legs and two arms, like it).
+    -- Its finisher (in place of Centarumon's 0x56 Solar Ray) as Double Scissor
+    -- Claw: HerculesKabuterimon's Electro Shocker's stats (93) at an
+    -- Ultimate's power, playing Kuwagamon's own Scissor Claw (KUWA.MMD
+    -- animation 0x38: it rears back and lunges ~400 forward, head and pincers
+    -- first, at frames 14..20) retargeted onto Centarumon's skeleton
+    -- (`motion.file`; `from`: Centarumon's bone <- Kuwagamon's: horse body and
+    -- hind body <- abdomen 23, torso <- upper body 2, head (Okuwamon's head and
+    -- pincers) <- head 3, arms <- its first arms 7-9 / 10-11, front legs <- its
+    -- legs 24-26 / 27-29; the hind legs keep their rest; its travel kept), and
+    -- Kuwagamon's Scissor Claw effect (0x64) striking where Kuwagamon's does
+    -- (bone 0, 140 up, 425 forward)
+    finisher = { name = "Double Scissor Claw", from = 0x56, stats = 93, power = 230, effect = 0x64, origin = { 0, 0, -140, -425 },
+      motion = { file = "KUWA.MMD", type = 51, anim = 0x38, travel = 1,
+        from = { [1] = 1, [2] = 23, [16] = 23, [3] = 2, [4] = 3, [5] = 7, [6] = 8, [7] = 9, [8] = 10, [9] = 11,
+          [10] = 24, [11] = 25, [12] = 26, [13] = 27, [14] = 28, [15] = 29 } } },
     gains = { 4500, 4500, 600, 400, 600, 400 },
     -- HP 400, MP 300, Offense 500, Defense 300, Speed 500, at most 10 care
     -- mistakes, weight 45, 30 battles, 30 techniques
@@ -408,7 +460,7 @@ M.list = {
   {
     type = 191, name = "Garudamon", file = "GRDA", level = 5, height = 470, game = "dw2",
     attribute = 2, specialties = { 0, 2, 1 }, radius = 260, -- Vaccine; Fire, Air, Battle
-    -- Andromon's techniques; its finisher (102 Spiral Sword: stats, motion) as
+    -- Its finisher (102 Spiral Sword: stats, motion) as
     -- Wing Blade with Birdramon's Meteor Wing (0x5E), whose four start points
     -- (Birdramon's wings) are its wing tips (on the chest, bone 2) and hands
     -- (7, 11): those parts' centres at rest, in bone space
@@ -435,8 +487,13 @@ M.list = {
   -- --- Deltamon, Kimeramon (DW2003) and Machinedramon (DW1's own) -----------------
   {
     type = 192, name = "Deltamon", file = "DELT", level = 4, height = 420,
-    attribute = 3, specialties = { 1, 5, 3 }, radius = 230, -- Virus; Battle, Mech, Earth
-    -- Tyrannomon's techniques; its finisher (58 Blaze Blast: stats, motion) as
+    attribute = 3, specialties = { 1, 0, 4 }, radius = 230, -- Virus; Battle, Fire, Ice
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from Fire and Ice from its middle mouth, the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true, points = { [0] = { 3, 126, -48, 0 }, [4] = { 3, 126, -48, 0 } } },
+    -- Its finisher (58 Blaze Blast: stats, motion) as
     -- Triplex Force with Meramon's Fireball (0x3D), whose three start points
     -- (Meramon's body and hands) are its three mouths: the head's (bone 3) and
     -- the hand heads' (on the hand, bone 7, and the forearm, bone 12), the
@@ -468,8 +525,13 @@ M.list = {
   },
   {
     type = 193, name = "Kimeramon", file = "KIME", level = 5, height = 480,
-    attribute = 1, specialties = { 0, 2, 1 }, radius = 280, -- Data; Fire, Air, Battle
-    -- MetalGreymon's techniques; its finisher (79 Giga Scissor Claw: stats,
+    attribute = 1, specialties = { 1, 0, 2 }, radius = 280, -- Data; Battle, Fire, Air
+    -- Techniques of its specialties (lib/techniques.lua: the donor's own of
+    -- those kinds first, each other on the donor's closest motion; effects
+    -- that don't list the donor start from the nearest-sized
+    -- Digimon's place or in front of it)
+    techniques = { auto = true },
+    -- Its finisher (79 Giga Scissor Claw: stats,
     -- motion) as Heat Viper with Phoenixmon's Crimson Flare (0x6D), whose four
     -- start points (Phoenixmon's wings and feet) are its four hands: the
     -- raised ones (riding the chest, bone 2), then the claws (bones 9, 13),
@@ -511,7 +573,7 @@ M.list = {
     type = 194, name = "Machinedramon", file = "MCDR", level = 5, height = 600, model_height = 650, game = "dw1",
     chart_stage = 6,
     attribute = 3, specialties = { 5, 0, 1 }, radius = 320, -- Virus; Mech, Fire, Battle
-    -- MetalGreymon's techniques; its finisher (in place of 79 Giga Scissor
+    -- Its finisher (in place of 79 Giga Scissor
     -- Claw) its own Infinity Cannon (0x6A: stats and effect) at a Mega's power
     -- (the boss's is 777), playing its own Infinity Cannon motion (its
     -- animation 0x34, retargeted by lib/convert.lua: the cannons swing
@@ -548,6 +610,85 @@ M.list = {
       [26] = { 23, "limb", 27, 24, true }, [27] = { 24, "leaf" }, [28] = { 25, "core" },         -- leg (+x)
       [29] = { 27, "limb", 30, 28, true }, [30] = { 28, "leaf" }, [31] = { 29, "core" },         -- leg (-x)
     },
+  },
+  -- --- the Sukamon line --------------------------------------------------------------
+  {
+    -- Digimon World's own PlatinumSukamon (type 73, an enemy: battle motions
+    -- only) on Sukamon (39): the very same skeleton and mesh in another
+    -- texture, so no mapping (every bone on itself, lib/convert.lua same_rig)
+    -- and Sukamon's motions, face changes included, at its own size
+    -- (`scale = 1`). A Champion, as the enemy.
+    type = 195, name = "PlatinumSukamon", file = "PLSK", level = 4, height = 290, scale = 1, game = "dw1",
+    attribute = 2, specialties = { 6, 5, 255 }, radius = 175, -- Vaccine (as the enemy); Filth, Mech
+    -- Filth and Mech techniques (`techniques.moves`, technique by slot, each
+    -- slot playing Sukamon's slot `motions[k]`): Sukamon's eight and its
+    -- finisher (slots 0..8 as Sukamon's), then seven of the eight Mech ones
+    -- (16 slots in all: DG Dimension, an Ultimate's, is left out): Power
+    -- Crane thrown like Poop Spd Toss, All Range Beam and Full Potential on
+    -- Ult Poop Hell's raised arms, Metal Sprinter on Poop Rnd Toss, Pulse
+    -- Laser out of the mouth on Odor Spray, Delete Program on Rnd Spd Toss,
+    -- Reverse Prog on Big Rnd Toss. The Mech effects don't list Sukamon:
+    -- they start where MetalGreymon's do (`from`), its hand 9 on Sukamon's
+    -- throwing hand 12 (where Poop Spd Toss starts); DG-less lists naming
+    -- neither from that hand too (`fallback`).
+    techniques = { from = 12,
+      moves = { 0x37, 0x31, 0x32, 0x33, 0x35, 0x36, 0x34, 0x38, 0x41, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1E, 0x1F },
+      motions = { 0, 1, 2, 3, 4, 5, 6, 7, 3, 2, 7, 4, 1, 5, 7, 6 },
+      bones = { [9] = { 12, 35, -20, 0 } }, fallback = { 12, 35, -20, 0 } },
+    -- Its finisher (in place of Sukamon's 0x41 Party Time: stats) as Rare Metal
+    -- Poop at a Champion's power: Big Poop Toss's throw (slot 3's motion,
+    -- above) and effect (0x33: from the body, as Sukamon's)
+    finisher = { name = "Rare Metal Poop", from = 0x41, power = 170, effect = 0x33 },
+    gains = { 2000, 1500, 150, 300, 150, 200 },
+    -- MP 100, Defense 100, Brains 100, at most 10 care mistakes, weight 20, 28
+    -- techniques. In the tree it comes from Gotsumon, not in the mod yet;
+    -- until then from Tanemon's other Rookies (`interim_from`)
+    requirements = { digimon = -1, hp = -1, mp = 100, offense = -1, defense = 100, speed = -1, brain = 100,
+      care = 10, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = 28, flags = 0x10 },
+    interim_from = { "Palmon", "Kunemon", "Tentomon" },
+    icon_head = { 2, 3, 4 }, icon_head_scale = 1.0, -- all of it is its head
+    source = { ["SLUS-01032"] = { type = 73, file = "PCSC.MMD" } },
+    donor = 39, donor_file = "SCUM.MMD", -- Sukamon
+  },
+  {
+    -- Digimon World's own KingSukamon (type 120, "King of Sukamon", the NPC
+    -- ruling Trash Mountain: a few idle motions) on Sukamon: the same
+    -- skeleton 2.75 times as big, a crown on its head, and its arm raised by
+    -- its pose (its rest pose takes Sukamon's rotations: lib/dw1source.lua).
+    -- An Ultimate, 1.4 times Sukamon's size (`model_height`).
+    type = 196, name = "KingSukamon", file = "KSUK", level = 5, height = 400, model_height = 430, game = "dw1",
+    attribute = 3, specialties = { 6, 1, 255 }, radius = 240, -- Virus (as the NPC); Filth, Combat
+    -- Filth and Combat techniques: Sukamon's (but Horizontal Kick) and its
+    -- finisher, then all eight Combat ones: Tremar on Big Poop Toss's slam,
+    -- Muscle Charge on Ult Poop Hell's raised arms, War Cry on Odor Spray's
+    -- open mouth, Sonic Jab on Poop Spd Toss's swing, Dynamite Kick and
+    -- Buster Dive on Horizontal Kick, Counter on Rnd Spd Toss, Megaton Punch
+    -- on Big Rnd Toss. The Combat effects start where Etemon's do (`from`):
+    -- its head 4 (Buster Dive) at the foe, its hand 9 (Muscle Charge) on
+    -- Sukamon's hand 12.
+    techniques = { from = 42,
+      moves = { 0x31, 0x32, 0x33, 0x35, 0x36, 0x34, 0x38, 0x41, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F },
+      motions = { 1, 2, 3, 4, 5, 6, 7, 0, 3, 7, 1, 2, 0, 5, 6, 0 },
+      bones = { [4] = { 0, 0, -100, -550 }, [9] = { 12, 35, -20, 0 } }, fallback = { 12, 35, -20, 0 } },
+    -- Its finisher (in place of Party Time) as King Stamp at an Ultimate's
+    -- power: it jumps high onto the foe and lands with Buster Dive's impact
+    -- there (0x2F at bone 0, 100 up, 550 forward). Horizontal Kick's flip,
+    -- its own jump (frames 7..25) three times as high and its own forward
+    -- travel 1.6 times as far, about 500 (`leap`; an added dash, `lunge`,
+    -- would be overridden by the flip's own root keys from frame 10)
+    finisher = { name = "King Stamp", from = 0x41, power = 225, effect = 0x2F, origin = { 0, 0, -100, -550 },
+      leap = { from = 7, to = 26, up = 3, forward = 1.6 } },
+    gains = { 6000, 4000, 550, 650, 400, 400 },
+    -- HP 400, Offense 300, Defense 400, at most 15 care mistakes, weight 30,
+    -- 30 battles or 35 techniques (Etemon, from Sukamon too, wants none)
+    requirements = { digimon = -1, hp = 400, mp = -1, offense = 300, defense = 400, speed = -1, brain = -1,
+      care = 15, weight = 30, discipline = -1, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
+    icon_head = { 2, 3, 4 }, icon_head_scale = 1.0,
+    -- The Digimon page: at Sukamon's distance its crown is cut off, so it
+    -- stands farther back by its height over Sukamon's, at the same place
+    view = { -87, 361, -700 },
+    source = { ["SLUS-01032"] = { type = 120, file = "SCUD.MMD" } },
+    donor = 39, donor_file = "SCUM.MMD", -- Sukamon
   },
 }
 

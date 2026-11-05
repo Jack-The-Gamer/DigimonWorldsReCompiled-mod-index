@@ -19,8 +19,10 @@ local convert = require("lib.convert")
 local M = {}
 
 -- skel: {[bone] = {object, parent}} (0-based bones, as main.lua reads them);
--- mmd: the Digimon's MMD; tim_entry: its 0x4800-byte ALLTIM entry.
-function M.read(mmd, skel, tim_entry)
+-- mmd: the Digimon's MMD; tim_entry: its 0x4800-byte ALLTIM entry;
+-- same_rig: it uses its donor's very skeleton (the Sukamon family on
+-- Sukamon: see M.pose and lib/convert.lua).
+function M.read(mmd, skel, tim_entry, same_rig)
   local t = string.unpack("<I4", mmd, 1)
   local nobj = string.unpack("<I4", mmd, t + 8 + 1)
   local top = t + 12
@@ -55,7 +57,7 @@ function M.read(mmd, skel, tim_entry)
     objs[i] = o
   end
   -- its own MMD and skeleton too: lib/convert.lua can retarget its animations
-  local m = { bones = {}, mmd = mmd, skel = skel }
+  local m = { bones = {}, mmd = mmd, skel = skel, same_rig = same_rig or false }
   for b = 1, #skel do
     local o = skel[b][1]
     local src = o >= 0 and objs[o] or { verts = {}, normals = {}, polys = {} }
@@ -68,9 +70,12 @@ function M.read(mmd, skel, tim_entry)
 end
 
 -- The bones' model-space matrices ({{r, r, r, t} x 3}, 1-based, unit rotation)
--- at animation 0's start pose.
-function M.pose(mmd, skel)
-  local w = convert.dw1_pose(mmd, skel, 0)
+-- at animation 0's start pose; with the donor's MMD (rest_from, the same
+-- skeleton), its rotations and this model's bone locations, so each bone's
+-- mesh lands on the same donor bone as it is (KingSukamon's raised arm is a
+-- pose, not its mesh).
+function M.pose(mmd, skel, rest_from)
+  local w = convert.dw1_pose(mmd, skel, 0, rest_from)
   local out = {}
   for b = 1, #skel do
     local m, t = w[b][1], w[b][2]

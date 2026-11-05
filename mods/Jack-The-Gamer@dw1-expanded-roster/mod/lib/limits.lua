@@ -194,8 +194,16 @@ local EVL_SET_SCRATCH_TOP = 0x800601B0
 -- for the user's own original type but one for the other Digimon, the word
 -- it pops (the top of EFE_DATA_STACK) is pointed at a private one-entry
 -- list: that entry with the bone translated (bone 0, the entity, stays as it
--- is; a bone without a translation keeps its number and offset).
+-- is; a bone without a translation keeps its number and offset). A list
+-- naming neither (a mixed technique list: `fallback` = {bone, x, y, z}, or
+-- `near`: lists built from specialties) takes the entry of the Digimon
+-- closest to the user's height (DigimonPara.height), starting at the user's
+-- point for the technique's kind (`points[kind]`, else `fallback`, else in
+-- front of it at 3/5 of its height and its radius away) unless that entry
+-- starts at bone 0 (the entity: its offset is a place before the user, kept).
+-- Lists can be long (Megaton Punch's has 29 entries).
 M.borrow = {}
+local loaded = {} -- effect file address -> {stop, technique} (the battle's loaded effects)
 local CHECK_TECH = { { "BTL_REL.BIN", 0x8006D8FC }, { "STD_REL.BIN", 0x80075ED8 }, { "VS_REL.BIN", 0x8006BFA8 } }
 local EFE_DATA_STACK = 0x80134CC8     -- int32 * (pop: *--ptr)
 local EFE_SCRIPT_CONTEXT = 0x80134CE8 -- EfeSubEffect * (sourceEntity at +16)
@@ -253,6 +261,10 @@ function M.install()
       local load = ctx:reg("a0")
       local want = ctx:read16(ctx:read32(load + 8) - 2)
       if want >= 0x8000 then return false end
+      do -- which technique each effect file is, for borrow's kind
+        local f = ctx:read32(ctx:read32(load + 16) + 12)
+        if want >= 0x100 and want < 0x200 then loaded[f] = { f + 0x34 + ctx:read32(f + 36), want - 0x100 } end
+      end
       local src = M.efe_source[want - 0x100]
       if not src then return false end
       local mmd = ctx:read32(ctx:read32(load + 16) + 12)
@@ -288,16 +300,33 @@ function M.install()
       local top = ctx:read32(EFE_DATA_STACK) - 4
       local list = ctx:read32(top)
       local own = M.original_type[t] or t
-      local found
-      for k = 0, 15 do
+      local found, near, gap
+      local function height(ty) return ctx:read_s16(tables.entry("DIGIMON_DATA", ty) + 26) end
+      local mine = height(t)
+      for k = 0, 47 do
         local ty = ctx:read_s16(list + 10 * k)
         if ty < 0 then break end
         if ty == own then return false end
-        if ty == b.type and not found then found = list + 10 * k end
+        if b.type and ty == b.type and not found then found = list + 10 * k end
+        if ty < 180 then
+          local g = math.abs(height(ty) - mine)
+          if not gap or g < gap then near, gap = list + 10 * k, g end
+        end
       end
+      local any = false
+      if not found and (b.fallback or b.near) and near then found, any = near, true end
       if not found then return false end
       local bone, x, y, z = ctx:read_s16(found + 2), ctx:read_s16(found + 4), ctx:read_s16(found + 6), ctx:read_s16(found + 8)
-      local to = bone ~= 0 and b.bones[bone]
+      local to = bone ~= 0 and not any and b.bones[bone]
+      if bone ~= 0 and any then
+        local kind
+        for f, r in pairs(loaded) do
+          if list >= f and list < r[1] then kind = ctx:read8(tables.entry("MOVE_DATA", r[2]) + 9) end
+        end
+        local data = tables.entry("DIGIMON_DATA", t)
+        to = (b.points and kind and b.points[kind]) or b.fallback
+          or { 0, 0, -(ctx:read_s16(data + 26) * 3 // 5), -ctx:read16(data + 24) }
+      end
       if to then bone, x, y, z = to[1], to[2], to[3], to[4] end
       local slot = tables.BORROW + 12 * ((list >> 1) % tables.BORROW_SLOTS)
       ctx:write_bytes(slot, string.pack("<i2i2i2i2i2i2", own, bone, x, y, z, -1))

@@ -595,6 +595,44 @@ local function add_root_motion(d, bones, frame, frames, distance)
   return d:sub(1, a1) .. b1 .. d:sub(a1 + 1, a2) .. b2 .. d:sub(a2 + 1)
 end
 
+-- A copy of an animation whose own jump and travel grow between frames a and
+-- b (leap = {a, b, up, forward}): bone 1's (the body root's) location-y
+-- totals (channel 0x80) times `up` (it rises and falls that much higher,
+-- ending about where it did) and bone 0's (the entity's) forward location-z
+-- totals (channel 0x40, negative) times `forward` (it travels that much
+-- farther). Keys at frames a..b-1. As dw1convert.py.
+local function scale_leap(d, bones, leap)
+  local a, b, up, forward = leap[1], leap[2], leap[3], leap[4]
+  local function bits(x) local n = 0; while x ~= 0 do n = n + (x & 1); x = x >> 1 end return n end
+  local edits = {}
+  for _, st in ipairs(anim_steps(d, 0, bones)) do
+    if st[2] == 0 and st[3] >= a and st[3] < b then
+      local p = st[1] + 2
+      while p + 2 <= #d and string.unpack("<I2", d, p + 1) & 0x8000 ~= 0 do
+        local w = string.unpack("<I2", d, p + 1)
+        local flags, bone = w & 0x7FC0, w & 0x3F
+        for _, c in ipairs({ { 0x80, up, 1 }, { 0x40, forward, 0 } }) do
+          local flag, k, which = c[1], c[2], c[3]
+          if bone == which and flags & flag ~= 0 then
+            local at = p + 4 + 2 * bits(flags & (0x7FC0 & ~(2 * flag - 1)))
+            local v = string.unpack("<i2", d, at + 1)
+            if flag == 0x80 or v < 0 then edits[at] = string.pack("<i2", clamp16(v * k)) end
+          end
+        end
+        p = p + 4 + 2 * bits(flags)
+      end
+    end
+  end
+  local parts, pos = {}, 0
+  for _, o in ipairs(sorted_keys(edits)) do
+    parts[#parts + 1] = d:sub(pos + 1, o)
+    parts[#parts + 1] = edits[o]
+    pos = o + 2
+  end
+  parts[#parts + 1] = d:sub(pos + 1)
+  return table.concat(parts)
+end
+
 -- --- a DW1 source's own animation on the converted model (dw1convert.py's
 -- retarget; Machinedramon's Infinity Cannon) -----------------------------------
 local function world(skel, pose, nb)
@@ -711,15 +749,22 @@ end
 -- more than `tol` (4096 a turn): per channel, a velocity reaching the
 -- rounded angle exactly at the segment's end, left out while it changes by
 -- `slack` or less; the source's sound instructions are kept.
-local function retarget(src, anim, motion_from, mapping, group, s, skel, nb, rest_pose)
+-- travel: src is another DW1 Digimon, not the converted model's source
+-- (Veemon's dive from Tyrannomon's Buster Dive): motion_from names every
+-- donor bone's bone there, nothing is turned (no groups), s is the two body
+-- roots' heights at rest, and its whole-body travel (bone 0's location keys,
+-- which move the entity) is kept, times `travel`.
+local function retarget(src, anim, motion_from, mapping, group, s, skel, nb, rest_pose, travel)
   local step, slack, tol = 8, 2, 64
   local sinfo = donor_info(src.mmd)
   local snb = #src.skel + 1
   local s_rest = rots(world(src.skel, start_pose(src.mmd, sinfo, 0, snb), snb), snb)
   local t_rest = rots(world(skel, rest_pose, nb), nb)
   local source = {}
-  for _, b in ipairs(sorted_keys(mapping)) do
-    if mapping[b][2] ~= "follow" and not source[mapping[b][1]] then source[mapping[b][1]] = b end
+  if not travel then
+    for _, b in ipairs(sorted_keys(mapping)) do
+      if mapping[b][2] ~= "follow" and not source[mapping[b][1]] then source[mapping[b][1]] = b end
+    end
   end
   for t, b in pairs(motion_from or {}) do source[t] = b end
   local keyed = {}
@@ -727,6 +772,7 @@ local function retarget(src, anim, motion_from, mapping, group, s, skel, nb, res
   local base = sinfo.anim_base + sinfo.anims[anim]
   local fc = string.unpack("<I2", src.mmd, base + 1) & 0x7FFF
   local loc_rest = start_pose(src.mmd, sinfo, 0, snb)[1][3]
+  if travel then s = rest_pose[1][3][2] / loc_rest[2] end
   local ang, prev = {}, nil
   local I = { { 1.0, 0.0, 0.0 }, { 0.0, 1.0, 0.0 }, { 0.0, 0.0, 1.0 } }
   for t = 1, fc do
@@ -738,7 +784,7 @@ local function retarget(src, anim, motion_from, mapping, group, s, skel, nb, res
       local par = skel[i][2]
       if source[i] then
         local b = source[i]
-        local r = group[b][3]
+        local r = travel and I or group[b][3]
         local A = mm(sw[b], mt(s_rest[b]))
         W[i] = mm(mm(mm(r, A), mt(r)), t_rest[i])
         local a = euler_xyz(mm(mt(W[par]), W[i]))
@@ -775,6 +821,29 @@ local function retarget(src, anim, motion_from, mapping, group, s, skel, nb, res
   for _, st in ipairs(anim_steps(src.mmd, base, snb)) do
     if st[2] == 0x4000 then sounds[#sounds + 1] = { st[3], (string.unpack("<I2", src.mmd, base + st[1] + 3)) } end
   end
+  local moves0 = {} -- frame -> bone 0's location keys (the entity's travel)
+  if travel then
+    local function bits(x) local n = 0; while x ~= 0 do n = n + (x & 1); x = x >> 1 end return n end
+    local d = src.mmd
+    for _, st in ipairs(anim_steps(d, base, snb)) do
+      if st[2] == 0 then
+        local q = base + st[1] + 2
+        while q + 2 <= #d and string.unpack("<I2", d, q + 1) & 0x8000 ~= 0 do
+          local w = string.unpack("<I2", d, q + 1)
+          local fl = w & 0x7FC0
+          if w & 0x3F == 0 and fl & 0x1C0 ~= 0 then
+            local parts = { string.pack("<I2", 0x8000 | (fl & 0x1C0)), d:sub(q + 3, q + 4) }
+            local first = bits(fl & 0x7E00)
+            for c = first, bits(fl) - 1 do
+              parts[#parts + 1] = string.pack("<i2", clamp16(string.unpack("<i2", d, q + 5 + 2 * c) * travel))
+            end
+            moves0[st[3]] = (moves0[st[3]] or "") .. table.concat(parts)
+          end
+          q = q + 4 + 2 * bits(fl)
+        end
+      end
+    end
+  end
   local cur, last, due = {}, {}, {}
   for _, i in ipairs(keyed) do
     cur[i], last[i], due[i] = {}, {}, 1
@@ -782,7 +851,7 @@ local function retarget(src, anim, motion_from, mapping, group, s, skel, nb, res
   end
   local flags = { 0x0800, 0x0400, 0x0200, 0x0100, 0x0080, 0x0040 }
   for g = 1, fc do
-    local group_bytes = {}
+    local group_bytes = { moves0[g] }
     for _, i in ipairs(keyed) do
       if due[i] == g and g < fc then
         local n = math.min(step, fc - g)
@@ -830,10 +899,16 @@ end
 -- that one).
 -- A DW1 model's bones at an animation's start pose (lib/dw1source.lua): per
 -- bone {matrix (4096 = 1, with scale), location}, chained to the parents.
-function M.dw1_pose(mmd, skel, anim)
+-- rest_from: another MMD on the same skeleton whose rotations (and scales)
+-- to take, keeping this one's bone locations.
+function M.dw1_pose(mmd, skel, anim, rest_from)
   local nb = #skel + 1
   local info = donor_info(mmd)
   local pose = start_pose(mmd, info, anim or 0, nb)
+  if rest_from then
+    local other = start_pose(rest_from, donor_info(rest_from), 0, nb)
+    for i = 1, nb - 1 do pose[i] = { other[i][1], other[i][2], pose[i][3] } end
+  end
   local w = { [0] = { IDENT4096, { 0, 0, 0 } } }
   for i = 1, nb - 1 do
     local par = skel[i][2]
@@ -859,6 +934,11 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   local o1 = {}
   for i = 0, nb - 1 do o1[i] = w1[i][2] end
   local order = sorted_keys(mapping)
+  -- A DW1 source on the donor's own skeleton (lib/dw1source.lua same_rig:
+  -- the Sukamon family on Sukamon): every bone's mesh moves onto the same
+  -- bone, placed from its own root and ground (no lift), and the donor's
+  -- texture moves (face changes) stay when its texture keeps its layout.
+  local same_rig = m3.same_rig
 
   local function groups(s)
     local group, first = {}, nil
@@ -884,7 +964,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
         if parent == 0 then
           if not first then
             first = b
-            p1 = { o1[target][1], o1[target][2], o1[target][3] }
+            -- a DW1 model on its own skeleton's donor keeps its own place
+            if same_rig then p1 = { s * o3[b][1], s * o3[b][2], s * o3[b][3] }
+            else p1 = { o1[target][1], o1[target][2], o1[target][3] } end
           else
             local g = group[first]
             p1 = {}
@@ -921,10 +1003,11 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
 
   -- size: the target height, then the feet on the ground
   local lo, hi = y_range(groups(1.0), 1.0)
-  local s = target_height / (hi - lo)
+  -- {scale = k}: k times the source's own size (PlatinumSukamon: 1, Sukamon's)
+  local s = type(target_height) == "table" and target_height.scale or target_height / (hi - lo)
   local group = groups(s)
   lo, hi = y_range(group, s)
-  local lift = -hi
+  local lift = same_rig and 0 or -hi
   local lifted = {}
   for b, g in pairs(group) do lifted[b] = { g[1], { g[2][1], g[2][2] + lift, g[2][3] }, g[3] } end
   group = lifted
@@ -958,8 +1041,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   for _, b in ipairs(order) do
     local target = mapping[b][1]
     local o = skel[target][1]
-    if o < 0 then error("DW1 bone " .. target .. " has no object") end
     local bone, M3, g = m3.bones[b], mats3[b], group[b]
+    if o < 0 and #bone.verts == 0 and #bone.polys == 0 then goto next_bone end
+    if o < 0 then error("DW1 bone " .. target .. " has no object") end
     local m1, t1 = w1[target][1], w1[target][2]
     local out = objs[o]
     local vbase, nbase = #out.verts, #out.normals
@@ -994,6 +1078,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       for k = 1, n do pts[k] = placed_verts[p.idx[k] + 1] end
       faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * m3.tims[1].w + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
     end
+    ::next_bone::
   end
   if #clut_list > 16 then clut_list = merge_cluts(objs, info.nobj, m3.tims[1], clut_list) end
 
@@ -1020,6 +1105,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
   -- the donor's animations with the new bone locations in every start pose,
   -- then the aliases (before the TMD: it gets whatever room they leave)
   local anims = donor_mmd:sub(info.anim_base + 1)
+  -- a same-rig source's texture has the donor's layout (the Sukamon family's
+  -- four eye blocks in the same places): its face changes work as they are
+  local keep_moves = same_rig and packed == nil
   local edits = {}
   for a = 0, #info.anims do
     local off = info.anims[a]
@@ -1031,7 +1119,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       -- Digimon's own texture, the donor's eye and face changes) would
       -- copy across another layout: each copies its block onto itself.
       for _, st in ipairs(anim_steps(anims, off, nb)) do
-        if st[2] == 0x3000 then
+        if st[2] == 0x3000 and not keep_moves then
           local src, size = string.unpack("<I2I2", anims, off + st[1] + 2 + 1)
           edits[off + st[1] + 2] = string.pack("<I2I2I2", src, size, src)
         end
@@ -1083,7 +1171,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
     if type(src) == "table" and src.motion then
       local rest_pose = {}
       for i = 0, nb - 1 do rest_pose[i] = { pose1[i][1], pose1[i][2], new_loc[i] or pose1[i][3] } end
-      local blob = retarget(m3, src.motion, src.from, mapping, group, s, skel, nb, rest_pose)
+      local blob = retarget(src.other or m3, src.motion, src.from, mapping, group, s, skel, nb, rest_pose, src.travel)
       anims = anims .. string.rep("\0", (4 - #anims % 4) % 4)
       off = #anims
       anims = anims .. blob
@@ -1093,7 +1181,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
         local o = offs[a]
         if o and o > start and o < stop then stop = o end
       end
-      local blob = add_root_motion(anims:sub(start + 1, stop), nb, src[2], src[3], src[4])
+      local blob = anims:sub(start + 1, stop)
+      if src[5] then blob = scale_leap(blob, nb, src[5]) end
+      if src[2] then blob = add_root_motion(blob, nb, src[2], src[3], src[4]) end
       anims = anims .. string.rep("\0", (4 - #anims % 4) % 4)
       off = #anims
       anims = anims .. blob

@@ -31,6 +31,7 @@ local convert = require("lib.convert")
 local chart = require("lib.chart")
 local tree = require("lib.tree")
 local icon = require("lib.icon")
+local techniques = require("lib.techniques")
 
 if dwrc.serial ~= "SLUS-01032" then
   dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
@@ -177,10 +178,22 @@ do
         local skel = skeleton(b.donor)
         alltim = alltim or read_game_file("ALLTIM.TIM")
         local m3, mats
+        local mapping = b.mapping
         if game == "dw1" then
           local mmd1, skel1 = read_game_file(spec.file), skeleton(spec.type)
-          m3 = dw1source.read(mmd1, skel1, alltim:sub(spec.type * TEXTURE_SIZE + 1, (spec.type + 1) * TEXTURE_SIZE))
-          mats = dw1source.pose(mmd1, skel1)
+          -- the donor's very skeleton (the Sukamon family on Sukamon): its
+          -- rest pose takes the donor's rotations, and every bone maps to itself
+          local same = #skel1 == #skel
+          for i = 0, #skel do
+            if not skel1[i] or skel1[i][1] ~= skel[i][1] or skel1[i][2] ~= skel[i][2] then same = false end
+          end
+          local donor_mmd = same and read_game_file(b.donor_file) or nil
+          m3 = dw1source.read(mmd1, skel1, alltim:sub(spec.type * TEXTURE_SIZE + 1, (spec.type + 1) * TEXTURE_SIZE), same)
+          mats = dw1source.pose(mmd1, skel1, donor_mmd)
+          if same and not mapping then
+            mapping = {}
+            for i = 1, #skel do mapping[i] = { i, "core" } end
+          end
         elseif game == "dw2" then
           m3 = dw2model.read(src.file(spec.model))
           mats = dw2model.pose(m3, src.file(spec.anim), 0, 0)
@@ -193,22 +206,49 @@ do
         -- technique slot k is animation 0x2E + k
         local alias
         local f = b.finisher
+        -- a finisher playing another DW1 Digimon's motion, retargeted
+        -- (finisher.motion.file / type: Veemon's dive from Tyrannomon's Buster Dive)
+        local function other_motion()
+          local mo = f.motion
+          local other = mo.file and { mmd = read_game_file(mo.file), skel = skeleton(mo.type) } or nil
+          return { motion = mo.anim, from = mo.from, other = other, travel = other and (mo.travel or 1) or nil }
+        end
+        if b.techniques and b.techniques.auto and not b.techniques.moves then
+          -- techniques of its specialties (lib/techniques.lua), each on one of
+          -- the donor's technique motions
+          local kinds, dm = {}, {}
+          for _, k in ipairs(b.specialties) do if k ~= 255 then kinds[#kinds + 1] = k end end
+          for k = 0, 15 do dm[k + 1] = exe:byte(exe_off(DIGIMON_DATA + b.donor * 0x34 + 35 + k) + 1) end
+          b.techniques.moves, b.techniques.motions = techniques.build(function(a) return exe:byte(exe_off(a) + 1) end, dm, kinds, f.from, f.anim)
+        end
         if b.techniques then
-          -- another Digimon's techniques, each on one of the donor's technique
-          -- motions (slot k plays animation 0x2E + k); the finisher's with its dash
+          -- another Digimon's techniques (or a list of its own, `moves`), each
+          -- on one of the donor's technique motions (slot k plays animation
+          -- 0x2E + k); the finisher's with its dash (lunge) or its own jump
+          -- and travel made bigger (leap: KingSukamon's King Stamp), or
+          -- another Digimon's motion (motion)
           alias = {}
-          local data = DIGIMON_DATA + b.techniques.from * 0x34
+          local data = DIGIMON_DATA + (b.techniques.from or b.donor) * 0x34
           for k, m in ipairs(b.techniques.motions) do
-            local slot, l = k - 1, nil
-            if f and f.lunge and exe:byte(exe_off(data + 35 + slot) + 1) == f.from then l = f.lunge end
-            alias[0x2E + slot] = l and { 0x2E + m, l.frame, l.frames, l.distance } or 0x2E + m
+            local slot = k - 1
+            local tech = b.techniques.moves and b.techniques.moves[k] or exe:byte(exe_off(data + 35 + slot) + 1)
+            local l, leap
+            if f and tech == f.from then l, leap = f.lunge, f.leap end
+            if f and tech == f.from and f.motion then
+              alias[0x2E + slot] = other_motion()
+            elseif l or leap then
+              local lp = leap and { leap.from, leap.to, leap.up, leap.forward }
+              alias[0x2E + slot] = { 0x2E + m, l and l.frame or false, l and l.frames, l and l.distance, lp }
+            else
+              alias[0x2E + slot] = 0x2E + m
+            end
           end
         elseif f and f.motion then
           -- the finisher plays one of the source's own animations, retargeted
           -- (a DW1 source: Machinedramon's Infinity Cannon)
           local data = DIGIMON_DATA + b.donor * 0x34
           for k = 0, 15 do
-            if exe:byte(exe_off(data + 35 + k) + 1) == f.from then alias = { [0x2E + k] = { motion = f.motion.anim, from = f.motion.from } } end
+            if exe:byte(exe_off(data + 35 + k) + 1) == f.from then alias = { [0x2E + k] = other_motion() } end
           end
         elseif f and f.anim then
           local data, from_k, anim_k = DIGIMON_DATA + b.donor * 0x34, nil, nil
@@ -221,7 +261,9 @@ do
           if from_k and anim_k then alias = { [0x2E + from_k] = l and { 0x2E + anim_k, l.frame, l.frames, l.distance } or 0x2E + anim_k }
           else dwrc.log(string.format("%s: its donor has no technique %d or %d; %s keeps its own motion", b.name, f.from, f.anim, f.name)) end
         end
-        local mmd, tim, info = convert.convert(b.mapping, m3, mats, skel, read_game_file(b.donor_file), entry, b.model_height or b.height, alias)
+        -- its size: `scale` times its own (PlatinumSukamon: 1), else model_height or height
+        local size = b.scale and { scale = b.scale } or b.model_height or b.height
+        local mmd, tim, info = convert.convert(mapping, m3, mats, skel, read_game_file(b.donor_file), entry, size, alias)
         if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
         -- the evolution scene shatters it (lib/limits.lua: 6 bytes a vertex and a polygon)
         if 6 * (info.verts + info.prims) > tables.EVL_SCRATCH_SIZE then
@@ -250,8 +292,10 @@ for t, b in pairs(built) do
   local o = string.unpack("<i2", exe, exe_off(ORIGINAL_DIGIMON_TYPES + 2 * b.donor) + 1)
   limits.original_type[t] = o >= 0 and o or b.donor -- battle effects treat it as its donor
   if b.techniques then
-    local f = string.unpack("<i2", exe, exe_off(ORIGINAL_DIGIMON_TYPES + 2 * b.techniques.from) + 1)
-    limits.borrow[t] = { type = f >= 0 and f or b.techniques.from, bones = b.techniques.bones or {} }
+    local from = b.techniques.from
+    local f = from and string.unpack("<i2", exe, exe_off(ORIGINAL_DIGIMON_TYPES + 2 * from) + 1)
+    limits.borrow[t] = { type = from and (f >= 0 and f or from), bones = b.techniques.bones or {}, fallback = b.techniques.fallback,
+      points = b.techniques.points, near = b.techniques.auto }
   end
 end
 do
@@ -431,6 +475,21 @@ do
   -- the game's sources (a stage below it), and a Champion with no Ultimate
   -- keeps the game's Ultimates.
   local interim = {}
+  -- a new Digimon whose sources in the tree aren't in the mod yet comes from
+  -- its stand-ins (`interim_from`: PlatinumSukamon from Tanemon's Rookies,
+  -- where Gotsumon would be)
+  for _, t in ipairs(new_types) do
+    local b = built[t]
+    if b.interim_from and not sourced(t) then
+      for _, n in ipairs(b.interim_from) do
+        local s = resolve(n)
+        if s and not has(to[s], t) then
+          to[s][#to[s] + 1] = t
+          interim[#interim + 1] = n .. " -> " .. b.name
+        end
+      end
+    end
+  end
   for t = 1, 61 do
     local st = stage(t)
     if st >= 3 and st <= 5 and not sourced(t) then
@@ -474,7 +533,7 @@ do
     set_list(t, 0, 5, from[t] or {}, false)
     set_list(t, 5, 6, to[t], true)
   end
-  dwrc.log(string.format("evolution tree: %d Digimon with evolutions; not in the mod yet: %d (%s); kept from the game for now: %s",
+  dwrc.log(string.format("evolution tree: %d Digimon with evolutions; not in the mod yet: %d (%s); for now (the game's routes and stand-ins): %s",
     #tree_sources, #skipped, table.concat(skipped, ", "), #interim > 0 and table.concat(interim, ", ") or "none"))
 end
 
@@ -538,7 +597,10 @@ local function setup(ctx)
     -- another Digimon's techniques (DigimonPara.moves[16] at +35; their
     -- motions are aliased in the model, their start points translated by
     -- lib/limits.lua)
-    if b.techniques then
+    if b.techniques and b.techniques.moves then
+      local m = b.techniques.moves
+      ctx:write_bytes(tables.entry("DIGIMON_DATA", t) + 35, string.char(table.unpack(m)) .. string.rep(string.char(0xFF), 16 - #m))
+    elseif b.techniques then
       ctx:write_bytes(tables.entry("DIGIMON_DATA", t) + 35, ctx:read_bytes(tables.entry("DIGIMON_DATA", b.techniques.from) + 35, 16))
     end
     -- RaiseData (meals, sleep, poop, favourite food, training, default
