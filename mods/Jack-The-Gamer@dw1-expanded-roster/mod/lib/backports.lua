@@ -861,6 +861,104 @@ M.list = {
       [6] = { 22, "limb", 7, 23, true }, [7] = { 23, "leaf" }, [8] = { 24, "core" }, [9] = { 24, "follow" }, -- leg (-x)
     },
   },
+  -- --- WereGarurumon (DW2), MetalGarurumon (DW2003), SaberLeomon (DW2) ---------------
+  {
+    type = 202, name = "WereGarurumon", file = "WERG", level = 5, height = 440, model_height = 460, game = "dw2",
+    attribute = 2, specialties = { 1, 4, 255 }, radius = 230, -- Vaccine; Battle, Ice
+    -- Battle and Ice techniques; the Ice ones (none list Leomon) from its mouth
+    techniques = { auto = true, points = { [4] = { 3, 148, 79, -1 } } },
+    -- Its finisher (Leomon's 91 Fist of the Beast King: stats, the punch) as
+    -- Wolf Claw with Andromon's Spiral Sword (0x66) blades from its right fist,
+    -- at an Ultimate's power
+    finisher = { name = "Wolf Claw", from = 91, power = 220, effect = 0x66, origin = { 7, -29, -6, 32 } },
+    gains = { 4500, 3000, 550, 400, 450, 300 },
+    -- HP 400, Offense 500, Defense 300, Speed 400, at most 10 care mistakes,
+    -- weight 40, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = -1, offense = 500, defense = 300, speed = 400, brain = -1,
+      care = 10, weight = 40, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon; Leomon is a Champion)
+    view = { 200, 330, -1320 },  -- the donor's camera (Leomon's)
+    icon_head = { 3, 4 },        -- Leomon's head and jaw
+    source = { ["SLUS-01193"] = { model = 183, anim = 181 } }, -- DW2 Digimon 183
+    donor = 48, donor_file = "LEOM.MMD", -- Leomon: a boxing crouch on four-bone legs
+    -- hybrid legs; its arms turned to Leomon's (upper arm and forearm keeping
+    -- their roll, hands their own): in its own guard stance the raised right
+    -- forearm jutted out sideways through Leomon's run. Leomon's tail (12-14)
+    -- stays empty
+    mapping = {
+      [10] = { 2, "core" }, [17] = { 3, "core" }, [18] = { 4, "core" },                        -- chest, head, jaw
+      [11] = { 5, "limb", 12, 6, true }, [12] = { 6, "limb", 13, 7, true }, [13] = { 7, "core" },   -- arm (+x)
+      [14] = { 8, "limb", 15, 9, true }, [15] = { 9, "limb", 16, 10, true }, [16] = { 10, "core" }, -- arm (-x)
+      [1] = { 11, "core" },                                                                    -- hips
+      [2] = { 15, "limb", 3, 16, true }, [3] = { 16, "leaf" }, [4] = { 17, "core" }, [5] = { 18, "core" }, -- leg (+x)
+      [6] = { 19, "limb", 7, 20, true }, [7] = { 20, "leaf" }, [8] = { 21, "core" }, [9] = { 22, "core" }, -- leg (-x)
+    },
+  },
+  {
+    type = 203, name = "MetalGarurumon", file = "MGAR", level = 5, height = 450, model_height = 520,
+    chart_stage = 6,
+    attribute = 2, specialties = { 5, 4, 1 }, radius = 280, -- Vaccine; Mech, Ice, Battle
+    -- Mech, Ice and Battle techniques; Mech and Ice from its mouth
+    techniques = { auto = true, points = { [5] = { 4, 124, 4, 87 }, [4] = { 4, 124, 4, 87 } } },
+    -- Its finisher (Garurumon's 0x40 Howling Blaster: stats, motion, effect) as
+    -- Metal Wolf Claw, the freezing blast from its mouth at a Mega's power
+    finisher = { name = "Metal Wolf Claw", from = 0x40, power = 280, origin = { 4, 124, 4, 87 } },
+    gains = { 7500, 6000, 700, 800, 800, 600 },
+    -- HP 700, MP 500, Offense 600, Defense 700, Speed 700, Brains 500, at most
+    -- 5 care mistakes, weight 45, 60 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 500, offense = 600, defense = 700, speed = 700, brain = 500,
+      care = 5, weight = 45, discipline = -1, happiness = -1, battles = 60, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon; Garurumon is a Champion)
+    -- The Digimon page: 520 tall with its blades, cut off at Garurumon's
+    -- distance; it stands back by its height over Garurumon's (290)
+    view = { -690, 520, 450 },
+    icon_head = { 4, 5 },        -- Garurumon's head and jaw
+    source = { ["SLES-03936"] = { file = 550, bones = 51, motions = 0 } }, -- M196MGAR (partner)
+    donor = 22, donor_file = "GARU.MMD", -- Garurumon
+    -- its blades on the body; 19-24 (missiles, hidden at rest) left out
+    mapping = {
+      [1] = { 2, "core" }, [8] = { 3, "core" }, [9] = { 4, "core" }, [10] = { 5, "core" },   -- body, neck, head, jaw
+      [5] = { 7, "limb", 6, 8, true }, [6] = { 8, "leaf" }, [7] = { 9, "core" },              -- front leg (+x)
+      [2] = { 11, "limb", 3, 12, true }, [3] = { 12, "leaf" }, [4] = { 13, "core" },          -- front leg (-x)
+      [11] = { 14, "core" }, [18] = { 15, "core" },                                           -- hind body, tail
+      [12] = { 19, "limb", 13, 20, true }, [13] = { 20, "leaf" }, [14] = { 21, "core" },      -- hind leg (+x)
+      [15] = { 23, "limb", 16, 24, true }, [16] = { 24, "leaf" }, [17] = { 25, "core" },      -- hind leg (-x)
+    },
+  },
+  {
+    type = 204, name = "SaberLeomon", file = "SABL", level = 5, height = 420, model_height = 480, game = "dw2",
+    chart_stage = 6,
+    attribute = 1, specialties = { 1, 3, 255 }, radius = 280, -- Data; Battle, Earth
+    -- Battle and Earth techniques; the Earth ones (none list Garurumon) from its mouth
+    techniques = { auto = true, points = { [3] = { 4, 142, -10, 81 } } },
+    -- Its finisher (Garurumon's 0x40 Howling Blaster: stats, motion) as
+    -- Infinity Arrow with Airdramon's Spinning Needle (0x45) from its mane,
+    -- at a Mega's power
+    finisher = { name = "Infinity Arrow", from = 0x40, power = 280, effect = 0x45, origin = { 4, -25, -6, 77 } },
+    gains = { 7500, 5000, 900, 600, 800, 500 },
+    -- HP 700, MP 400, Offense 800, Defense 500, Speed 700, at most 10 care
+    -- mistakes, weight 50, 80 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 400, offense = 800, defense = 500, speed = 700, brain = -1,
+      care = 10, weight = 50, discipline = -1, happiness = -1, battles = 80, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon; Garurumon is a Champion)
+    -- The Digimon page: 480 tall with its tail, its mane ran past the window
+    -- at Garurumon's distance; it stands back by its height over Garurumon's
+    view = { -537, 480, 163 },
+    icon_head = { 4, 5 },        -- Garurumon's head and jaw
+    source = { ["SLUS-01193"] = { model = 3103, anim = 3099 } }, -- DW2 Digimon 205
+    -- Garurumon. Unimon's gallop looked good too, but its finisher slot (0x54
+    -- Aerial Attack) dealt no damage on SaberLeomon (not understood yet)
+    donor = 22, donor_file = "GARU.MMD",
+    -- hybrid; its tail on Garurumon's three tail bones
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" }, [3] = { 4, "core" }, [4] = { 5, "core" },    -- body, neck, head + mane, jaw
+      [5] = { 7, "limb", 6, 8, true }, [6] = { 8, "leaf" }, [7] = { 9, "core" },              -- front leg (+x)
+      [8] = { 11, "limb", 9, 12, true }, [9] = { 12, "leaf" }, [10] = { 13, "core" },         -- front leg (-x)
+      [11] = { 14, "core" }, [12] = { 15, "core" }, [13] = { 16, "core" }, [14] = { 17, "core" }, -- hind body, tail
+      [15] = { 19, "limb", 16, 20, true }, [16] = { 20, "leaf" }, [17] = { 21, "core" }, [18] = { 21, "follow" }, -- hind leg (+x)
+      [19] = { 23, "limb", 20, 24, true }, [20] = { 24, "leaf" }, [21] = { 25, "core" }, [22] = { 25, "follow" }, -- hind leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from

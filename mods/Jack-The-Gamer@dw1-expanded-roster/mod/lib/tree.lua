@@ -3,7 +3,7 @@
 -- numbers: a name is one of the game's partner Digimon (types 1..61, as
 -- DIGIMON_DATA names them; `aliases` for the few the game spells otherwise)
 -- or a new Digimon from lib/backports.lua. Digimon that aren't in the mod yet
--- (ToyAgumon, Gomamon, Gatomon, MetalGarurumon...) are skipped, and take
+-- (ToyAgumon, Gomamon, Gatomon, Mammothmon...) are skipped, and take
 -- their places here as soon as they're added. The "comes from" lists are
 -- worked out from these (main.lua), and Digimon not listed as a source
 -- (the Fresh ones) keep the game's own evolutions.
