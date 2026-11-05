@@ -118,6 +118,42 @@ local textures = {}
 local DIGIMON_DATA = 0x8012CEB4      -- the game's own copy (USA: boneCount at +20)
 local DIGIMON_SKELETONS = 0x8011CE60 -- pointers to {s8 object, s8 parent}[boneCount]
 local built = {}                     -- the backports that were built (type -> entry)
+local npc_models = {}                -- their NAME.NPC: type -> {size, slots (bit k = technique slot k kept)}
+local MOVE_DATA = 0x8012623C         -- the game's own copy: 16 bytes a technique, specialty at +9
+
+-- The technique slots a wild copy keeps: its finisher, and up to three
+-- others, the first of each of its specialties before the rest (as the
+-- table the setup below writes: moves[k] at DigimonPara +35).
+local function npc_techniques(b)
+  local moves = {}
+  local data = DIGIMON_DATA + (b.techniques and b.techniques.from or b.donor) * 0x34
+  for k = 0, 15 do
+    moves[k] = b.techniques and b.techniques.moves and (b.techniques.moves[k + 1] or 0xFF) or exe:byte(exe_off(data + 35 + k) + 1)
+  end
+  local specs = b.specialties
+  if not specs then
+    specs = {}
+    for i = 0, 2 do specs[#specs + 1] = exe:byte(exe_off(DIGIMON_DATA + b.donor * 0x34 + 30 + i) + 1) end
+  end
+  local slots, regular = {}, {}
+  for k = 0, 15 do
+    local m = moves[k]
+    if m ~= 0xFF and m ~= 0 then
+      if (m >= 0x3A and m < 0x71) or (b.finisher and m == b.finisher.from) then slots[k] = true
+      elseif m < 0x71 then regular[#regular + 1] = { k = k, kind = exe:byte(exe_off(MOVE_DATA + 16 * m + 9) + 1) } end
+    end
+  end
+  local kept = 0
+  for _, s in ipairs(specs) do
+    for _, r in ipairs(regular) do
+      if kept < 3 and r.kind == s and not slots[r.k] then slots[r.k], kept = true, kept + 1 break end
+    end
+  end
+  for _, r in ipairs(regular) do
+    if kept < 3 and not slots[r.k] then slots[r.k], kept = true, kept + 1 end
+  end
+  return slots
+end
 local icons = {}                     -- their chart icons (type -> {pixels, clut})
 
 local function fnv(s) -- a checksum to compare with research/tools/dw1convert.py
@@ -277,12 +313,18 @@ do
           error(string.format("its %d vertices and %d polygons don't fit the evolution scene's shard buffer", info.verts, info.prims))
         end
         files.add(b.file .. ".MMD", mmd)
+        -- the smaller copy a map loads (a wild Digimon: lib/files.lua)
+        local slots, mask = npc_techniques(b), 0
+        for k in pairs(slots) do mask = mask | (1 << k) end
+        local npc = convert.npc_model(mmd, slots)
+        files.add_npc(b.file .. ".MMD", npc)
+        npc_models[b.type] = { size = #npc, slots = mask }
         textures[b.type] = tim
         built[b.type] = b
         local pixels, clut = icon.render(info.faces, info.texture, { head = b.icon_head or { 3, 4 }, head_scale = b.icon_head_scale, pivots = info.pivots, split = b.icon_split, split_factor = b.icon_split_factor, no_white = b.icon_no_white, head_from_second = b.icon_head_from_second, width = info.texture_w })
         icons[b.type] = { pixels = pixels, clut = clut }
-        dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes%s (%.2f s; checksums %08X %08X)",
-          b.name, src.info.title, info.verts, info.prims, #mmd, info.packed and string.format(", texture packed at %d%%", info.packed.scale * 5) or "",
+        dwrc.log(string.format("%s built from %s: %d vertices, %d polygons, %d bytes (%d on a map)%s (%.2f s; checksums %08X %08X)",
+          b.name, src.info.title, info.verts, info.prims, #mmd, #npc, info.packed and string.format(", texture packed at %d%%", info.packed.scale * 5) or "",
           os.clock() - t1, fnv(mmd), fnv(tim)))
       end)
       if not ok then dwrc.log(b.name .. " couldn't be built: " .. tostring(err)) end
@@ -351,10 +393,21 @@ end
 
 dwrc.log(string.format("roster core ready: %d references moved, %d bytes at %08X..%08X (%.2f s)", total, tables.BYTES, tables.HEAP_START, tables.END, os.clock() - t0))
 
--- A new type's 4-letter file name, in the moved tables' string room.
+-- A new type's 4-letter file name, in the moved tables' string room (16
+-- bytes each). For other mods (DW1 Wild Digimon Randomizer weighs the
+-- models it can load and gives each its kept techniques), its NAME.NPC
+-- follows: the technique slots it keeps (u16 at +6, bit k), "NPC" (+8) and
+-- its size (+12).
+local NPC_TAG = 0x0043504E -- "NPC\0"
 local function set_file_name(ctx, t, name)
   local at = tables.STRINGS + 16 * (t - 180)
   ctx:write_bytes(at, name .. "\0")
+  local npc = npc_models[t]
+  if npc then
+    ctx:write16(at + 6, npc.slots)
+    ctx:write32(at + 8, NPC_TAG)
+    ctx:write32(at + 12, npc.size)
+  end
   ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", t), at)
 end
 

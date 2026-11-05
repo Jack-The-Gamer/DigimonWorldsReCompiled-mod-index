@@ -972,6 +972,29 @@ local function prune_anims(anims, count, starts)
   return table.concat(words) .. out:sub(4 * count + 1)
 end
 
+-- The model as a field NPC needs it (a wild Digimon: DW1 Wild Digimon
+-- Randomizer): the same TMD with only the animations the game's own
+-- wild-only models have (DOKU.MMD, GOTU.MMD...: 0 1 2 4 19 33-37 40-44 and
+-- technique slots 0x2E + k), the rest of the table 0 as theirs. `slots`:
+-- the technique slots k kept (a wild Digimon uses up to three techniques
+-- and its finisher; each technique is ~2 KB of motion).
+local NPC_ANIMS = { 0, 1, 2, 4, 19, 33, 34, 35, 36, 37, 40, 41, 42, 43, 44 }
+
+function M.npc_model(mmd, slots)
+  local _, anim_at = string.unpack("<I4I4", mmd)
+  local anims = mmd:sub(anim_at + 1)
+  local count = string.unpack("<I4", anims) // 4
+  local wanted, offs, words = {}, {}, {}
+  for _, a in ipairs(NPC_ANIMS) do wanted[a] = true end
+  for k in pairs(slots) do wanted[0x2E + k] = true end
+  for a = 0, count - 1 do
+    offs[a] = string.unpack("<I4", anims, 4 * a + 1)
+    words[#words + 1] = string.pack("<I4", wanted[a] and offs[a] or 0)
+  end
+  anims = prune_anims(table.concat(words) .. anims:sub(4 * count + 1), count, offs)
+  return mmd:sub(1, anim_at) .. anims
+end
+
 function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias, keep, prune)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)

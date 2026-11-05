@@ -75,6 +75,8 @@ For now the new Digimon:
 - keep those Digimon's care habits and voices;
 - don't show on the Digivolution Chart yet once raised (a save has no room to record them so far); the chart itself is rebuilt with room for them and a Mega section, and its detail page shows any number of evolutions and pre-evolutions.
 
+With **DW1 Wild Digimon Randomizer**, the new Digimon can also turn up as wild Digimon. On a map each one loads as a lighter copy with only what a wild Digimon uses (its walking and battle motions, its finisher and three other techniques), about half the size of the full Digimon, so it fits beside the area's other Digimon.
+
 **Needs** Re:Compiled 1.6 or newer, Digimon World (USA, SLUS-01032), and **Digimon World 2003 (Europe, SLES-03936)** and **Digimon World 2 (USA, SLUS-01193)** imported in the launcher. Without one of them the game plays as usual, minus the Digimon from that game; the American and Japanese Digimon World 3 discs and the Japanese Digimon World 2 disc aren't supported yet.
 
 Checked on Digimon World (USA): loading a save, the field, the menus and battles play exactly as without the mod; all thirty-seven new Digimon evolve, show on the Digimon page and use their finishers in battle; a full virus bar and a Rookie with nothing to become each give the rarer Digimon about a quarter of the time; a Koromon at weight 25 with Offense highest becomes Guilmon; a Tanemon with Offense highest at weight 20 becomes Tentomon; a MegaKabuterimon with HerculesKabuterimon's stats and a MetalGreymon with Machinedramon's become them by themselves; every new Digimon can evolve on.
