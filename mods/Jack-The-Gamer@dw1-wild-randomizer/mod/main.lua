@@ -36,7 +36,10 @@
 -- replacement for every slot of that type (one model, as before), writes it
 -- to typeId, marks them 0x8000 | original type and turns their moves into
 -- the new Digimon's own (the same technique where it has it, otherwise one
--- of its own of the same kind, its finisher for a finisher). Stats, bits and
+-- of its own of the same kind, its finisher for a finisher). With Random
+-- techniques (option), every wild Digimon's regular slots, also those of one
+-- that stays itself, then get techniques drawn from all its own that its
+-- model can play, per Digimon and visit (per area with Fixed). Stats, bits and
 -- behaviour stay the map's. LOAD_DIGIMON, UNLOAD_DIGIMON and SET_DIGIMON
 -- with the original type then get the replacement.
 --
@@ -91,6 +94,7 @@ local WILD, CHOSEN, LIST_SIGN = 0x4000, 0x8000, 0x5A
 
 local EVERY_VISIT = dwrc.options.reroll ~= "Fixed"
 local WITH_ROSTER = dwrc.options.expanded_roster ~= false
+local RANDOM_TECHNIQUES = dwrc.options.techniques ~= "Matched"
 
 if not dwrc.data.seed then
   dwrc.data.seed = math.random(1, 0x7FFFFFFF)
@@ -361,6 +365,31 @@ local function remap_moves(orig, cand, slots)
   return out
 end
 
+-- Random techniques: the slots holding a regular technique get regular
+-- techniques drawn at random (without repeats) from all the Digimon's own
+-- that its model can play; the finisher slot keeps its finisher.
+local function shuffle_moves(cand, out, seed)
+  local pool, is_regular = {}, {}
+  for _, m in ipairs(cand.techs) do
+    if not is_finisher(m.tech) then
+      pool[#pool + 1] = 0x2E + m.k
+      is_regular[0x2E + m.k] = true
+    end
+  end
+  for i = #pool, 2, -1 do
+    local j = (mix(seed + i) & 0x7FFFFFFF) % i + 1
+    pool[i], pool[j] = pool[j], pool[i]
+  end
+  local n = 0
+  for j = 0, 3 do
+    if is_regular[out[j]] then
+      n = n + 1
+      out[j] = pool[n]
+    end
+  end
+  return out
+end
+
 -- Memory ------------------------------------------------------------------------------
 
 local function largest_free(ctx)
@@ -464,23 +493,31 @@ local function choose(ctx, t)
   end
   pick = pick or fallback
 
+  local techs = {}
   for _, i in ipairs(slots) do
+    local at = NPC_ENTITIES + i * NPC_SIZE + NPC_MOVES
+    local moves = {}
+    for j = 0, 3 do moves[j] = ctx:read8(at + j) end
+    local out = pick and remap_moves(orig, pick, moves) or moves  -- one that stays keeps its own
+    if RANDOM_TECHNIQUES then out = shuffle_moves(pick or orig, out, mix(nonce * 0x100000 + map * 0x400 + t * 0x10 + i) * 0x40) end
+    for j = 0, 3 do ctx:write8(at + j, out[j]) end
     if pick then
       ctx:write16(slot_at(i), pick.t)
       ctx:write16(slot_at(i) + 2, CHOSEN | t)
-      local at = NPC_ENTITIES + i * NPC_SIZE + NPC_MOVES
-      local moves = {}
-      for j = 0, 3 do moves[j] = ctx:read8(at + j) end
-      local out = remap_moves(orig, pick, moves)
-      for j = 0, 3 do ctx:write8(at + j, out[j]) end
     else
       ctx:write16(slot_at(i) + 2, 0)
     end
+    local named = {}
+    for j = 0, 3 do
+      for _, m in ipairs((pick or orig).techs) do if out[j] == 0x2E + m.k then named[#named + 1] = string.format("%d", m.tech) end end
+    end
+    techs[#techs + 1] = table.concat(named, " ")
   end
+  local moves_note = RANDOM_TECHNIQUES and (", techniques " .. table.concat(techs, " / ")) or ""
   if pick then
-    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s -> %s (%d candidates, %d KiB free for it)", map, orig.name, pick.name, #list, room // 1024))
+    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s -> %s (%d candidates, %d KiB free for it)%s", map, orig.name, pick.name, #list, room // 1024, moves_note))
   else
-    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s stays (%d candidates, none fit in %d KiB)", map, orig.name, #list, room // 1024))
+    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s stays (%d candidates, none fit in %d KiB)%s", map, orig.name, #list, room // 1024, moves_note))
   end
   return pick and pick.t
 end
