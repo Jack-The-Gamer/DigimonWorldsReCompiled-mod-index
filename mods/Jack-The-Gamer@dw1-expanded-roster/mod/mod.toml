@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-expanded-roster"
 name = "DW1 Expanded Roster"
-version = "0.3.0"
+version = "0.4.0"
 author = "Jack-The-Gamer"
 description = "Digimon from Digimon World 2003 and Digimon World 2 come to Digimon World, built from your own copies: Guilmon, Growlmon and WarGrowlmon; Veemon, ExVeemon, Veedramon, Paildramon and AeroVeedramon; Deltamon and Kimeramon; MegaKabuterimon, Okuwamon and Garudamon. Tentomon becomes raisable, Machinedramon, HerculesKabuterimon and Phoenixmon become Megas, and every Digimon follows a revised evolution tree. Work in progress."
 game = "dw1"
