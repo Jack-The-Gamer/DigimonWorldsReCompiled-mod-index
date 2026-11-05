@@ -35,6 +35,7 @@ local flat = require("lib.flat")
 local techniques = require("lib.techniques")
 local special = require("lib.special")
 local names = require("lib.names")
+local arena = require("lib.arena")
 
 if dwrc.serial ~= "SLUS-01032" then
   dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
@@ -399,6 +400,7 @@ end
 -- follows: the technique slots it keeps (u16 at +6, bit k), "NPC" (+8) and
 -- its size (+12).
 local NPC_TAG = 0x0043504E -- "NPC\0"
+local ARENA_TAG = 0x41     -- "A" at +5: it has a picture for the Arena's bracket (lib/arena.lua)
 local function set_file_name(ctx, t, name)
   local at = tables.STRINGS + 16 * (t - 180)
   ctx:write_bytes(at, name .. "\0")
@@ -408,6 +410,7 @@ local function set_file_name(ctx, t, name)
     ctx:write32(at + 8, NPC_TAG)
     ctx:write32(at + 12, npc.size)
   end
+  if icons[t] then ctx:write8(at + 5, ARENA_TAG) end
   ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", t), at)
 end
 
@@ -762,6 +765,10 @@ end
 tables.install(dwrc.options.check_relocation, setup)
 limits.install()
 files.install()
+-- Bracket pictures in File City's Arena (lib/arena.lua), from the chart
+-- icons, uploaded through the evolution scene's buffer (no evolution runs
+-- during a tournament).
+arena.install(icons, tables.EVL_SCRATCH, tables.EVL_SCRATCH_SIZE)
 do
   local new_types = {}
   for t, b in pairs(built) do
