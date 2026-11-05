@@ -173,8 +173,13 @@ M.list = {
     -- Gabumon's: chest, head, jaw, arms and legs, its tail and fingers left
     -- out; the dive's travel kept, `travel`), with Buster Dive's effect (0x2F)
     -- where the foe stands (bone 0, 100 up, 550 forward).
-    finisher = { name = "V-Headbutt", from = 99, effect = 0x2F, origin = { 0, 0, -100, -550 },
-      motion = { file = "TYRA.MMD", type = 8, anim = 0x34, travel = 1,
+    -- Melee: Devimon's Death Claw's stats (0x3E, range 1) make it walk into
+    -- contact before the finisher starts (BTL_tickMeleeAttack), as the game's
+    -- own close-range finishers do; a ranged finisher fires from where its
+    -- user stands, which the dive used to make up for.
+    -- Its dive then carries it 0.3 as far, onto the foe at contact.
+    finisher = { name = "V-Headbutt", from = 99, stats = 0x3E, power = 90, effect = 0x2F, origin = { 0, 0, -100, -250 },
+      motion = { file = "TYRA.MMD", type = 8, anim = 0x34, travel = 0.3,
         from = { [1] = 1, [2] = 2, [3] = 3, [4] = 4, [6] = 5, [7] = 6, [8] = 7, [10] = 11, [11] = 12, [12] = 13,
           [13] = 17, [15] = 21, [16] = 22, [17] = 23, [19] = 24, [20] = 25, [21] = 26 } } },
     gains = { 800, 500, 100, 70, 80, 50 },
@@ -429,8 +434,13 @@ M.list = {
     -- legs 24-26 / 27-29; the hind legs keep their rest; its travel kept), and
     -- Kuwagamon's Scissor Claw effect (0x64) striking where Kuwagamon's does
     -- (bone 0, 140 up, 425 forward)
-    finisher = { name = "Double Scissor Claw", from = 0x56, stats = 93, power = 230, effect = 0x64, origin = { 0, 0, -140, -425 },
-      motion = { file = "KUWA.MMD", type = 51, anim = 0x38, travel = 1,
+    -- Melee: Devimon's Death Claw's stats (0x3E, range 1) make it walk into
+    -- contact before the finisher starts (BTL_tickMeleeAttack), as the game's
+    -- own close-range finishers do; a ranged finisher fires from where its
+    -- user stands, which the dive used to make up for.
+    -- Its lunge then carries it 0.3 as far.
+    finisher = { name = "Double Scissor Claw", from = 0x56, stats = 0x3E, power = 230, effect = 0x64, origin = { 0, 0, -140, -425 },
+      motion = { file = "KUWA.MMD", type = 51, anim = 0x38, travel = 0.3,
         from = { [1] = 1, [2] = 23, [16] = 23, [3] = 2, [4] = 3, [5] = 7, [6] = 8, [7] = 9, [8] = 10, [9] = 11,
           [10] = 24, [11] = 25, [12] = 26, [13] = 27, [14] = 28, [15] = 29 } } },
     gains = { 4500, 4500, 600, 400, 600, 400 },
@@ -677,8 +687,13 @@ M.list = {
     -- its own jump (frames 7..25) three times as high and its own forward
     -- travel 1.6 times as far, about 500 (`leap`; an added dash, `lunge`,
     -- would be overridden by the flip's own root keys from frame 10)
-    finisher = { name = "King Stamp", from = 0x41, power = 225, effect = 0x2F, origin = { 0, 0, -100, -550 },
-      leap = { from = 7, to = 26, up = 3, forward = 1.6 } },
+    -- Melee: Devimon's Death Claw's stats (0x3E, range 1) make it walk into
+    -- contact before the finisher starts (BTL_tickMeleeAttack), as the game's
+    -- own close-range finishers do; a ranged finisher fires from where its
+    -- user stands, which the dive used to make up for.
+    -- Its jump keeps its own forward travel (about 310), landing on the foe.
+    finisher = { name = "King Stamp", from = 0x41, stats = 0x3E, power = 225, effect = 0x2F, origin = { 0, 0, -100, -380 },
+      leap = { from = 7, to = 26, up = 3, forward = 1 } },
     gains = { 6000, 4000, 550, 650, 400, 400 },
     -- HP 400, Offense 300, Defense 400, at most 15 care mistakes, weight 30,
     -- 30 battles or 35 techniques (Etemon, from Sukamon too, wants none)
@@ -1329,11 +1344,9 @@ M.list = {
       origin = { { 0, 0, -200, -340 }, { 7, 129, -42, 32 }, { 13, 55, -33, 108 }, { 10, 140, 24, -34 }, { 16, 55, -58, -106 } } },
     gains = { 1500, 2000, 150, 250, 150, 250 },
     -- MP 200, Defense 150, Brains 200, at least 15 care mistakes, weight 20,
-    -- 30 battles. In the tree it comes from DemiDevimon; until DemiDevimon is
-    -- in the mod, from Tokomon's other Rookies (`interim_from`)
+    -- 30 battles (from DemiDevimon in the tree)
     requirements = { digimon = -1, hp = -1, mp = 200, offense = -1, defense = 150, speed = -1, brain = 200,
       care = 15, weight = 20, discipline = -1, happiness = -1, battles = 30, techs = -1, flags = 0 },
-    interim_from = { "Patamon", "Penguinmon" },
     -- The Digimon page: a little up and left of Kabuterimon's camera (210,
     -- 360, -1290; it hovered low and half under the panel) and a little closer
     view = { 60, 250, -1400 },
@@ -1445,8 +1458,13 @@ M.list = {
     -- strikes from between its pincers (head bone 4) rather than Okuwamon's
     -- fixed point 425 ahead of it: a foe closer to a Digimon this big took
     -- nothing there, even uninterrupted.
-    finisher = { name = "Dimension Scissor", from = 0x56, stats = 93, power = 280, effect = 0x64, origin = { 4, -52, 0, -348 },
-      motion = { file = "KUWA.MMD", type = 51, anim = 0x38, travel = 1,
+    -- Melee: Devimon's Death Claw's stats (0x3E, range 1) make it walk into
+    -- contact before the finisher starts (BTL_tickMeleeAttack), as the game's
+    -- own close-range finishers do; a ranged finisher fires from where its
+    -- user stands, which the dive used to make up for.
+    -- Its lunge then carries it 0.3 as far.
+    finisher = { name = "Dimension Scissor", from = 0x56, stats = 0x3E, power = 280, effect = 0x64, origin = { 4, -52, 0, -348 },
+      motion = { file = "KUWA.MMD", type = 51, anim = 0x38, travel = 0.3,
         from = { [1] = 1, [2] = 23, [16] = 23, [3] = 2, [4] = 3, [5] = 7, [6] = 8, [7] = 9, [8] = 10, [9] = 11,
           [10] = 24, [11] = 25, [12] = 26, [13] = 27, [14] = 28, [15] = 29 } } },
     gains = { 8000, 5000, 900, 700, 700, 500 },
@@ -1648,11 +1666,9 @@ M.list = {
       origin = { { 9, -51, -133, -11 }, { 9, -51, -133, -11 }, { 9, -51, -133, -11 }, { 9, -51, -133, -11 }, { 9, -51, -133, -11 } } },
     gains = { 1200, 2200, 150, 150, 220, 300 },
     -- MP 150, Speed 100, Brains 150, at most 10 care mistakes, weight 15, 30
-    -- techniques. In the tree it comes from DemiDevimon; until DemiDevimon is
-    -- in the mod, from Tokomon's other Rookies (`interim_from`)
+    -- techniques (from DemiDevimon in the tree)
     requirements = { digimon = -1, hp = -1, mp = 150, offense = -1, defense = -1, speed = 100, brain = 150,
       care = 10, weight = 15, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
-    interim_from = { "Patamon", "Penguinmon" },
     view = { 50, 310, -1030 },   -- Angemon's camera, a little higher (it is shorter)
     icon_head = { 3 },           -- head and hat (on Angemon's head)
     source = { ["SLUS-01193"] = { model = 2903, anim = 2908 } }, -- DW2 Digimon 194
@@ -1668,6 +1684,267 @@ M.list = {
       [13] = { 18, "core" },                                                                        -- hips
       [14] = { 19, "limb", 15, 20, true }, [15] = { 20, "leaf" }, [16] = { 21, "core" },            -- leg (+x)
       [17] = { 22, "limb", 18, 23, true }, [18] = { 23, "leaf" }, [19] = { 24, "core" },            -- leg (-x)
+    },
+  },
+  -- --- DemiDevimon, Tsukaimon, Gatomon, the angels, LadyDevimon ---------------------
+  {
+    type = 227, name = "DemiDevimon", file = "DEMI", level = 3, height = 220,
+    attribute = 3, specialties = { 2, 255, 255 }, radius = 110, -- Virus; Air
+    techniques = { auto = true }, -- all eight Air techniques
+    -- Its finisher (Patamon's 0x47 Boom Bubble: stats, motion) as Demi Dart
+    -- (DW2's name): Ninjamon's Iga School Knife Throw (0x59), a dart flung
+    -- from its body. (Coelamon's Variable Darts, 0x67, scattered round it
+    -- and never reached the foe.)
+    finisher = { name = "Demi Dart", from = 0x47, effect = 0x59, origin = { 2, 46, 5, 8 } },
+    gains = { 700, 800, 70, 50, 100, 80 },
+    -- A Tokomon (30) whose highest stat is Speed or MP, at weight 10 +- 5
+    -- (Patamon and Penguinmon want weight 15)
+    requirements = { digimon = 30, hp = -1, mp = 1, offense = -1, defense = -1, speed = 1, brain = -1,
+      care = 0, weight = 10, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    icon_head = { 2 }, icon_head_scale = 1.0, -- the round body is its head
+    source = { ["SLES-03936"] = { file = 507, bones = 24, motions = 0 } }, -- M217PDEV (enemy fighter 0xD9)
+    -- Patamon: it flies on its ear-wings. The round body on Patamon's body
+    -- (on its head it nodded with Patamon's bob), wings on the ears' middle
+    -- bones, legs dangling on its hind legs
+    donor = 31, donor_file = "PATA.MMD",
+    mapping = {
+      [1] = { 2, "core" }, [6] = { 2, "follow" }, [7] = { 2, "follow" },                            -- body, hair
+      [2] = { 5, "core" }, [4] = { 5, "follow" }, [3] = { 8, "core" }, [5] = { 8, "follow" },       -- wings, claws
+      [8] = { 17, "core" }, [9] = { 19, "core" }, [10] = { 20, "core" }, [11] = { 22, "core" },     -- legs
+    },
+  },
+  {
+    type = 228, name = "Tsukaimon", file = "TSUK", level = 3, height = 180, scale = 1, game = "dw1",
+    attribute = 3, specialties = { 2, 1, 255 }, radius = 100, -- Virus; Air, Battle
+    techniques = { auto = true },
+    -- Its finisher: Patamon's 0x47 Boom Bubble (stats, motion, effect) as
+    -- Bad Message, its dark twin
+    finisher = { name = "Bad Message", from = 0x47 },
+    gains = { 900, 600, 100, 70, 90, 50 },
+    -- A Tokomon (30) whose highest stat is Offense or Speed, at weight 20 +- 5
+    requirements = { digimon = 30, hp = -1, mp = -1, offense = 1, defense = -1, speed = 1, brain = -1,
+      care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    icon_head = { 3 },
+    -- Digimon World's own (type 96, an NPC): Patamon's very skeleton, so it
+    -- converts bone for bone at its own size and moves like Patamon
+    source = { ["SLUS-01032"] = { type = 96, file = "TUKA.MMD" } },
+    donor = 31, donor_file = "PATA.MMD",
+    mapping = {
+      [1] = { 1, "core" }, [2] = { 2, "core" }, [3] = { 3, "core" }, [4] = { 4, "core" }, [5] = { 5, "core" },
+      [6] = { 6, "core" }, [7] = { 7, "core" }, [8] = { 8, "core" }, [9] = { 9, "core" }, [10] = { 10, "core" },
+      [11] = { 11, "core" }, [12] = { 12, "core" }, [13] = { 13, "core" }, [14] = { 14, "core" }, [15] = { 15, "core" },
+      [16] = { 16, "core" }, [17] = { 17, "core" }, [18] = { 18, "core" }, [19] = { 19, "core" }, [20] = { 20, "core" },
+      [21] = { 21, "core" }, [22] = { 22, "core" },
+    },
+  },
+  {
+    type = 229, name = "Gatomon", file = "GATO", level = 4, height = 240, game = "dw2",
+    attribute = 2, specialties = { 1, 255, 255 }, radius = 110, -- Vaccine; Battle
+    techniques = { auto = true }, -- all eight Battle techniques
+    -- Its finisher (Gabumon's 0x63 Blue Blaster: stats) as Lightning Paw
+    -- (DW2's name): Megaton Punch's punch (`anim`) with a dash of 450 into
+    -- the foe (`lunge`, frames 4..10), Buster Dive's impact (0x2F) where the
+    -- foe stands, at a Champion's power
+    -- Melee: Devimon's Death Claw's stats (0x3E, range 1) make it walk into
+    -- contact before the finisher starts (BTL_tickMeleeAttack), as the game's
+    -- own close-range finishers do; a ranged finisher fires from where its
+    -- user stands, which the dive used to make up for.
+    finisher = { name = "Lightning Paw", from = 0x63, anim = 0x2E, stats = 0x3E, power = 170, effect = 0x2F, origin = { 0, 0, -100, -230 } },
+    gains = { 1300, 1200, 220, 150, 250, 180 },
+    -- Offense and Speed 100, MP 80, at most 5 care mistakes, weight 15,
+    -- discipline 50 or 25 techniques
+    requirements = { digimon = -1, hp = -1, mp = 80, offense = 100, defense = -1, speed = 100, brain = -1,
+      care = 5, weight = 15, discipline = 50, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
+    raise_from = 20,             -- a Champion's care (Angemon; Gabumon is a Rookie)
+    view = { 420, 230, -1610 },  -- Gabumon's camera (Angemon's, with its care, left it tiny)
+    icon_head = { 3 },
+    source = { ["SLUS-01193"] = { model = 2677, anim = 2670 } }, -- DW2 Digimon 233
+    -- Gabumon: upright and small, a tail; the tail with the hips, hybrid legs
+    donor = 17, donor_file = "GABU.MMD",
+    mapping = {
+      [1] = { 2, "core" }, [14] = { 3, "core" },                                                   -- body, head
+      [11] = { 6, "core" }, [12] = { 7, "core" }, [13] = { 8, "core" },                             -- arm (+x)
+      [8] = { 10, "core" }, [9] = { 11, "core" }, [10] = { 12, "core" },                            -- arm (-x)
+      [15] = { 13, "core" }, [16] = { 13, "follow" }, [17] = { 13, "follow" }, [18] = { 13, "follow" }, [19] = { 13, "follow" }, -- tail
+      [5] = { 15, "limb", 6, 16, true }, [6] = { 16, "leaf" }, [7] = { 17, "core" },                -- leg (+x)
+      [2] = { 19, "limb", 3, 20, true }, [3] = { 20, "leaf" }, [4] = { 21, "core" },                -- leg (-x)
+    },
+  },
+  {
+    type = 230, name = "MagnaAngemon", file = "MAGN", level = 5, height = 460,
+    attribute = 2, specialties = { 1, 2, 255 }, radius = 170, -- Vaccine; Battle, Air
+    techniques = { auto = true },
+    -- Its finisher (Angemon's 0x52 Hand of Fate: stats, motion) as Gate of
+    -- Destiny (DW2003's name), at an Ultimate's power, with its glowing blade
+    -- out of the gauntlet as on DW2003 (there its bone 27, folded to nothing
+    -- at rest, grows 1152 long from the gauntlet when it attacks): Andromon's
+    -- Spiral Sword (0x66), whose blade points run along Andromon's forearms
+    -- (200, 340, 480), placed along that blade line on Angemon's forearm (8:
+    -- from 76 at the gauntlet out to 396), both arms' sets on the one blade
+    finisher = { name = "Gate of Destiny", from = 0x52, power = 220, effect = 0x66,
+      origin = { { 0, 0, -300, -400 }, { 8, 182, 13, -10 }, { 8, 268, 21, -1 }, { 8, 396, 33, 14 },
+        { 8, 182, 13, -10 }, { 8, 268, 21, -1 }, { 8, 396, 33, 14 } } },
+    gains = { 5000, 5000, 500, 500, 400, 500 },
+    -- HP 400, MP 300, Offense 400, Defense 400, Speed 300, Brains 300, at
+    -- most 5 care mistakes, weight 40, discipline 80 or 35 techniques
+    requirements = { digimon = -1, hp = 400, mp = 300, offense = 400, defense = 400, speed = 300, brain = 300,
+      care = 5, weight = 40, discipline = 80, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon; Angemon is a Champion)
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 724, bones = 66, motions = 0 } }, -- M211HANG (partner fighter 0xD3)
+    -- Angemon: its eight wings on Angemon's wing bones (they flap), legs
+    -- hybrid and damped to 0.6 (its longer legs lifted the feet ~100,
+    -- Angemon's own ~40)
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [8] = { 2, "core" }, [9] = { 2, "follow" }, [10] = { 3, "core" }, [11] = { 3, "follow" }, [12] = { 3, "follow" }, -- torso, head
+      [1] = { 18, "core" },                                                                         -- hips
+      [23] = { 10, "core" }, [24] = { 11, "core" }, [21] = { 14, "core" }, [22] = { 14, "follow" }, [19] = { 15, "core" }, [20] = { 15, "follow" }, -- wings (+x)
+      [17] = { 12, "core" }, [18] = { 13, "core" }, [15] = { 16, "core" }, [16] = { 16, "follow" }, [13] = { 17, "core" }, [14] = { 17, "follow" }, -- wings (-x)
+      [29] = { 4, "core" }, [30] = { 5, "core" }, [31] = { 6, "core" }, [32] = { 4, "follow" },     -- arm (+x)
+      [25] = { 7, "core" }, [26] = { 8, "core" }, [27] = { 8, "follow" }, [28] = { 9, "core" },     -- arm (-x)
+      [2] = { 19, "limb", 3, 20, true }, [3] = { 20, "leaf" }, [4] = { 21, "core" },                -- leg (+x)
+      [5] = { 22, "limb", 6, 23, true }, [6] = { 23, "leaf" }, [7] = { 24, "core" },                -- leg (-x)
+    },
+  },
+  {
+    type = 231, name = "Angewomon", file = "ANGW", level = 5, height = 440,
+    attribute = 2, specialties = { 2, 1, 255 }, radius = 160, -- Vaccine; Air, Battle
+    techniques = { auto = true },
+    -- Its finisher: Angemon's 0x52 Hand of Fate (stats, motion, its light
+    -- from the hand) as Celestial Arrow (DW2003's name), at an Ultimate's power
+    finisher = { name = "Celestial Arrow", from = 0x52, power = 220 },
+    gains = { 4500, 6000, 400, 350, 500, 600 },
+    -- HP 300, MP 500, Speed 400, Brains 400, at most 5 care mistakes, weight
+    -- 25, discipline 70 or 35 techniques
+    requirements = { digimon = -1, hp = 300, mp = 500, offense = -1, defense = -1, speed = 400, brain = 400,
+      care = 5, weight = 25, discipline = 70, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 691, bones = 68, motions = 0 } }, -- M234ANGW (partner fighter 0xEA)
+    -- Angemon: its eight wings on Angemon's wing bones, its sash with the
+    -- chest, legs hybrid and damped (as MagnaAngemon's)
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [10] = { 2, "core" }, [11] = { 3, "core" }, [12] = { 3, "follow" }, [13] = { 3, "follow" }, [1] = { 18, "core" }, -- torso, head, hips
+      [14] = { 4, "core" }, [15] = { 5, "core" }, [16] = { 6, "core" }, [17] = { 6, "follow" }, [18] = { 6, "follow" }, -- arm (+x)
+      [19] = { 7, "core" }, [20] = { 8, "core" }, [21] = { 9, "core" },                             -- arm (-x)
+      [22] = { 2, "follow" }, [23] = { 2, "follow" }, [24] = { 2, "follow" }, [25] = { 2, "follow" }, -- sash
+      [26] = { 10, "core" }, [27] = { 11, "core" }, [28] = { 14, "core" }, [29] = { 15, "core" },   -- wings (+x)
+      [30] = { 12, "core" }, [31] = { 13, "core" }, [32] = { 16, "core" }, [33] = { 17, "core" },   -- wings (-x)
+      [2] = { 19, "limb", 3, 20, true }, [3] = { 20, "leaf" }, [4] = { 21, "core" }, [5] = { 21, "follow" }, -- leg (+x)
+      [6] = { 22, "limb", 7, 23, true }, [7] = { 23, "leaf" }, [8] = { 24, "core" }, [9] = { 24, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 232, name = "LadyDevimon", file = "LDEV", level = 5, height = 440,
+    attribute = 3, specialties = { 1, 2, 255 }, radius = 160, -- Virus; Battle, Air
+    techniques = { auto = true },
+    -- Its finisher (in Angemon's 0x52 Hand of Fate slot) as Darkness Wave:
+    -- Devimon's Death Claw, its stats (0x3E: melee, range 1), its motion
+    -- (DEVI.MMD animation 0x39: both clawed hands raised and thrust forward)
+    -- retargeted onto Angemon's skeleton and its effect (0x3E: its two start
+    -- points, in front of it and at its feet), at an Ultimate's power. A
+    -- melee technique walks its user into contact before it starts
+    -- (BTL_tickMeleeAttack); with Hand of Fate's ranged stats it fired from
+    -- where LadyDevimon stood and never reached the foe.
+    finisher = { name = "Darkness Wave", from = 0x52, stats = 0x3E, power = 220, effect = 0x3E,
+      origin = { { 0, 0, -200, -400 }, { 0, 0, 0, 0 } },
+      motion = { file = "DEVI.MMD", type = 6, anim = 0x39, travel = 1,
+        from = { [1] = 1, [2] = 2, [3] = 4, [4] = 6, [5] = 7, [6] = 9, [7] = 11, [8] = 12, [9] = 14,
+          [10] = 16, [12] = 18, [18] = 19, [19] = 21, [20] = 22, [21] = 23, [22] = 25, [23] = 26, [24] = 27 } } },
+    gains = { 4500, 5000, 550, 400, 500, 400 },
+    -- MP 400, Offense 400, Speed 400, Brains 300, at least 15 care mistakes,
+    -- weight 25, 40 battles or 35 techniques
+    requirements = { digimon = -1, hp = -1, mp = 400, offense = 400, defense = -1, speed = 400, brain = 300,
+      care = 15, weight = 25, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
+    raise_from = 12,             -- an Ultimate's care (MetalGreymon)
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 1129, bones = 44, motions = 0 } }, -- M177LDDV (enemy fighter 0xB1)
+    -- Angemon (on Devimon one clawed hand stuck out at head height through
+    -- the walk): its wing capes on Angemon's upper wings, legs hybrid and
+    -- damped (as MagnaAngemon's)
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [10] = { 2, "core" }, [18] = { 3, "core" }, [19] = { 3, "follow" }, [20] = { 3, "follow" }, [1] = { 18, "core" }, -- torso, head, hips
+      [17] = { 10, "core" }, [21] = { 12, "core" },                                                 -- wing capes
+      [11] = { 4, "core" }, [12] = { 5, "core" }, [13] = { 6, "core" },                             -- arm (+x)
+      [14] = { 7, "core" }, [15] = { 8, "core" }, [16] = { 9, "core" },                             -- arm (-x)
+      [2] = { 19, "limb", 3, 20, true }, [3] = { 20, "leaf" }, [4] = { 21, "core" }, [5] = { 21, "follow" }, -- leg (+x)
+      [6] = { 22, "limb", 7, 23, true }, [7] = { 23, "leaf" }, [8] = { 24, "core" }, [9] = { 24, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 233, name = "Seraphimon", file = "SERA", level = 5, height = 480,
+    chart_stage = 6,
+    attribute = 2, specialties = { 2, 1, 255 }, radius = 180, -- Vaccine; Air, Battle
+    techniques = { auto = true },
+    -- Its finisher (Angemon's 0x52 Hand of Fate: stats, motion) as Seven
+    -- Heavens (DW2003's name): Elecmon's Super Thunder Strike (0x65), its
+    -- eight orbs in a ring over it (Elecmon's points at 1.5 times), at a
+    -- Mega's power
+    finisher = { name = "Seven Heavens", from = 0x52, power = 280, effect = 0x65,
+      origin = { { 0, 0, -518, 0 }, { 0, -203, -270, 0 }, { 0, 0, -405, 0 }, { 0, 203, -270, 0 },
+        { 0, -203, -345, -105 }, { 0, 0, -480, -105 }, { 0, 203, -345, -105 }, { 0, -128, -420, -105 } } },
+    gains = { 8000, 8000, 700, 800, 600, 800 },
+    -- HP 700, MP 600, Offense 600, Defense 700, Speed 500, Brains 700, at
+    -- most 5 care mistakes, weight 45, discipline 90 or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 600, offense = 600, defense = 700, speed = 500, brain = 700,
+      care = 5, weight = 45, discipline = 90, happiness = -1, battles = -1, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    view = { 120, 400, -1230 },  -- Phoenixmon's camera, a little higher
+    icon_head = { 3 },
+    source = { ["SLES-03936"] = { file = 1104, bones = 62, motions = 0 } }, -- M214SRPH (partner fighter 0xD6)
+    -- Angemon: five feathers a side on its four wing bones (they flap; on
+    -- Andromon they stayed rigid and its legs pinched together), cloths with
+    -- the chest, legs hybrid and damped (as MagnaAngemon's)
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" },                                                     -- torso, head
+      [3] = { 12, "core" }, [4] = { 13, "core" }, [5] = { 16, "core" }, [6] = { 17, "core" }, [7] = { 13, "follow" }, -- wings (-x)
+      [8] = { 10, "core" }, [9] = { 11, "core" }, [10] = { 14, "core" }, [11] = { 15, "core" }, [12] = { 11, "follow" }, -- wings (+x)
+      [13] = { 2, "follow" }, [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 2, "follow" }, -- cloths
+      [17] = { 4, "core" }, [18] = { 5, "core" }, [19] = { 6, "core" },                             -- arm (+x)
+      [20] = { 7, "core" }, [21] = { 8, "core" }, [22] = { 9, "core" },                             -- arm (-x)
+      [23] = { 19, "limb", 24, 20, true }, [24] = { 20, "leaf" }, [25] = { 21, "core" }, [26] = { 21, "follow" }, -- leg (+x)
+      [27] = { 22, "limb", 28, 23, true }, [28] = { 23, "leaf" }, [29] = { 24, "core" }, [30] = { 24, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 234, name = "BlackSeraphimon", file = "BSRA", level = 5, height = 480,
+    chart_stage = 6,
+    attribute = 3, specialties = { 1, 2, 0 }, radius = 180, -- Virus; Battle, Air, Fire
+    techniques = { auto = true },
+    -- Its finisher (Angemon's 0x52 Hand of Fate: stats, motion) as Seven
+    -- Hells: Phoenixmon's Crimson Flare (0x6D), its four start points on its
+    -- wings and hands, at a Mega's power
+    finisher = { name = "Seven Hells", from = 0x52, power = 280, effect = 0x6D,
+      origin = { { 10, 36, 80, -58 }, { 12, 36, 80, 58 }, { 6, 19, -9, -17 }, { 9, 10, -23, 11 } } },
+    gains = { 8000, 7000, 900, 700, 700, 600 },
+    -- HP 700, MP 600, Offense 800, Defense 600, Speed 600, Brains 600, at
+    -- least 15 care mistakes, weight 45, 80 battles or 45 techniques
+    requirements = { digimon = -1, hp = 700, mp = 600, offense = 800, defense = 600, speed = 600, brain = 600,
+      care = 15, weight = 45, discipline = -1, happiness = -1, battles = 80, techs = 45, flags = 0 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon)
+    view = { 120, 400, -1230 },  -- as Seraphimon
+    icon_head = { 3 },
+    -- Seraphimon's model with its own texture
+    source = { ["SLES-03936"] = { file = 1114, bones = 62, motions = 0 } }, -- M447SRP2 (enemy fighter 0x1BF)
+    donor = 20, donor_file = "ANGE.MMD",
+    damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
+    mapping = {
+      [1] = { 2, "core" }, [2] = { 3, "core" },                                                     -- torso, head
+      [3] = { 12, "core" }, [4] = { 13, "core" }, [5] = { 16, "core" }, [6] = { 17, "core" }, [7] = { 13, "follow" }, -- wings (-x)
+      [8] = { 10, "core" }, [9] = { 11, "core" }, [10] = { 14, "core" }, [11] = { 15, "core" }, [12] = { 11, "follow" }, -- wings (+x)
+      [13] = { 2, "follow" }, [14] = { 2, "follow" }, [15] = { 2, "follow" }, [16] = { 2, "follow" }, -- cloths
+      [17] = { 4, "core" }, [18] = { 5, "core" }, [19] = { 6, "core" },                             -- arm (+x)
+      [20] = { 7, "core" }, [21] = { 8, "core" }, [22] = { 9, "core" },                             -- arm (-x)
+      [23] = { 19, "limb", 24, 20, true }, [24] = { 20, "leaf" }, [25] = { 21, "core" }, [26] = { 21, "follow" }, -- leg (+x)
+      [27] = { 22, "limb", 28, 23, true }, [28] = { 23, "leaf" }, [29] = { 24, "core" }, [30] = { 24, "follow" }, -- leg (-x)
     },
   },
 }

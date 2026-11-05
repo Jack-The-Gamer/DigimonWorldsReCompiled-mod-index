@@ -376,7 +376,7 @@ do
   end
 end
 
--- Developer option: the last type (229), a copy of Agumon, for testing new type numbers.
+-- Developer option: the last type (239), a copy of Agumon, for testing new type numbers.
 local test_clone = dwrc.options.test_clone
 local CLONE, CLONE_OF, CLONE_FILE = tables.CAPACITY - 1, 3, "XAGU"
 if test_clone then
