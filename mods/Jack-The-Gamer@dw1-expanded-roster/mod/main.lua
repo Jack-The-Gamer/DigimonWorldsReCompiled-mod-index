@@ -264,7 +264,11 @@ do
         end
         -- its size: `scale` times its own (PlatinumSukamon: 1), else model_height or height
         local size = b.scale and { scale = b.scale } or b.model_height or b.height
-        local mmd, tim, info = convert.convert(mapping, m3, mats, skel, read_game_file(b.donor_file), entry, size, alias)
+        -- parts the slimming leaves alone (`keep`, DW3 bones), the donor motions
+        -- nothing plays dropped (`prune`)
+        local keep
+        if b.keep then keep = {}; for _, k in ipairs(b.keep) do keep[k] = true end end
+        local mmd, tim, info = convert.convert(mapping, m3, mats, skel, read_game_file(b.donor_file), entry, size, alias, keep, b.prune)
         if #mmd > 0x18800 then error(string.format("its model is %d bytes, more than the partner's 100,352", #mmd)) end
         -- the evolution scene shatters it (lib/limits.lua: 6 bytes a vertex and a polygon)
         if 6 * (info.verts + info.prims) > tables.EVL_SCRATCH_SIZE then
@@ -326,9 +330,9 @@ do
   end
 end
 
--- Developer option: type 199, a copy of Agumon, for testing new type numbers.
+-- Developer option: the last type (209), a copy of Agumon, for testing new type numbers.
 local test_clone = dwrc.options.test_clone
-local CLONE, CLONE_OF, CLONE_FILE = 199, 3, "XAGU"
+local CLONE, CLONE_OF, CLONE_FILE = tables.CAPACITY - 1, 3, "XAGU"
 if test_clone then
   local alltim = read_game_file("ALLTIM.TIM")
   textures[CLONE] = alltim:sub(CLONE_OF * TEXTURE_SIZE + 1, (CLONE_OF + 1) * TEXTURE_SIZE)

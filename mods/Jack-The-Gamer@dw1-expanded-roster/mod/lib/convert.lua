@@ -320,7 +320,9 @@ local NORMAL_COS = 16541266 -- cos(10 degrees) * 4096 * 4096, rounded down
 -- and how many edges that took. Free first: normals within 10 degrees
 -- shared, vertices at the same place shared, triangle pairs as quads. Then
 -- the shortest edge in the model collapses to its middle (an integer point),
--- again and again: detail goes where the mesh is densest.
+-- again and again: detail goes where the mesh is densest. Vertices marked
+-- in an object's `keep` (parts that must stay whole: Kyubimon's face,
+-- Sakuyamon's staff) never move.
 local function simplify(objs, nobj, budget)
   local work = {}
   for oi = 0, nobj - 1 do
@@ -340,16 +342,18 @@ local function simplify(objs, nobj, budget)
       end
       nmap[i - 1] = found
     end
-    local place, vmap, verts = {}, {}, {}
+    local place, vmap, verts, keep = {}, {}, {}, {}
     for i, v in ipairs(o.verts) do
       local key = v[1] .. "," .. v[2] .. "," .. v[3]
       if not place[key] then
         place[key] = #verts
         verts[#verts + 1] = { v[1], v[2], v[3] }
+        keep[#verts] = false
       end
       vmap[i - 1] = place[key]
+      if o.keep and o.keep[i] then keep[place[key] + 1] = true end
     end
-    work[oi] = { verts = verts, normals = reps, prims = remap(o.prims, vmap, nmap) }
+    work[oi] = { verts = verts, normals = reps, prims = remap(o.prims, vmap, nmap), keep = keep }
   end
   local sizes = {}
   for oi = 0, nobj - 1 do sizes[oi] = obj_bytes(compact(work[oi])) end
@@ -367,12 +371,14 @@ local function simplify(objs, nobj, budget)
         local ring = PERIMETER[p.n]
         for k = 1, #ring do
           local a, b = p.idx[ring[k] + 1], p.idx[ring[k % #ring + 1] + 1]
-          local lo, hi = math.min(a, b), math.max(a, b)
-          local va, vb = V[a + 1], V[b + 1]
-          local dx, dy, dz = va[1] - vb[1], va[2] - vb[2], va[3] - vb[3]
-          local d = dx * dx + dy * dy + dz * dz
-          if not bd or d < bd or (d == bd and (oi < bo or (oi == bo and (lo < blo or (lo == blo and hi < bhi))))) then
-            bd, bo, blo, bhi = d, oi, lo, hi
+          if not (work[oi].keep[a + 1] or work[oi].keep[b + 1]) then
+            local lo, hi = math.min(a, b), math.max(a, b)
+            local va, vb = V[a + 1], V[b + 1]
+            local dx, dy, dz = va[1] - vb[1], va[2] - vb[2], va[3] - vb[3]
+            local d = dx * dx + dy * dy + dz * dz
+            if not bd or d < bd or (d == bd and (oi < bo or (oi == bo and (lo < blo or (lo == blo and hi < bhi))))) then
+              bd, bo, blo, bhi = d, oi, lo, hi
+            end
           end
         end
       end
@@ -918,7 +924,40 @@ function M.dw1_pose(mmd, skel, anim, rest_from)
   return w
 end
 
-function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias)
+-- The animation block without the motions no table entry plays any more (a
+-- donor's technique motions the new list doesn't use): the rest in order,
+-- each 4-aligned, the table pointed at their new places. `starts`: the
+-- table's entries before the aliases (0-based).
+local function prune_anims(anims, count, starts)
+  local table_, seen, bounds, used = {}, {}, {}, {}
+  for a = 0, count - 1 do table_[a] = string.unpack("<I4", anims, 4 * a + 1) end
+  for a = 0, count - 1 do
+    for _, o in ipairs({ starts[a] or 0, table_[a] }) do
+      if o ~= 0 and not seen[o] then seen[o] = true; bounds[#bounds + 1] = o end
+    end
+    if table_[a] ~= 0 then used[table_[a]] = true end
+  end
+  table.sort(bounds)
+  bounds[#bounds + 1] = #anims
+  local parts, len, moved = { anims:sub(1, 4 * count) }, 4 * count, {}
+  for i = 1, #bounds - 1 do
+    local a, b = bounds[i], bounds[i + 1]
+    if used[a] then
+      local pad = (4 - len % 4) % 4
+      parts[#parts + 1] = string.rep("\0", pad)
+      len = len + pad
+      moved[a] = len
+      parts[#parts + 1] = anims:sub(a + 1, b)
+      len = len + (b - a)
+    end
+  end
+  local out = table.concat(parts)
+  local words = {}
+  for a = 0, count - 1 do words[#words + 1] = string.pack("<I4", table_[a] ~= 0 and moved[table_[a]] or 0) end
+  return table.concat(words) .. out:sub(4 * count + 1)
+end
+
+function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height, anim_alias, keep, prune)
   local nb = #skel + 1
   local info = donor_info(donor_mmd)
   local pose1 = start_pose(donor_mmd, info, 0, nb)
@@ -1035,7 +1074,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
 
   -- the objects: the donor's object numbers, filled from the mapped bones
   local objs = {}
-  for o = 0, info.nobj - 1 do objs[o] = { verts = {}, normals = {}, prims = {} } end
+  for o = 0, info.nobj - 1 do objs[o] = { verts = {}, normals = {}, prims = {}, keep = {} } end
   local clut_rows, clut_list = {}, {}
   local faces = {} -- every polygon at the rest pose, for the chart icon (lib/icon.lua)
   for _, b in ipairs(order) do
@@ -1055,6 +1094,7 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       local loc = {}
       for i = 1, 3 do loc[i] = clamp16((m1[1][i] * d[1] + m1[2][i] * d[2] + m1[3][i] * d[3]) / 4096) end
       out.verts[#out.verts + 1] = loc
+      out.keep[#out.keep + 1] = (keep and keep[b]) and true or false
     end
     for _, n in ipairs(bone.normals) do
       local w = mv(g[3], { M3[1][1] * n[1] + M3[1][2] * n[2] + M3[1][3] * n[3], M3[2][1] * n[1] + M3[2][2] * n[2] + M3[2][3] * n[3], M3[3][1] * n[1] + M3[3][2] * n[2] + M3[3][3] * n[3] })
@@ -1062,18 +1102,33 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
       out.normals[#out.normals + 1] = { clamp16(l[1] * 4096), clamp16(l[2] * 4096), clamp16(l[3] * 4096) }
     end
     for _, p in ipairs(bone.polys) do
-      if not (p.textured and p.lit) then error("DW3 bone " .. b .. " has a polygon that isn't textured and lit") end
+      if not p.textured then error("DW3 bone " .. b .. " has a polygon that isn't textured") end
       local key = p.tex[4] .. "," .. p.tex[5]
       if not clut_rows[key] then
         clut_list[#clut_list + 1] = { p.tex[4], p.tex[5] }
         clut_rows[key] = #clut_list - 1
       end
       local n = p.quad and 4 or 3
-      local nrm = p.nrm
-      if not p.gouraud then nrm = {}; for k = 1, n do nrm[k] = p.nrm[1] end end
       local idx, nn = {}, {}
-      for k = 1, n do idx[k] = vbase + p.idx[k]; nn[k] = nbase + nrm[k] end
-      out.prims[#out.prims + 1] = { n = n, uv = p.uv, clut = clut_rows[key], blend = p.blend, idx = idx, nrm = nn }
+      if p.lit then
+        local nrm = p.nrm
+        if not p.gouraud then nrm = {}; for k = 1, n do nrm[k] = p.nrm[1] end end
+        for k = 1, n do idx[k] = vbase + p.idx[k]; nn[k] = nbase + nrm[k] end
+      else
+        -- unlit (Kyubimon's flame wisps): lit flat here, by the face's own
+        -- normal (outward: (v2 - v0) x (v1 - v0) in DW1's winding)
+        local v0, v1, v2 = out.verts[vbase + p.idx[1] + 1], out.verts[vbase + p.idx[2] + 1], out.verts[vbase + p.idx[3] + 1]
+        local a = { v2[1] - v0[1], v2[2] - v0[2], v2[3] - v0[3] }
+        local c = { v1[1] - v0[1], v1[2] - v0[2], v1[3] - v0[3] }
+        local fn = norm({ a[2] * c[3] - a[3] * c[2], a[3] * c[1] - a[1] * c[3], a[1] * c[2] - a[2] * c[1] })
+        out.normals[#out.normals + 1] = { clamp16(fn[1] * 4096), clamp16(fn[2] * 4096), clamp16(fn[3] * 4096) }
+        for k = 1, n do idx[k] = vbase + p.idx[k]; nn[k] = #out.normals - 1 end
+      end
+      -- DW3's semi-transparency (0xEn: 0 opaque, else ABR n - 1; Kyubimon's
+      -- flames: 2, additive) on the unlit ones only (lit ones never had it)
+      local blend = p.blend
+      if not p.lit and p.abr and p.abr > 0 then blend = p.abr - 1 end
+      out.prims[#out.prims + 1] = { n = n, uv = p.uv, clut = clut_rows[key], blend = blend, idx = idx, nrm = nn }
       local pts = {}
       for k = 1, n do pts[k] = placed_verts[p.idx[k] + 1] end
       faces[#faces + 1] = { pts = pts, uv = p.uv, clut = p.tex[5] * m3.tims[1].w + p.tex[4], bone = target, dw3_bone = b } -- CLUT: halfword index in the texture
@@ -1192,6 +1247,9 @@ function M.convert(mapping, m3, mats3, skel, donor_mmd, tim_entry, target_height
     end
     anims = anims:sub(1, 4 * dst) .. string.pack("<I4", off) .. anims:sub(4 * dst + 5)
   end
+  -- The donor's motions nothing plays any more go, when asked (`prune`:
+  -- Kyubimon, whose mesh doesn't fit beside all of Garurumon's)
+  if prune then anims = prune_anims(anims, need, offs) end
 
 
   -- TMD, slimmed when it doesn't fit the partner's buffer (0x18800 bytes)

@@ -722,6 +722,145 @@ M.list = {
       [9] = { 11, "core" }, [10] = { 12, "core" }, [11] = { 13, "core" }, [12] = { 13, "follow" }, -- arm (-x)
     },
   },
+  -- --- the Renamon line (DW2003 partners) -------------------------------------------
+  {
+    type = 198, name = "Renamon", file = "RENA", level = 3, height = 340, model_height = 360, -- tall for a Rookie, ears included
+    attribute = 1, specialties = { 1, 4, 255 }, radius = 150, -- Data; Battle, Ice
+    -- Battle and Ice techniques (lib/techniques.lua); the Ice ones (none list
+    -- Leomon) start from its right hand
+    techniques = { auto = true, points = { [4] = { 7, 15, 8, 8 } } },
+    -- Its finisher (Leomon's 91 Fist of the Beast King: stats, the punch) as
+    -- Diamond Storm with Seadramon's Ice Blast (0x58) shards from its right
+    -- hand, at a Rookie's power (Leomon's is a Champion's 170)
+    finisher = { name = "Diamond Storm", from = 91, power = 95, effect = 0x58, origin = { 7, 15, 8, 8 } },
+    gains = { 600, 700, 70, 60, 110, 90 },
+    -- a Tsunomon (16) whose highest stat is Speed or Brains, at weight 30 +- 5
+    -- (Tsunomon's other Rookies want weight 10 to 20)
+    requirements = { digimon = 16, hp = -1, mp = -1, offense = -1, defense = -1, speed = 1, brain = 1,
+      care = 0, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
+    raise_from = 17,             -- a Rookie's care (Gabumon, also from Tsunomon)
+    view = { 200, 330, -1320 },  -- the donor's camera (Leomon's; Gabumon's came with raise_from)
+    icon_head = { 3 },           -- Leomon's head (its jaw stays empty)
+    source = { ["SLES-03936"] = { file = 511, bones = 45, motions = 0 } }, -- M373RENA (partner)
+    donor = 48, donor_file = "LEOM.MMD", -- Leomon: a tail, four-bone legs
+    -- hybrid; its tail keeps its own sideways sweep on Leomon's three tail
+    -- bones (the last two segments on the last); Leomon's jaw (4) stays empty
+    mapping = {
+      [14] = { 2, "core" }, [15] = { 3, "core" },                                              -- chest, head (ears)
+      [19] = { 5, "core" }, [20] = { 6, "core" }, [21] = { 7, "core" },                        -- arm (+x)
+      [16] = { 8, "core" }, [17] = { 9, "core" }, [18] = { 10, "core" },                       -- arm (-x)
+      [1] = { 11, "core" },                                                                    -- hips
+      [10] = { 12, "core" }, [11] = { 13, "core" }, [12] = { 14, "core" }, [13] = { 14, "follow" }, -- tail
+      [2] = { 15, "limb", 3, 16, true }, [3] = { 16, "leaf" }, [4] = { 17, "core" }, [5] = { 18, "core" }, -- leg (+x)
+      [6] = { 19, "limb", 7, 20, true }, [7] = { 20, "leaf" }, [8] = { 21, "core" }, [9] = { 22, "core" }, -- leg (-x)
+    },
+  },
+  {
+    type = 199, name = "Kyubimon", file = "KYBI", level = 4, height = 330, model_height = 400,
+    attribute = 1, specialties = { 1, 0, 255 }, radius = 230, -- Data; Battle, Fire
+    -- Battle and Fire techniques; the Fire ones (Garurumon's list none) from its mouth
+    techniques = { auto = true, points = { [0] = { 4, 80, -2, 24 } } },
+    -- Its finisher (Garurumon's 0x40 Howling Blaster: stats, motion) as Fox
+    -- Tail Inferno with Birdramon's Meteor Wing (0x5E) fireballs from four of
+    -- its tail tips (all on Garurumon's tail bone 15)
+    finisher = { name = "Fox Tail Inferno", from = 0x40, effect = 0x5E,
+      origin = { { 15, 263, -140, -20 }, { 15, 291, 12, -45 }, { 15, 256, 152, -1 }, { 15, 222, 107, 171 } } },
+    gains = { 1500, 2000, 150, 150, 200, 250 },
+    -- MP and Brains 100, at most 5 care mistakes, weight 25, 30 techniques
+    requirements = { digimon = -1, hp = -1, mp = 100, offense = -1, defense = -1, speed = -1, brain = 100,
+      care = 5, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
+    icon_head = { 4 },           -- Garurumon's head (its jaw stays empty)
+    -- The Digimon page: 400 tall with its tails, it can't fit at Garurumon's
+    -- distance (its tails spilled out), so it stands back by its height over
+    -- Garurumon's (290) at the same place on screen
+    view = { -231, 400, -411 },
+    source = { ["SLES-03936"] = { file = 927, bones = 90, motions = 0 } }, -- M374KYBI (partner)
+    donor = 22, donor_file = "GARU.MMD", -- Garurumon: four legs
+    -- Garurumon's technique motions its list doesn't use go, for room: with
+    -- them it only fit slimmed, and lost its ears, its neck rope, then its tails
+    prune = true,
+    -- its ruff and bead tassels on the neck, the nine tails (a base and seven
+    -- more) one fan on Garurumon's first tail bone; its fox fires (16-33,
+    -- hidden at rest) left out; Garurumon's jaw and last tail bones stay empty
+    mapping = {
+      [1] = { 2, "core" },                                                                       -- chest
+      [8] = { 3, "core" }, [9] = { 3, "follow" }, [10] = { 3, "follow" }, [11] = { 4, "core" },  -- ruff, tassels, head
+      [5] = { 7, "limb", 6, 8, true }, [6] = { 8, "leaf" }, [7] = { 9, "core" },                 -- front leg (+x)
+      [2] = { 11, "limb", 3, 12, true }, [3] = { 12, "leaf" }, [4] = { 13, "core" },             -- front leg (-x)
+      [12] = { 14, "core" },                                                                     -- hind body
+      [13] = { 19, "limb", 14, 20, true }, [14] = { 20, "leaf" }, [15] = { 21, "core" },         -- hind leg (+x)
+      [34] = { 23, "limb", 35, 24, true }, [35] = { 24, "leaf" }, [36] = { 25, "core" },         -- hind leg (-x)
+      [37] = { 15, "core" }, [38] = { 15, "follow" }, [39] = { 15, "follow" }, [40] = { 15, "follow" }, -- tails
+      [41] = { 15, "follow" }, [42] = { 15, "follow" }, [43] = { 15, "follow" }, [44] = { 15, "follow" },
+    },
+  },
+  {
+    type = 200, name = "Taomon", file = "TAOM", level = 5, height = 450, model_height = 480,
+    attribute = 1, specialties = { 1, 2, 255 }, radius = 230, -- Data; Battle, Air
+    -- Battle and Air techniques; the Air ones not Andromon's from its right sleeve
+    techniques = { auto = true, points = { [2] = { 7, 35, 17, 19 } } },
+    -- Its finisher (Andromon's 102 Spiral Sword: stats, the swing) as
+    -- Thousand Spells with Ninjamon's Iga School Knife Throw (0x59), its
+    -- talismans flung from the right sleeve
+    finisher = { name = "Thousand Spells", from = 102, effect = 0x59, origin = { 7, 35, 17, 19 } },
+    gains = { 4000, 5500, 400, 400, 450, 550 },
+    -- HP 300, MP 400, Speed 300, Brains 400, at most 5 care mistakes, weight
+    -- 30, discipline 80, 35 techniques
+    requirements = { digimon = -1, hp = 300, mp = 400, offense = -1, defense = -1, speed = 300, brain = 400,
+      care = 5, weight = 30, discipline = 80, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
+    icon_head = { 3 },           -- Andromon has no jaw
+    -- The Digimon page: 480 tall, its hat and feet were cut off at Andromon's
+    -- distance; it stands back by its height over Andromon's (400)
+    view = { 52, 432, -1024 },
+    source = { ["SLES-03936"] = { file = 1112, bones = 1, motions = 0 } }, -- M375TAOM (partner)
+    donor = 40, donor_file = "ANDR.MMD", -- Andromon: upright, arms hanging at its sides
+    -- shoulder pads and upper sleeves on the upper arms; its brush tail and
+    -- robe flaps on the hips; its brush (28, hidden at rest) left out
+    mapping = {
+      [18] = { 2, "core" }, [23] = { 3, "core" },                                                -- chest, head
+      [19] = { 5, "core" }, [20] = { 5, "follow" }, [21] = { 6, "core" }, [22] = { 7, "core" },  -- arm (+x)
+      [24] = { 9, "core" }, [25] = { 9, "follow" }, [26] = { 10, "core" }, [27] = { 11, "core" }, -- arm (-x)
+      [1] = { 12, "core" }, [6] = { 12, "follow" }, [7] = { 12, "follow" }, [8] = { 12, "follow" }, [9] = { 12, "follow" }, -- hips, tail
+      [14] = { 12, "follow" }, [15] = { 12, "follow" }, [16] = { 12, "follow" }, [17] = { 12, "follow" },                   -- robe flaps
+      [2] = { 14, "limb", 3, 15, true }, [3] = { 15, "leaf" }, [4] = { 16, "core" }, [5] = { 16, "follow" },     -- leg (+x)
+      [10] = { 18, "limb", 11, 19, true }, [11] = { 19, "leaf" }, [12] = { 20, "core" }, [13] = { 20, "follow" }, -- leg (-x)
+    },
+  },
+  {
+    type = 201, name = "Sakuyamon", file = "SKYA", level = 5, height = 470, model_height = 620,
+    chart_stage = 6,
+    attribute = 1, specialties = { 1, 2, 3 }, radius = 250, -- Data; Battle, Air, Earth
+    -- Battle, Air and Earth techniques; the others from the head of its staff
+    techniques = { auto = true, points = { [2] = { 9, -259, 87, -101 }, [3] = { 9, -259, 87, -101 } } },
+    -- Its finisher (Angemon's 0x52 Hand of Fate: stats, motion, effect) as
+    -- Spirit Strike, the light from the head of its staff, at a Mega's power
+    finisher = { name = "Spirit Strike", from = 0x52, power = 280, origin = { 9, -259, 87, -101 } },
+    gains = { 7000, 8000, 600, 500, 700, 800 },
+    -- HP 600, MP 700, Offense 500, Defense 500, Speed 600, Brains 700, at most
+    -- 5 care mistakes, weight 35, discipline 90, 45 techniques
+    requirements = { digimon = -1, hp = 600, mp = 700, offense = 500, defense = 500, speed = 600, brain = 700,
+      care = 5, weight = 35, discipline = 90, happiness = -1, battles = -1, techs = 45, flags = 0x10 },
+    raise_from = 59,             -- a Mega's care (Phoenixmon; Angemon is a Champion)
+    -- The Digimon page: 620 tall with its staff, whose ring was cut off at
+    -- Angemon's distance; it stands back by its height over Angemon's (400)
+    view = { -638, 542, 208 },
+    icon_head = { 3 },           -- Angemon's head
+    source = { ["SLES-03936"] = { file = 1091, bones = 54, motions = 0 } }, -- M376SKYA (partner)
+    donor = 20, donor_file = "ANGE.MMD", -- Angemon: a staff in the left hand
+    -- the slimming leaves its staff alone (its thin shaft collapsed to a line)
+    keep = { 22, 23, 24, 25, 26 },
+    -- hair on the head, the staff on the left hand; Angemon's wings (10-17)
+    -- and loincloth (25) stay empty
+    mapping = {
+      [10] = { 2, "core" }, [14] = { 3, "core" }, [15] = { 3, "follow" }, [16] = { 3, "follow" }, [17] = { 3, "follow" }, [18] = { 3, "follow" }, -- chest, head, hair
+      [11] = { 4, "core" }, [12] = { 5, "core" }, [13] = { 6, "core" },                          -- arm (+x)
+      [19] = { 7, "core" }, [20] = { 8, "core" }, [21] = { 9, "core" },                          -- arm (-x)
+      [22] = { 9, "follow" }, [23] = { 9, "follow" }, [24] = { 9, "follow" }, [25] = { 9, "follow" }, [26] = { 9, "follow" }, -- staff
+      [1] = { 18, "core" },                                                                      -- hips
+      [2] = { 19, "limb", 3, 20, true }, [3] = { 20, "leaf" }, [4] = { 21, "core" }, [5] = { 21, "follow" }, -- leg (+x)
+      [6] = { 22, "limb", 7, 23, true }, [7] = { 23, "leaf" }, [8] = { 24, "core" }, [9] = { 24, "follow" }, -- leg (-x)
+    },
+  },
 }
 
 -- The game's own Digimon that change (their evolution lists come from
