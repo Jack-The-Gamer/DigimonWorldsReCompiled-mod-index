@@ -1,0 +1,15 @@
+[mod]
+id = "dw3-vemmon-partner"
+name = "DW3 Vemmon Partner"
+version = "0.1.0"
+author = "Jack-The-Gamer"
+description = "Vemmon joins as a partner: beat it in the story for its DDNA, bring it to a DRI Agent in Cargo Tower, and raise it into Snatchmon, Destromon and Galacticmon. Every partner can learn that line too."
+game = "dw3"
+serials = ["SLES-03936"]
+script = "main.lua"
+categories = ["CONTENT", "GAMEPLAY"]
+tags = ["partner", "digivolution", "vemmon", "galacticmon"]
+license = "MIT"
+github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
+homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw3-vemmon-partner"
+experimental = true
