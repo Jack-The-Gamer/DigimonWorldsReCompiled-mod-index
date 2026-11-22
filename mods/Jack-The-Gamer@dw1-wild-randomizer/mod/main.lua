@@ -32,16 +32,31 @@
 -- The mod: after loadMapDigimon (hook at 0x800A9BD8) it marks the wild slots
 -- in typeId's padding (+2: 0x4000 | type; the game never uses it, and save
 -- states keep it), the map's list length in slot 0's padding (+194, with
--- 0x5A at +195) and the map number in slot 1's (+194). When a script loads a wild type's model, it picks the
--- replacement for every slot of that type (one model, as before), writes it
+-- 0x5A at +195) and the map number in slot 1's (+194). When a script loads a wild type's model, it picks a
+-- replacement for each slot of that type (see "One type, several Digimon"), writes it
 -- to typeId, marks them 0x8000 | original type and turns their moves into
 -- the new Digimon's own (the same technique where it has it, otherwise one
 -- of its own of the same kind, its finisher for a finisher). With Random
 -- techniques (option), every wild Digimon's regular slots, also those of one
 -- that stays itself, then get techniques drawn from all its own that its
 -- model can play, per Digimon and visit (per area with Fixed). Stats, bits and
--- behaviour stay the map's. LOAD_DIGIMON, UNLOAD_DIGIMON and SET_DIGIMON
--- with the original type then get the replacement.
+-- behaviour stay the map's. LOAD_DIGIMON and UNLOAD_DIGIMON with the
+-- original type then get every replacement of it, SET_DIGIMON the slot's.
+--
+-- One type, several Digimon: a map's scripts load a type's model once
+-- (scriptLoadModel(type): LOADED_DIGIMON_MODELS[first free] = type, then
+-- loadMMD, which shares one NPC_MODELS entry per type: 5 entries of 0x1C at
+-- 0x80137140, useCount +0) and place each slot of that type with it. So
+-- each slot gets its own pick while the NPC_MODELS entries and the heap
+-- still hold them (slots after the first take a Digimon not picked yet,
+-- else one of the type's picks again), and the hook on scriptLoadModel
+-- calls it once per replacement: it sets a0 to the first and ra to
+-- scriptLoadModel itself, so each return comes back to its first
+-- instruction for the next one, the last returning to the caller.
+-- scriptUnloadModel the same way. Where the chain is (original type,
+-- index, which function, caller's ra) is kept in the padding of slots 2..5
+-- (+194), so a save state taken during a load (loadMMD reads the disc over
+-- several frames) carries on.
 --
 -- Memory: NPC models (and each NPC's bone data: boneCount x 136 + 82 bytes)
 -- come from the heap (malloc3; K&R free list, freep at 0x80115A24, headers
@@ -77,6 +92,7 @@ local FIRST_WORDS = { [SCRIPT_LOAD_MODEL] = 0x27BDFFE8, [SCRIPT_UNLOAD_MODEL] = 
 local MAP_DIGIMON_TABLE, MAP_DIGIMON_SIZE, FOLLOW_MODE, LIST_LENGTH = 0x8013CB50, 0xC4, 0xBC, 194
 local NPC_ENTITIES, NPC_SIZE, NPC_MOVES = 0x80155828, 0x68, 0x44
 local LOADED_DIGIMON_MODELS = 0x801BE7EC
+local NPC_MODELS, NPC_MODEL_SIZE, NPC_MODEL_COUNT = 0x80137140, 0x1C, 5
 local MAP_ENTRIES = 0x801292D4
 local FREEP = 0x80115A24
 local FILE_OFFSET_TABLE = 0x8011FE1C
@@ -95,6 +111,7 @@ local NPC_TAG = 0x0043504E      -- "NPC\0": Expanded Roster's map copy of a mode
 local ARENA_TAG = 0x41          -- "A" at +5: Expanded Roster draws it in the Arena's bracket
 local MARGIN = 0x2000           -- heap kept free beyond what the map still needs
 local WILD, CHOSEN, LIST_SIGN = 0x4000, 0x8000, 0x5A
+local CHAIN_SIGN, CHAIN_LOAD, CHAIN_UNLOAD = 0x5B, 1, 2
 
 local EVERY_VISIT = dwrc.options.reroll ~= "Fixed"
 local WITH_ROSTER = dwrc.options.expanded_roster ~= false
@@ -537,6 +554,7 @@ local function mark_wild(ctx)
   local n = ctx:read16(ctx:reg("s3"))
   for i = 0, 7 do ctx:write16(slot_at(i) + 2, 0) end
   ctx:write16(slot_at(0) + LIST_LENGTH, 0)
+  ctx:write8(slot_at(5) + LIST_LENGTH, 0)  -- no model chain
   if map > 254 or n < 1 or n > 8 or (ctx:read8(MAP_ENTRIES + 16 * map + 12) & 0x80) == 0 then return end
   ctx:write8(slot_at(0) + LIST_LENGTH, n)
   ctx:write8(slot_at(0) + LIST_LENGTH + 1, LIST_SIGN)
@@ -558,7 +576,19 @@ local function mark_wild(ctx)
   end
 end
 
--- A wild type's model is about to load: choose its replacement.
+-- NPC_MODELS entries in use, LOADED_DIGIMON_MODELS entries free.
+local function model_entries(ctx)
+  local used, free = 0, 0
+  for i = 0, NPC_MODEL_COUNT - 1 do
+    if ctx:read32(NPC_MODELS + NPC_MODEL_SIZE * i) ~= 0 then used = used + 1 end
+  end
+  for i = 0, 7 do
+    if ctx:read32(LOADED_DIGIMON_MODELS + 4 * i) == 0xFFFFFFFF then free = free + 1 end
+  end
+  return used, free
+end
+
+-- A wild type's model is about to load: choose a replacement for each of its slots.
 local function choose(ctx, t)
   local n = listed(ctx)
   local slots = {}
@@ -576,6 +606,7 @@ local function choose(ctx, t)
   local map = ctx:read8(slot_at(1) + LIST_LENGTH)
   local learned = dwrc.data.loads and dwrc.data.loads[tostring(map)]
   local others, unseen, seen, taken, story = 0, 0, { [t] = true }, {}, {}
+  local models_needed, model_unseen = 0, 0  -- NPC_MODELS entries the other types may still take
   for i = 0, n - 1 do
     local u, mk = ctx:read16(slot_at(i)), mark(ctx, i)
     if (mk & CHOSEN) ~= 0 then taken[u] = true end
@@ -589,31 +620,66 @@ local function choose(ctx, t)
         local ty = types[u]
         local size = padded(ty and ((mk & CHOSEN) ~= 0 and not story[u] and wild_size(ty) or ty.size) or MAX_MODEL) + 8
         local scripts_load = (mk & (WILD | CHOSEN)) ~= 0 and (mk & 0x3FFF) or u  -- the type the map's scripts ask for
-        if not learned or learned[tostring(scripts_load)] then others = others + size
-        else unseen = math.max(unseen, size) end
+        if not learned or learned[tostring(scripts_load)] then others, models_needed = others + size, models_needed + 1
+        else unseen, model_unseen = math.max(unseen, size), 1 end
       end
     end
     if mk ~= (WILD | t) then others = others + bone_data(types[u] and types[u].bones or 32) end
   end
   local room = largest_free(ctx) - others - unseen - MARGIN - #slots * 8
+  local used, free = model_entries(ctx)
+  local spare = math.min(NPC_MODEL_COUNT - used, free) - models_needed - model_unseen - 1  -- models beyond the first
+  local spare_at_start = math.max(spare, 0)
 
   local nonce = EVERY_VISIT and (session + visit * 0x9E3779B9) or dwrc.data.seed
   local list = candidates(types, limit, orig)
   for _, c in ipairs(list) do c.order = mix(nonce * 0x100000 + map * 0x400 + t * 0x10000000 + c.t) end
   table.sort(list, function(a, b) return a.order < b.order end)
   local own = padded(orig.size) + #slots * bone_data(orig.bones)
-  local pick, fallback
+  local function fit(bytes) return bytes <= own or bytes + 8 <= room end
+  local function model(c) return padded(story[c.t] and c.size or wild_size(c)) end
+
+  -- the first slot's pick, which every slot could share (the type's one model)
+  local first, fallback
   for _, c in ipairs(list) do
-    local takes = padded(story[c.t] and c.size or wild_size(c)) + #slots * bone_data(c.bones)
-    if takes <= own or takes + 8 <= room then
-      if not taken[c.t] then pick = c break end
+    if fit(model(c) + #slots * bone_data(c.bones)) then
+      if not taken[c.t] then first = c break end
       fallback = fallback or c
     end
   end
-  pick = pick or fallback
+  first = first or fallback
 
-  local techs = {}
-  for _, i in ipairs(slots) do
+  -- each further slot: a Digimon not picked yet when its model fits beside
+  -- the others (the slots after it can still share the first's), else one
+  -- of this type's picks again
+  local picks, distinct = { first }, { first }
+  if first then
+    local models, bytes, bones = { [first.t] = true }, model(first), bone_data(first.bones)
+    for j = 2, #slots do
+      local rest = (#slots - j) * bone_data(first.bones)
+      local pick
+      if spare > 0 then
+        for _, c in ipairs(list) do
+          if not models[c.t] and not taken[c.t] and fit(bytes + model(c) + 8 + bones + bone_data(c.bones) + rest) then pick = c break end
+        end
+      end
+      if pick then
+        models[pick.t], bytes, spare = true, bytes + model(pick) + 8, spare - 1
+        distinct[#distinct + 1] = pick
+      else
+        local again = {}
+        for _, c in ipairs(distinct) do
+          if fit(bytes + bones + bone_data(c.bones) + rest) then again[#again + 1] = c end
+        end
+        pick = again[(mix(nonce * 0x100000 + map * 0x400 + t * 0x10 + j) & 0x7FFFFFFF) % #again + 1]  -- the first always fits
+      end
+      picks[j], bones = pick, bones + bone_data(pick.bones)
+    end
+  end
+
+  local techs, names = {}, {}
+  for p, i in ipairs(slots) do
+    local pick = picks[p]
     local at = NPC_ENTITIES + i * NPC_SIZE + NPC_MOVES
     local moves = {}
     for j = 0, 3 do moves[j] = ctx:read8(at + j) end
@@ -623,6 +689,7 @@ local function choose(ctx, t)
     if pick then
       ctx:write16(slot_at(i), pick.t)
       ctx:write16(slot_at(i) + 2, CHOSEN | t)
+      names[#names + 1] = pick.name
     else
       ctx:write16(slot_at(i) + 2, 0)
     end
@@ -634,22 +701,74 @@ local function choose(ctx, t)
   end
   local moves_note = RANDOM_TECHNIQUES and (", techniques " .. table.concat(techs, " / ")) or ""
   if learned then moves_note = ", loads known" .. moves_note end
-  if pick then
-    local model = (pick.light and not story[pick.t]) and string.format(", light copy %d KiB", pick.light // 1024) or string.format(", %d KiB", pick.size // 1024)
-    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s -> %s (%d candidates, %d KiB free for it%s)%s", map, orig.name, pick.name, #list, room // 1024, model, moves_note))
+  if first then
+    local sizes = {}
+    for _, c in ipairs(distinct) do
+      sizes[#sizes + 1] = (c.light and not story[c.t]) and string.format("%s light copy %d KiB", c.name, c.light // 1024) or string.format("%s %d KiB", c.name, c.size // 1024)
+    end
+    dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s -> %s (%d candidates, %d KiB free, entries for %d more models; %s)%s", map, orig.name,
+      table.concat(names, ", "), #list, room // 1024, spare_at_start, table.concat(sizes, ", "), moves_note))
   else
     dwrc.log(string.format("DW1 Wild Randomizer: map %d: %s stays (%d candidates, none fit in %d KiB)%s", map, orig.name, #list, room // 1024, moves_note))
   end
-  return pick and pick.t
 end
 
--- The replacement for an original type (in `slot`, or anywhere on the map).
+-- The replacement in `slot` for an original type.
 local function replacement(ctx, t, slot)
-  local from, to = slot or 0, slot or 7
-  for i = from, to do
-    if mark(ctx, i) == (CHOSEN | t) then return ctx:read16(slot_at(i)) end
-  end
+  if mark(ctx, slot) == (CHOSEN | t) then return ctx:read16(slot_at(slot)) end
   return nil
+end
+
+-- Every replacement of an original type on the map, each once, in slot order.
+local function replacements(ctx, t)
+  local out, seen = {}, {}
+  for i = 0, listed(ctx) - 1 do
+    if mark(ctx, i) == (CHOSEN | t) then
+      local u = ctx:read16(slot_at(i))
+      if not seen[u] then seen[u], out[#out + 1] = true, u end
+    end
+  end
+  return out
+end
+
+-- Model chains (see "One type, several Digimon"): `fn` (scriptLoadModel or
+-- scriptUnloadModel) is at its first instruction; call it with list[at],
+-- and come back to its first instruction for the next one.
+local function pad16(i) return slot_at(i) + LIST_LENGTH end
+
+local function chain_call(ctx, fn, kind, t, list, at)
+  ctx:set_reg("a0", list[at])
+  if at == 1 and #list > 1 then
+    local ra = ctx:reg("ra")
+    ctx:write16(pad16(2), ra & 0xFFFF)
+    ctx:write16(pad16(3), ra >> 16)
+    ctx:write8(pad16(5) + 1, kind)
+    ctx:write8(pad16(5), CHAIN_SIGN)
+  end
+  ctx:write8(pad16(4), t)
+  ctx:write8(pad16(4) + 1, at)
+  if at < #list then
+    ctx:set_reg("ra", fn)
+  elseif at > 1 then
+    ctx:set_reg("ra", ctx:read16(pad16(2)) | (ctx:read16(pad16(3)) << 16))
+    ctx:write8(pad16(5), 0)
+  end
+end
+
+-- `fn` was entered by its own return (ra = fn): the chain's next call. Nil
+-- when it wasn't.
+local function chain_next(ctx, fn, kind)
+  if ctx:reg("ra") ~= fn or ctx:read8(pad16(5)) ~= CHAIN_SIGN or ctx:read8(pad16(5) + 1) ~= kind then return nil end
+  local t, at = ctx:read8(pad16(4)), ctx:read8(pad16(4) + 1) + 1
+  local list = replacements(ctx, t)
+  if at > #list then  -- nothing left (the slots changed): back to the caller
+    ctx:set_reg("ra", ctx:read16(pad16(2)) | (ctx:read16(pad16(3)) << 16))
+    ctx:write8(pad16(5), 0)
+    ctx:ret()
+    return true
+  end
+  chain_call(ctx, fn, kind, t, list, at)
+  return false
 end
 
 -- Learning: the types a map's scripts load on a visit (Gear Savanna lists
@@ -682,17 +801,26 @@ end)
 
 dwrc.on_exec(SCRIPT_LOAD_MODEL, function(ctx)
   if ctx:read32(SCRIPT_LOAD_MODEL) ~= FIRST_WORDS[SCRIPT_LOAD_MODEL] then return false end
+  local next_call = chain_next(ctx, SCRIPT_LOAD_MODEL, CHAIN_LOAD)
+  if next_call ~= nil then return next_call end
   local t = ctx:reg("a0") & 0xFF
   if visiting and listed(ctx) > 0 and ctx:read8(slot_at(1) + LIST_LENGTH) == visiting.map then visiting.types[tostring(t)] = true end
-  local r = replacement(ctx, t) or choose(ctx, t)
-  if r then ctx:set_reg("a0", r) end
+  local list = replacements(ctx, t)
+  if #list == 0 then
+    choose(ctx, t)
+    list = replacements(ctx, t)
+  end
+  if #list > 0 then chain_call(ctx, SCRIPT_LOAD_MODEL, CHAIN_LOAD, t, list, 1) end
   return false
 end)
 
 dwrc.on_exec(SCRIPT_UNLOAD_MODEL, function(ctx)
   if ctx:read32(SCRIPT_UNLOAD_MODEL) ~= FIRST_WORDS[SCRIPT_UNLOAD_MODEL] then return false end
-  local r = replacement(ctx, ctx:reg("a0") & 0xFF)
-  if r then ctx:set_reg("a0", r) end
+  local next_call = chain_next(ctx, SCRIPT_UNLOAD_MODEL, CHAIN_UNLOAD)
+  if next_call ~= nil then return next_call end
+  local t = ctx:reg("a0") & 0xFF
+  local list = replacements(ctx, t)
+  if #list > 0 then chain_call(ctx, SCRIPT_UNLOAD_MODEL, CHAIN_UNLOAD, t, list, 1) end
   return false
 end)
 

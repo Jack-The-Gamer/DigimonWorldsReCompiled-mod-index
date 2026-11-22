@@ -22,7 +22,7 @@ The wild Digimon roaming the File Island maps become **other Digimon of the same
 
 **Notes**
 
-- All the wild Digimon of one kind in an area become the same Digimon, as in the original game, where an area loads one model per kind.
+- Each wild Digimon is picked on its own, so three Dokunemon in Native Forest can become a Muchomon and two Kunemon. The game loads one model per kind of Digimon in an area and has room for five, so a second or third replacement for the same kind is only picked while its model still fits; otherwise it is one of that kind's replacements again.
 - A technique is only picked when the Digimon's model has its animation, so Digimon whose model was made for a few moves (Gotsumon, Tankmon, Tekkamon, the story Digimon's copies) have little to choose from.
 - The PlayStation has little memory for the Digimon on a map. A replacement is only picked when its model fits next to everything else the area needs, so bigger Digimon turn up less often in crowded areas, and sometimes a wild Digimon stays itself. ClearAgumon always does: no other Rookie shares its specialties.
 - To fit more, a replacement loads a lighter copy of its model, made when the game starts, with only what a wild Digimon uses: Greymon, Angemon or Patamon leave out their care, training and menu motions and take about half the memory. The mod also remembers which Digimon each area actually loads (many list more kinds than they bring out) and, from the second visit on, keeps room only for those and one more.
