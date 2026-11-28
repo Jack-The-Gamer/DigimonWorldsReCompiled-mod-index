@@ -16,6 +16,8 @@ Your partner gets **twice the stat gains from gym training** and **three times t
 - The game's usual limits still apply: 9999 for HP and MP, 999 for the other stats.
 - A failed Bonus Try normally gives half gains; with the mod you get the multiplied half.
 
-Made for Digimon World (USA, SLUS-01032) and checked there. Boulder Moving gave +80 HP and +2 Offense without the mod and +160 and +4 with it. A battle against Dokunemon gave +1 MP, Offense, Speed and Brains and +2 Defense without the mod, and +3 and +6 with it. The mod looks for the game's code rather than relying on fixed addresses, so other releases of Digimon World may work too.
+Made for Digimon World (USA, SLUS-01032) and checked there. Boulder Moving gave +80 HP and +2 Offense without the mod and +160 and +4 with it. A battle against Dokunemon gave +1 MP, Offense, Speed and Brains and +2 Defense without the mod, and +3 and +6 with it.
+
+Also works on Digimon World (Europe, SLES-02914): a battle against ModokiBetamon gave +3 HP, +6 MP, +6 Offense, +3 Defense, +3 Speed and +9 Brains, and the mod finds every exercise in both gyms' code. The mod looks for the game's code rather than relying on fixed addresses; the Japanese release has the same code as the European one.
 
 Needs Re:Compiled 0.2.6 or newer.

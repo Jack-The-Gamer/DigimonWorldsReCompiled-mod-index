@@ -13,17 +13,23 @@
 --   window. The mod hooks that call.
 --
 -- Both are found by their machine code rather than by fixed addresses, and
--- the list's address is read from the game's own code, so other releases of
--- the game should work too.
+-- the list's address is read from the game's own code. The Europe and Japan
+-- executables were compiled with less optimisation: their battle code sets
+-- the call's argument before the call instead of in its delay slot, and one
+-- of their exercises (MP) loads a value between two of the stores. Checked
+-- on all three: the list is at 0x8013D468 (USA, SLUS-01032), 0x80144A30
+-- (Europe, SLES-02914), 0x80147754 (Japan, SLPS-01797), with 6 exercises in
+-- TRN_REL.BIN and 5 in TRN2_REL.BIN on each.
 
 local TRAINING = tonumber(dwrc.options.training) or 2
 local BATTLE = tonumber(dwrc.options.battle) or 3
 
--- Main program: `jal <battle gains>` followed by the window's setup.
-local BATTLE_CALL = "0c?????? 27a40024 2402ffb2 a7a20028 24020036 a7a2002a"
--- Training: six `lui at, hi` / `sh rX, lo(at)` pairs, then `jal <window>`.
-local TRAINING_STORES = "3c01???? a4?????? 3c01???? a4?????? 3c01???? a4?????? " ..
-                        "3c01???? a4?????? 3c01???? a4?????? 3c01???? a4?????? 0c??????"
+-- Main program: `jal <battle gains>` followed by the window's setup; `call`
+-- is the jal's offset in the pattern.
+local BATTLE_CALLS = {
+  { pattern = "0c?????? 27a40024 2402ffb2 a7a20028 24020036 a7a2002a", call = 0 },          -- USA
+  { pattern = "27a40024 0c?????? 00000000 2402ffb2 a7a20028 24020036 a7a2002a", call = 4 }, -- Europe, Japan
+}
 
 local CODE_FROM, CODE_TO = 0x80080000, 0x80140000
 local CHECK_EVERY = 20 -- frames
@@ -45,7 +51,11 @@ end
 -- The battle gains function starts by clearing the list:
 -- `lui v0, hi` / `addiu v0, v0, lo` at +0x2c.
 local function find_battle(ctx)
-  local at = ctx:find(BATTLE_CALL, 0x80090000, CODE_TO)
+  local at
+  for _, b in ipairs(BATTLE_CALLS) do
+    at = ctx:find(b.pattern, 0x80090000, CODE_TO)
+    if at then at = at + b.call break end
+  end
   if not at then return end
   local call = ctx:read32(at)
   local fn = 0x80000000 | ((call & 0x03FFFFFF) << 2)
@@ -59,6 +69,7 @@ local function find_battle(ctx)
   local after = at + 8 -- just after the call and its delay slot
   local word = ctx:read32(after)
   battle_hooked = true
+  dwrc.log(string.format("DW1 Better EXP: battle code found at %08x, gains at %08x", at, buf))
   dwrc.on_exec(after, function(c)
     if c:read32(after) ~= word or c:read32(at) ~= call then return false end
     multiply(c, buf, BATTLE)
@@ -66,35 +77,48 @@ local function find_battle(ctx)
   end)
 end
 
--- A match is one of the training stores if the six stores go to six
--- neighbouring numbers in the gains list.
-local function training_list(ctx, at)
-  local hi = ctx:read32(at) & 0xFFFF
-  local first = ctx:read32(at + 4)
-  for k = 0, 5 do
-    local lui, sh = ctx:read32(at + k * 8), ctx:read32(at + k * 8 + 4)
-    if (lui & 0xFFFF) ~= hi or (sh >> 21) & 31 ~= 1 then return nil end
-    if (sh & 0xFFFF) ~= ((first & 0xFFFF) + k * 2) & 0xFFFF then return nil end
+-- Training: from `lui at, hi` / `sh rX, lo(at)` storing the first gain,
+-- the stores of all six gains (`lui at, hi` / `sh rX, lo(at)`, in any order,
+-- with loads, `lh`/`lhu`/`lw`..., or nops between them) up to `jal <window>`.
+-- Returns the jal's address, or nil if the code there is anything else.
+local function training_call(ctx, at)
+  local lui = 0x3c010000 | (((buf + 0x8000) >> 16) & 0xFFFF)
+  local seen, at_set = 0, false
+  for p = at, at + 23 * 4, 4 do
+    local w = ctx:read32(p)
+    local op = w >> 26
+    if w == lui then
+      at_set = true
+    elseif op == 0x29 and (w >> 21) & 31 == 1 then -- sh rX, lo(at)
+      local k = s16(w & 0xFFFF) - s16(buf & 0xFFFF)
+      if not at_set or k < 0 or k > 10 or k % 2 ~= 0 then return nil end
+      seen = seen | (1 << (k // 2))
+    elseif op == 3 then -- jal
+      return seen == 63 and p or nil
+    elseif w ~= 0 and not ((op == 0x20 or op == 0x21 or op == 0x23 or op == 0x24 or op == 0x25) and (w >> 16) & 31 ~= 1) then
+      return nil
+    end
   end
-  local list = (hi << 16) + s16(first & 0xFFFF)
-  return list == buf and list or nil
+  return nil
 end
 
 local function find_training(ctx)
-  local at = ctx:find(TRAINING_STORES, CODE_FROM, CODE_TO)
+  local first = string.format("3c01%04x a4??%04x", ((buf + 0x8000) >> 16) & 0xFFFF, buf & 0xFFFF)
+  local at = ctx:find(first, CODE_FROM, CODE_TO)
   while at do
     local stores = at -- `at` moves on; the hook needs this match's address
-    local call = stores + 12 * 4
-    if not training_hooked[call] and training_list(ctx, stores) then
+    local call = training_call(ctx, stores)
+    if call and not training_hooked[call] then
       training_hooked[call] = true
+      dwrc.log(string.format("DW1 Better EXP: training code found at %08x", call))
       dwrc.on_exec(call, function(c)
         -- Another overlay may have been loaded here since: check first.
-        if (c:read32(call) >> 26) ~= 3 or training_list(c, stores) == nil then return false end
+        if training_call(c, stores) ~= call then return false end
         multiply(c, buf, TRAINING)
         return false
       end)
     end
-    at = ctx:find(TRAINING_STORES, at + 4, CODE_TO)
+    at = ctx:find(first, at + 4, CODE_TO)
   end
 end
 

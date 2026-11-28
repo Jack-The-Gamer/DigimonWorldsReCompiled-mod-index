@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-better-exp"
 name = "DW1 Better EXP"
-version = "1.0.0"
+version = "1.1.0"
 author = "Jack-The-Gamer"
 description = "Twice the stat gains from training at any gym, and three times the stat gains from battles."
 game = "dw1"
