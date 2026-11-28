@@ -12,6 +12,6 @@ The game holds sixteen auctions, in Cargo Tower in Asuka City, each at its own p
 - Loading a save where an auction is already open shows the "!" on the map, but no notice.
 - The "!" moves aside for the game's "you are here" bubble when you are in Asuka City, and hides while the cursor or the name of a place is over it.
 
-Made for Digimon World 2003 (SLES-03936) and checked there (in its 60 Hz and 50 Hz modes), and on Digimon World 3 (Japan). It looks for the game's code rather than relying on fixed addresses, and the code and auction list are on the Digimon World 3 (USA) disc too, so it should work there as well.
+Made for Digimon World 2003 (SLES-03936) and checked there (in its 60 Hz and 50 Hz modes), and on Digimon World 3 (Japan). It looks for the game's code rather than relying on fixed addresses, and on Digimon World 3 (USA) it finds the story stage, the auction flags, your BIT and the field's code (checked in a new game); the world map and auction list are on that disc too.
 
 Needs Re:Compiled 1.4 or later.

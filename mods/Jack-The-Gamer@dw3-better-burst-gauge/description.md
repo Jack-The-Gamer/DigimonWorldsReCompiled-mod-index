@@ -11,6 +11,6 @@ In the normal game the burst gauge under each partner's party slots is never wri
 
 The gauges are kept in this mod's own data in Re:Compiled (your memory card files are not changed), so they come back when you load your saves in Re:Compiled with the mod switched on.
 
-Made for Digimon World 2003 (SLES-03936) and checked there, and on Digimon World 3 (Japan). It looks for the game's code rather than relying on fixed addresses, so Digimon World 3 (USA) should work too.
+Made for Digimon World 2003 (SLES-03936) and checked there, and on Digimon World 3 (Japan). It looks for the game's code rather than relying on fixed addresses, and on Digimon World 3 (USA) it finds the gauges and the play time clock at their USA addresses.
 
 Needs Re:Compiled 0.2.6 or newer.
