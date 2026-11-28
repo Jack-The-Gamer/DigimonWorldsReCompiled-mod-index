@@ -152,12 +152,24 @@ local function read_tims(a)
 end
 
 -- --- the model ------------------------------------------------------------------
-function M.read(data, bone_entry, motions_entry)
+-- `order` (optional): the file's bone for each bone given back, 1-based, when
+-- a release lists its bones in another order than the one the mappings
+-- were made on (parents are renumbered to match).
+function M.read(data, bone_entry, motions_entry, order)
   local a = archive(data)
   local e = a:entry(bone_entry)
   local m = { tex_entry = u32(data, e), bones = {} }
-  for b = 0, u32(data, e + 4) - 1 do
-    local parent, mesh, keys = string.unpack("<I4I4I4", data, e + 8 + 12 * b + 1)
+  local recs = {}
+  for b = 0, u32(data, e + 4) - 1 do recs[b + 1] = { string.unpack("<I4I4I4", data, e + 8 + 12 * b + 1) } end
+  if order then
+    assert(#order == #recs, "the bone order names " .. #order .. " bones, the model has " .. #recs)
+    local inv, re = { [0] = 0 }, {}
+    for i, j in ipairs(order) do inv[j] = i end
+    for i, j in ipairs(order) do re[i] = { inv[recs[j][1]], recs[j][2], recs[j][3] } end
+    recs = re
+  end
+  for _, r in ipairs(recs) do
+    local parent, mesh, keys = r[1], r[2], r[3]
     local ma, ka = a:sub(mesh), a:sub(keys)
     local tracks = {}
     for t = 0, 2 do

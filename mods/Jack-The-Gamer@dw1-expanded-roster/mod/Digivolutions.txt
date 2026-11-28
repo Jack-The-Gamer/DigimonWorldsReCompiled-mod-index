@@ -1,4 +1,4 @@
-DW1 Expanded Roster 0.24.0: digivolution requirements
+DW1 Expanded Roster 0.25.0: digivolution requirements
 =====================================================
 
 For Digimon World (USA, SLUS-01032). Every Digimon you can raise, what it
@@ -39,9 +39,10 @@ Special digivolutions
   digivolved becomes KingSukamon at once.
 * The game's own event digivolutions are unchanged.
 
-Needs Digimon World 2003 (Europe) and Digimon World 2 (USA) imported in the
-launcher for every Digimon below; without one of them the Digimon from that
-game are left out of the tree.
+Needs a Digimon World 2003 / Digimon World 3 disc (Europe, USA or Japan)
+and a Digimon World 2 disc (USA or Japan) imported in the launcher for
+every Digimon below; without one of them the Digimon from that game are
+left out of the tree.
 
 
 FRESH

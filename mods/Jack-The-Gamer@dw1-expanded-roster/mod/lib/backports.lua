@@ -6,24 +6,34 @@
 -- DW1 Digimon whose skeleton and animations it uses (the donor), how the
 -- bones map (see lib/convert.lua), and its height.
 --
--- Only the European DW2003 (SLES-03936) is known so far: the model's file
--- number and its bone/motion entries differ on the American and Japanese
--- discs (find them through the fighter table, SMDLDATA.PRO). Likewise only
--- the American DW2 (SLUS-01193): its Digimon records (data files 0xCB9..
--- 0xCBB, research/tools/dw2disc.py) give the model and animation files.
+-- DW2003 Europe (SLES-03936), Digimon World 3 USA (SLUS-01436) and Japan
+-- (SLPS-03446): the models have other file numbers on the American and
+-- Japanese discs, the same on both (matched by content: on the Japanese
+-- disc all byte for byte; on the American 40, or but for a last archive
+-- entry nothing reads, while Growlmon, Kyubimon and Renamon have a few
+-- polygons fewer there and Chrysalimon other keyframes), and the same
+-- bone/motion entries; American Renamon lists its tail and body bones in
+-- another order (`order`). Digimon World 2 USA (SLUS-01193) and Japan
+-- (SLPS-02844): the same file numbers and files on both; its Digimon
+-- records (data files 0xCB9..0xCBB, research/tools/dw2disc.py) give the
+-- model and animation files.
 
 local M = {}
 
--- Digimon World 2003 (Europe): the executable's file table (first sector,
--- sector count of each file by number).
+-- Digimon World 2003 (Europe) and Digimon World 3 (USA): the executable's
+-- file table (first sector, sector count of each file by number).
 M.DW3 = {
   ["SLES-03936"] = { exe = "SLES_039.36", load = 0x80010000, sectors = 0x80044F6C, counts = 0x800474A4, files = 2382 },
+  ["SLUS-01436"] = { exe = "SLUS_014.36", load = 0x80010000, sectors = 0x80044B78, counts = 0x80046DD4, files = 2199 },
+  ["SLPS-03446"] = { exe = "SLPS_034.46", load = 0x80010000, sectors = 0x80044D98, counts = 0x80047284, files = 2363 },
 }
 
--- Digimon World 2 (USA): the executable's file table, by offset in the file
--- (Cd_FileLba s32 first sector, Cd_FileSectors u16 count; 0xE5B files).
+-- Digimon World 2 (USA, Japan): the executable's file table, by offset in
+-- the file (Cd_FileLba s32 first sector, Cd_FileSectors u16 count; 0xE5B
+-- files on the American disc, 0xE47 on the Japanese).
 M.DW2 = {
   ["SLUS-01193"] = { exe = "SLUS_011.93", lba = 0x33F94, sectors = 0x37900 },
+  ["SLPS-02844"] = { exe = "SLPS_028.44", lba = 0x316A8, sectors = 0x34FC4 },
 }
 
 M.list = {
@@ -59,7 +69,7 @@ M.list = {
     -- Agumon's 550, 230, -1870 frames it whole; a more negative z comes
     -- closer and moves it left, a larger y moves it down). `view = {x, y, z}`
     -- sets another.
-    source = { ["SLES-03936"] = { file = 356, bones = 24, motions = 50 } }, -- M366GIRU
+    source = { ["SLES-03936"] = { file = 356, bones = 24, motions = 50 }, ["SLUS-01436"] = { file = 342, bones = 24, motions = 50 }, ["SLPS-03446"] = { file = 342, bones = 24, motions = 50 } }, -- M366GIRU
     donor = 3, donor_file = "AGUM.MMD", -- Agumon
     -- DW3 bone (1-based) -> { DW1 bone, kind [, DW3 child, DW1 child] }
     mapping = {
@@ -96,7 +106,7 @@ M.list = {
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = -1,
       care = 3, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
     icon_head = { 4, 5 }, -- Greymon's head and jaw
-    source = { ["SLES-03936"] = { file = 625, bones = 50, motions = 0 } }, -- M367GRAW
+    source = { ["SLES-03936"] = { file = 625, bones = 50, motions = 0 }, ["SLUS-01436"] = { file = 610, bones = 50, motions = 0 }, ["SLPS-03446"] = { file = 610, bones = 50, motions = 0 } }, -- M367GRAW
     donor = 5, donor_file = "GREY.MMD", -- Greymon
     -- Its model is bigger than Greymon's: lib/convert.lua slims it to fit
     -- the partner buffer (shortest edges first).
@@ -136,7 +146,7 @@ M.list = {
     -- 2), in its own space 95 forward of the pivot.
     finisher = { name = "Atomic Blaster", from = 79, effect = 0x43, origin = { 2, 95, -15, 0 } },
     icon_head = { 4, 5 }, -- MetalGreymon's head and jaw
-    source = { ["SLES-03936"] = { file = 1103, bones = 54, motions = 0 } }, -- M368MGRW
+    source = { ["SLES-03936"] = { file = 1103, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 1087, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 1087, bones = 54, motions = 0 } }, -- M368MGRW
     donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (its small parts 15 and 17 stay empty)
     -- 980 polygons: slimmed to fit next to MetalGreymon's animations
     mapping = {
@@ -188,7 +198,7 @@ M.list = {
     -- or Speed at weight 15).
     requirements = { digimon = 16, hp = -1, mp = -1, offense = 1, defense = -1, speed = -1, brain = 1,
       care = 0, weight = 20, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
-    source = { ["SLES-03936"] = { file = 526, bones = 44, motions = 0 } }, -- M145VMON (fighter 0x91)
+    source = { ["SLES-03936"] = { file = 526, bones = 44, motions = 0 }, ["SLUS-01436"] = { file = 511, bones = 44, motions = 0 }, ["SLPS-03446"] = { file = 511, bones = 44, motions = 0 } }, -- M145VMON (fighter 0x91)
     donor = 17, donor_file = "GABU.MMD", -- Gabumon (Agumon's skeleton)
     mapping = {
       -- hybrid (as WarGrowlmon): arms keep their own stance; thighs turned to the
@@ -219,7 +229,7 @@ M.list = {
     -- 10 battles, 30 techniques
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = -1, speed = 100, brain = -1,
       care = 3, weight = 25, discipline = -1, happiness = -1, battles = 10, techs = 30, flags = 0x10 },
-    source = { ["SLES-03936"] = { file = 575, bones = 54, motions = 0 } }, -- M259EXVM (fighter 0x103)
+    source = { ["SLES-03936"] = { file = 575, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 560, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 560, bones = 54, motions = 0 } }, -- M259EXVM (fighter 0x103)
     donor = 48, donor_file = "LEOM.MMD", -- Leomon (a tail, 4-bone legs)
     mapping = {
       [13] = { 2, "core" }, [20] = { 2, "follow" }, [21] = { 2, "follow" }, [25] = { 2, "follow" }, [26] = { 2, "follow" }, -- chest, wings
@@ -252,7 +262,7 @@ M.list = {
     requirements = { digimon = -1, hp = -1, mp = -1, offense = 100, defense = 100, speed = -1, brain = 80,
       care = 3, weight = 30, discipline = 70, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
     icon_head = { 4, 5 },     -- Greymon's head and jaw
-    source = { ["SLUS-01193"] = { model = 135, anim = 26 } }, -- DW2 Digimon 128 (its first animation file)
+    source = { ["SLUS-01193"] = { model = 135, anim = 26 }, ["SLPS-02844"] = { model = 135, anim = 26 } }, -- DW2 Digimon 128 (its first animation file)
     donor = 5, donor_file = "GREY.MMD", -- Greymon
     mapping = {
       -- hybrid (as WarGrowlmon): arms keep their own stance; thighs turned to the
@@ -285,7 +295,7 @@ M.list = {
     requirements = { digimon = -1, hp = 300, mp = 200, offense = 400, defense = 300, speed = 400, brain = 300,
       care = 8, weight = 50, discipline = 90, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
     icon_head = { 3 },      -- Andromon has no jaw
-    source = { ["SLES-03936"] = { file = 601, bones = 54, motions = 0 } }, -- M254PLDR (fighter 0xFE)
+    source = { ["SLES-03936"] = { file = 601, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 586, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 586, bones = 54, motions = 0 } }, -- M254PLDR (fighter 0xFE)
     donor = 40, donor_file = "ANDR.MMD", -- Andromon (no tail or jaw)
     -- 948 polygons: slimmed to fit next to Andromon's animations. Its hip
     -- cannons (13, 15) ride the hips; 14 and 16 are folded to a point at rest
@@ -323,7 +333,7 @@ M.list = {
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 500, defense = 400, speed = 400, brain = 300,
       care = 10, weight = 60, discipline = 90, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
     icon_head = { 4, 5 },   -- MetalGreymon's head and jaw
-    source = { ["SLUS-01193"] = { model = 114, anim = 27 } }, -- DW2 Digimon 180
+    source = { ["SLUS-01193"] = { model = 114, anim = 27 }, ["SLPS-02844"] = { model = 114, anim = 27 } }, -- DW2 Digimon 180
     donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon (as WarGrowlmon: arms keep their own stance, feet flat)
     mapping = {
       [1] = { 2, "core" }, [8] = { 2, "follow" }, [9] = { 2, "follow" },                         -- chest, wings
@@ -400,7 +410,7 @@ M.list = {
     requirements = { digimon = -1, hp = 500, mp = -1, offense = 400, defense = 500, speed = 300, brain = -1,
       care = 5, weight = 55, discipline = -1, happiness = -1, battles = 30, techs = 35, flags = 0x10 },
     icon_head = { 3, 4 },
-    source = { ["SLUS-01193"] = { model = 115, anim = 28 } }, -- DW2 Digimon 181
+    source = { ["SLUS-01193"] = { model = 115, anim = 28 }, ["SLPS-02844"] = { model = 115, anim = 28 } }, -- DW2 Digimon 181
     donor = 60, donor_file = "HKAB.MMD", -- HerculesKabuterimon (its wing bones stay empty)
     mapping = {
       [8] = { 2, "core" },                                                                       -- body
@@ -450,7 +460,7 @@ M.list = {
       care = 10, weight = 45, discipline = -1, happiness = -1, battles = 30, techs = 30, flags = 0x10 },
     raise_from = 60,            -- an Ultimate's care (Centarumon is a Champion)
     icon_head = { 4 },
-    source = { ["SLES-03936"] = { file = 832, bones = 58, motions = 0 } }, -- M226OKWA (enemy fighter 0xE2)
+    source = { ["SLES-03936"] = { file = 832, bones = 58, motions = 0 }, ["SLUS-01436"] = { file = 817, bones = 58, motions = 0 }, ["SLPS-03446"] = { file = 817, bones = 58, motions = 0 } }, -- M226OKWA (enemy fighter 0xE2)
     donor = 36, donor_file = "CENT.MMD", -- Centarumon
     -- abdomen on the horse body (the front legs' parent), chest on the human
     -- torso; legs and arms keep Okuwamon's own stance (turned to Centarumon's
@@ -482,7 +492,7 @@ M.list = {
     requirements = { digimon = -1, hp = 400, mp = 300, offense = 400, defense = 300, speed = 400, brain = 300,
       care = 5, weight = 40, discipline = 90, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
     icon_head = { 3 },             -- Andromon has no jaw
-    source = { ["SLUS-01193"] = { model = 226, anim = 225 } }, -- DW2 Digimon 187
+    source = { ["SLUS-01193"] = { model = 226, anim = 225 }, ["SLPS-02844"] = { model = 226, anim = 225 } }, -- DW2 Digimon 187
     donor = 40, donor_file = "ANDR.MMD", -- Andromon (as Paildramon)
     mapping = {
       [1] = { 2, "core" }, [2] = { 2, "follow" }, [3] = { 2, "follow" }, [13] = { 2, "follow" }, [14] = { 2, "follow" }, -- chest, wings
@@ -516,7 +526,7 @@ M.list = {
     requirements = { digimon = -1, hp = 100, mp = -1, offense = 100, defense = 100, speed = -1, brain = -1,
       care = 10, weight = 35, discipline = -1, happiness = -1, battles = 15, techs = 28, flags = 0x10 },
     icon_head = { 3, 4 },      -- Tyrannomon's head and jaw
-    source = { ["SLES-03936"] = { file = 662, bones = 54, motions = 0 } }, -- M138DELT (enemy fighter 0x8A)
+    source = { ["SLES-03936"] = { file = 662, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 647, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 647, bones = 54, motions = 0 } }, -- M138DELT (enemy fighter 0x8A)
     donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon (its fingers and left hand stay empty)
     -- hybrid: arms keep their own stance (each ends in a head: on a finger,
     -- the hand heads' jaws gaped as Tyrannomon's fingers curl, so they ride
@@ -559,7 +569,7 @@ M.list = {
     -- distance, ~9 px lower and ~6 px left on screen so its horn clears the
     -- panel's title
     view = { -63, 440, -793 },
-    source = { ["SLES-03936"] = { file = 1055, bones = 66, motions = 0 } }, -- M237CHMR (enemy fighter 0xED)
+    source = { ["SLES-03936"] = { file = 1055, bones = 66, motions = 0 }, ["SLUS-01436"] = { file = 1039, bones = 66, motions = 0 }, ["SLPS-03446"] = { file = 1039, bones = 66, motions = 0 } }, -- M237CHMR (enemy fighter 0xED)
     donor = 12, donor_file = "MTGR.MMD", -- MetalGreymon
     -- 18 palettes, merged to 16 (lib/convert.lua). Its forward (Kabuterimon)
     -- claws ride MetalGreymon's arms, the raised (Devimon) arms the chest (on
@@ -725,7 +735,7 @@ M.list = {
     requirements = { digimon = -1, hp = 100, mp = -1, offense = -1, defense = 100, speed = -1, brain = -1,
       care = 15, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
     icon_head = { 4, 5 },      -- Shellmon's head and jaw
-    source = { ["SLES-03936"] = { file = 666, bones = 30, motions = 0 } }, -- M139RARE (enemy fighter 0x8B)
+    source = { ["SLES-03936"] = { file = 666, bones = 30, motions = 0 }, ["SLUS-01436"] = { file = 651, bones = 30, motions = 0 }, ["SLPS-03446"] = { file = 651, bones = 30, motions = 0 } }, -- M139RARE (enemy fighter 0x8B)
     donor = 35, donor_file = "SHEL.MMD", -- Shellmon: both sit on the ground propped on two clawed arms
     -- its slime base and front lip on the shell, its upper body on Shellmon's
     -- body, head and jaw on head and jaw, its arms on Shellmon's arms in
@@ -757,7 +767,7 @@ M.list = {
     raise_from = 17,             -- a Rookie's care (Gabumon, also from Tsunomon)
     view = { 200, 330, -1320 },  -- the donor's camera (Leomon's; Gabumon's came with raise_from)
     icon_head = { 3 },           -- Leomon's head (its jaw stays empty)
-    source = { ["SLES-03936"] = { file = 511, bones = 45, motions = 0 } }, -- M373RENA (partner)
+    source = { ["SLES-03936"] = { file = 511, bones = 45, motions = 0 }, ["SLUS-01436"] = { file = 496, bones = 45, motions = 0, order = { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 21, 18, 19, 20, 15, 16, 17 } }, ["SLPS-03446"] = { file = 496, bones = 45, motions = 0 } }, -- M373RENA (partner)
     donor = 48, donor_file = "LEOM.MMD", -- Leomon: a tail, four-bone legs
     -- hybrid; its tail keeps its own sideways sweep on Leomon's three tail
     -- bones (the last two segments on the last); Leomon's jaw (4) stays empty
@@ -790,7 +800,7 @@ M.list = {
     -- distance (its tails spilled out), so it stands back by its height over
     -- Garurumon's (290) at the same place on screen
     view = { -231, 400, -411 },
-    source = { ["SLES-03936"] = { file = 927, bones = 90, motions = 0 } }, -- M374KYBI (partner)
+    source = { ["SLES-03936"] = { file = 927, bones = 90, motions = 0 }, ["SLUS-01436"] = { file = 911, bones = 90, motions = 0 }, ["SLPS-03446"] = { file = 911, bones = 90, motions = 0 } }, -- M374KYBI (partner)
     donor = 22, donor_file = "GARU.MMD", -- Garurumon: four legs
     -- Garurumon's technique motions its list doesn't use go, for room: with
     -- them it only fit slimmed, and lost its ears, its neck rope, then its tails
@@ -828,7 +838,7 @@ M.list = {
     -- The Digimon page: 480 tall, its hat and feet were cut off at Andromon's
     -- distance; it stands back by its height over Andromon's (400)
     view = { 52, 432, -1024 },
-    source = { ["SLES-03936"] = { file = 1112, bones = 1, motions = 0 } }, -- M375TAOM (partner)
+    source = { ["SLES-03936"] = { file = 1112, bones = 1, motions = 0 }, ["SLUS-01436"] = { file = 1096, bones = 1, motions = 0 }, ["SLPS-03446"] = { file = 1096, bones = 1, motions = 0 } }, -- M375TAOM (partner)
     donor = 40, donor_file = "ANDR.MMD", -- Andromon: upright, arms hanging at its sides
     -- shoulder pads and upper sleeves on the upper arms; its brush tail and
     -- robe flaps on the hips; its brush (28, hidden at rest) left out
@@ -861,7 +871,7 @@ M.list = {
     -- Angemon's distance; it stands back by its height over Angemon's (400)
     view = { -638, 542, 208 },
     icon_head = { 3 },           -- Angemon's head
-    source = { ["SLES-03936"] = { file = 1091, bones = 54, motions = 0 } }, -- M376SKYA (partner)
+    source = { ["SLES-03936"] = { file = 1091, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 1075, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 1075, bones = 54, motions = 0 } }, -- M376SKYA (partner)
     donor = 20, donor_file = "ANGE.MMD", -- Angemon: a staff in the left hand
     -- the slimming leaves its staff alone (its thin shaft collapsed to a line)
     keep = { 22, 23, 24, 25, 26 },
@@ -895,7 +905,7 @@ M.list = {
     raise_from = 12,             -- an Ultimate's care (MetalGreymon; Leomon is a Champion)
     view = { 200, 330, -1320 },  -- the donor's camera (Leomon's)
     icon_head = { 3, 4 },        -- Leomon's head and jaw
-    source = { ["SLUS-01193"] = { model = 183, anim = 181 } }, -- DW2 Digimon 183
+    source = { ["SLUS-01193"] = { model = 183, anim = 181 }, ["SLPS-02844"] = { model = 183, anim = 181 } }, -- DW2 Digimon 183
     donor = 48, donor_file = "LEOM.MMD", -- Leomon: a boxing crouch on four-bone legs
     -- hybrid legs; its arms turned to Leomon's (upper arm and forearm keeping
     -- their roll, hands their own): in its own guard stance the raised right
@@ -929,7 +939,7 @@ M.list = {
     -- distance; it stands back by its height over Garurumon's (290)
     view = { -690, 520, 450 },
     icon_head = { 4, 5 },        -- Garurumon's head and jaw
-    source = { ["SLES-03936"] = { file = 550, bones = 51, motions = 0 } }, -- M196MGAR (partner)
+    source = { ["SLES-03936"] = { file = 550, bones = 51, motions = 0 }, ["SLUS-01436"] = { file = 535, bones = 51, motions = 0 }, ["SLPS-03446"] = { file = 535, bones = 51, motions = 0 } }, -- M196MGAR (partner)
     donor = 22, donor_file = "GARU.MMD", -- Garurumon
     -- its blades on the body; 19-24 (missiles, hidden at rest) left out
     mapping = {
@@ -961,7 +971,7 @@ M.list = {
     -- at Garurumon's distance; it stands back by its height over Garurumon's
     view = { -537, 480, 163 },
     icon_head = { 4, 5 },        -- Garurumon's head and jaw
-    source = { ["SLUS-01193"] = { model = 3103, anim = 3099 } }, -- DW2 Digimon 205
+    source = { ["SLUS-01193"] = { model = 3103, anim = 3099 }, ["SLPS-02844"] = { model = 3103, anim = 3099 } }, -- DW2 Digimon 205
     -- Garurumon. Unimon's gallop looked good too, but its finisher slot (0x54
     -- Aerial Attack) dealt no damage on SaberLeomon (not understood yet)
     donor = 22, donor_file = "GARU.MMD",
@@ -1154,7 +1164,7 @@ M.list = {
     requirements = { digimon = -1, hp = 100, mp = -1, offense = 100, defense = 100, speed = 100, brain = -1,
       care = 15, weight = 35, discipline = -1, happiness = -1, battles = 30, techs = -1, flags = 0 },
     icon_head = { 3, 4 },        -- Tyrannomon's head and jaw
-    source = { ["SLUS-01193"] = { model = 1829, anim = 1832 } }, -- DW2 Digimon 133
+    source = { ["SLUS-01193"] = { model = 1829, anim = 1832 }, ["SLPS-02844"] = { model = 1829, anim = 1832 } }, -- DW2 Digimon 133
     donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
     mapping = {
       [1] = { 2, "core" }, [20] = { 3, "core" }, [21] = { 4, "core" },                          -- chest, head, jaw
@@ -1183,7 +1193,7 @@ M.list = {
     -- Tyrannomon's (400) at the same place on screen
     view = { -200, 408, -472 },
     icon_head = { 3, 4 },
-    source = { ["SLES-03936"] = { file = 768, bones = 56, motions = 0 } }, -- M124TIRS (enemy fighter 0x7C)
+    source = { ["SLES-03936"] = { file = 768, bones = 56, motions = 0 }, ["SLUS-01436"] = { file = 753, bones = 56, motions = 0 }, ["SLPS-03446"] = { file = 753, bones = 56, motions = 0 } }, -- M124TIRS (enemy fighter 0x7C)
     donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
     -- its three claws on Tyrannomon's three fingers, its toes with the feet
     mapping = {
@@ -1214,7 +1224,7 @@ M.list = {
     raise_from = 12,             -- an Ultimate's care (MetalGreymon)
     view = { -200, 408, -472 },  -- 480 tall: back by its height over Tyrannomon's
     icon_head = { 3, 4 },
-    source = { ["SLES-03936"] = { file = 917, bones = 50, motions = 0 } }, -- M140MTRN (enemy fighter 0x8C)
+    source = { ["SLES-03936"] = { file = 917, bones = 50, motions = 0 }, ["SLUS-01436"] = { file = 901, bones = 50, motions = 0 }, ["SLPS-03446"] = { file = 901, bones = 50, motions = 0 } }, -- M140MTRN (enemy fighter 0x8C)
     donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
     -- two-bone arms (shoulder, forearm), their three claws on Tyrannomon's
     -- fingers; the cable on its chest
@@ -1244,7 +1254,7 @@ M.list = {
     raise_from = 12,             -- an Ultimate's care (MetalGreymon)
     view = { -44, 366, -764 },   -- 430 tall: back by its height over Tyrannomon's
     icon_head = { 3 },           -- its great head (Tyrannomon's jaw stays empty)
-    source = { ["SLUS-01193"] = { model = 1807, anim = 1806 } }, -- DW2 Digimon 142
+    source = { ["SLUS-01193"] = { model = 1807, anim = 1806 }, ["SLPS-02844"] = { model = 1807, anim = 1806 } }, -- DW2 Digimon 142
     donor = 8, donor_file = "TYRA.MMD", -- Tyrannomon
     -- every part hangs off its root: body (and the small piece in front of
     -- it) on the chest, its great head (jaw and all) on the head, one-piece
@@ -1279,7 +1289,7 @@ M.list = {
     raise_from = 59,             -- a Mega's care (Phoenixmon; Ogremon is a Champion)
     view = { 280, 340, -1390 },  -- the donor's camera (Ogremon's: 390 tall)
     icon_head = { 3, 4 },        -- Ogremon's head and jaw
-    source = { ["SLES-03936"] = { file = 1819, bones = 46, motions = 0 } }, -- M250KGET (enemy fighter 0xFA)
+    source = { ["SLES-03936"] = { file = 1819, bones = 46, motions = 0 }, ["SLUS-01436"] = { file = 1803, bones = 46, motions = 0 }, ["SLPS-03446"] = { file = 1803, bones = 46, motions = 0 } }, -- M250KGET (enemy fighter 0xFA)
     -- Ogremon: upright as it stands (on Etemon's crouch its long legs bent
     -- double and a foot left the ground)
     donor = 34, donor_file = "OGRE.MMD",
@@ -1319,7 +1329,7 @@ M.list = {
     -- past the window; moved up a little, at about the same distance
     view = { 200, 330, -1300 },
     icon_head = { 4, 5 },        -- Etemon's head and jaw
-    source = { ["SLES-03936"] = { file = 727, bones = 44, motions = 0 } }, -- M065MTET (enemy fighter 0x41)
+    source = { ["SLES-03936"] = { file = 727, bones = 44, motions = 0 }, ["SLUS-01436"] = { file = 712, bones = 44, motions = 0 }, ["SLPS-03446"] = { file = 712, bones = 44, motions = 0 } }, -- M065MTET (enemy fighter 0x41)
     donor = 42, donor_file = "ETEM.MMD", -- Etemon
     -- hybrid; its tail on Etemon's, toes with the feet; arms turned to
     -- Etemon's (in its own raised guard a fist rose over its head through
@@ -1351,7 +1361,7 @@ M.list = {
     -- 360, -1290; it hovered low and half under the panel) and a little closer
     view = { 60, 250, -1400 },
     icon_head = { 2 }, icon_head_scale = 1.0, -- its face is on the pod
-    source = { ["SLES-03936"] = { file = 504, bones = 74, motions = 0 } }, -- M175KRSR (enemy fighter 0xAF)
+    source = { ["SLES-03936"] = { file = 504, bones = 74, motions = 0 }, ["SLUS-01436"] = { file = 489, bones = 74, motions = 0 }, ["SLPS-03446"] = { file = 489, bones = 74, motions = 0 } }, -- M175KRSR (enemy fighter 0xAF)
     -- Kabuterimon: it hovers as Chrysalimon does, and its four arms and two
     -- legs carry the six tentacles
     donor = 19, donor_file = "KABU.MMD",
@@ -1387,7 +1397,7 @@ M.list = {
     -- (0, 350, -870): it stands back a little (farther also moves it right)
     view = { -350, 420, -550 },
     icon_head = { 4, 5 },        -- head and jaw
-    source = { ["SLES-03936"] = { file = 1809, bones = 52, motions = 0 } }, -- M245INFR (enemy fighter 0xF5)
+    source = { ["SLES-03936"] = { file = 1809, bones = 52, motions = 0 }, ["SLUS-01436"] = { file = 1793, bones = 52, motions = 0 }, ["SLPS-03446"] = { file = 1793, bones = 52, motions = 0 } }, -- M245INFR (enemy fighter 0xF5)
     -- Monochromon: four legs and a level body. Each spider leg is rigid from
     -- the hip on a thigh (front and middle legs on the front thighs, rear
     -- legs on the rear ones), those thighs' motions damped to 0.3 (`damp`:
@@ -1426,7 +1436,7 @@ M.list = {
     -- camera; stands back (as Machinedramon) and to the left
     view = { -850, 660, 250 },
     icon_head = { 4, 5 },        -- head and jaw
-    source = { ["SLES-03936"] = { file = 1606, bones = 54, motions = 0 } }, -- M382ARMG (enemy fighter 0x17E)
+    source = { ["SLES-03936"] = { file = 1606, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 1590, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 1590, bones = 54, motions = 0 } }, -- M382ARMG (enemy fighter 0x17E)
     -- Monochromon as Infermon (rigid legs, thighs damped), the tail on its
     -- tail (damped to 0.5: it is twice as long). 1004 polygons fit only
     -- slimmed: the thin shins and the tail kept whole (`keep`; slimmed, the
@@ -1477,7 +1487,7 @@ M.list = {
     -- camera (310, 370, -1370); stands back and to the left
     view = { -500, 550, -100 },
     icon_head = { 4 },           -- head and pincers
-    source = { ["SLES-03936"] = { file = 508, bones = 1, motions = 0 } }, -- M230GKWA (partner fighter 0xE6)
+    source = { ["SLES-03936"] = { file = 508, bones = 1, motions = 0 }, ["SLUS-01436"] = { file = 493, bones = 1, motions = 0 }, ["SLPS-03446"] = { file = 493, bones = 1, motions = 0 } }, -- M230GKWA (partner fighter 0xE6)
     -- Centarumon, as Okuwamon: four legs and two arms. Legs in their own
     -- stance, their motions damped to 0.35 and the bodies' (root, horse
     -- body, hind body) to 0.3: in full, Centarumon's gallop pitched its long
@@ -1513,7 +1523,7 @@ M.list = {
       care = 5, weight = 25, discipline = -1, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
     raise_from = 23,             -- a Champion's care (Frigimon; Mamemon is an Ultimate)
     icon_head = { 10 }, icon_head_scale = 1.0, -- its head sits on the clock
-    source = { ["SLES-03936"] = { file = 1335, bones = 42, motions = 0 } }, -- M143CLOK (enemy fighter 0x8F)
+    source = { ["SLES-03936"] = { file = 1335, bones = 42, motions = 0 }, ["SLUS-01436"] = { file = 1319, bones = 42, motions = 0 }, ["SLPS-03446"] = { file = 1319, bones = 42, motions = 0 } }, -- M143CLOK (enemy fighter 0x8F)
     -- Mamemon: a round body on short legs, big fists. Head, hat, the small
     -- arms holding its key and the wind-up key on its back go with the body
     donor = 13, donor_file = "MAME.MMD",
@@ -1541,7 +1551,7 @@ M.list = {
     -- over a fifth of all Gotsumon and ToyAgumon)
     requirements = { digimon = -1, hp = 100, mp = -1, offense = 100, defense = 150, speed = -1, brain = -1,
       care = 15, weight = 45, discipline = -1, happiness = -1, battles = 30, techs = -1, flags = 0 },
-    source = { ["SLES-03936"] = { file = 737, bones = 38, motions = 0 } }, -- M108GOLE (enemy fighter 0x6C, "Rockmon")
+    source = { ["SLES-03936"] = { file = 737, bones = 38, motions = 0 }, ["SLUS-01436"] = { file = 722, bones = 38, motions = 0 }, ["SLPS-03446"] = { file = 722, bones = 38, motions = 0 } }, -- M108GOLE (enemy fighter 0x6C, "Rockmon")
     -- Ogremon: hunched, its long arms swinging low. Legs in their own stance
     -- (turned to Ogremon's they never planted a foot through the walk); its
     -- fists hang below its soles, so it stands on its feet (`float`) with
@@ -1573,7 +1583,7 @@ M.list = {
     -- ran off the right edge; moved left and a little down
     view = { -250, 410, -870 },
     icon_head = { 4 },           -- Monochromon's head
-    source = { ["SLES-03936"] = { file = 811, bones = 42, motions = 0 } }, -- M208TOTA (enemy fighter 0xD0)
+    source = { ["SLES-03936"] = { file = 811, bones = 42, motions = 0 }, ["SLUS-01436"] = { file = 796, bones = 42, motions = 0 }, ["SLPS-03446"] = { file = 796, bones = 42, motions = 0 } }, -- M208TOTA (enemy fighter 0xD0)
     -- Monochromon: four short legs, hybrid; neck and head on its neck and
     -- head. The stub tail is fixed to the shell: on Monochromon's tail (off
     -- its hips, which tilt apart from its body) it stood off the shell and
@@ -1608,7 +1618,7 @@ M.list = {
     -- higher (its feet were on the panel's edge)
     view = { 120, 410, -1230 },
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 1826, bones = 52, motions = 0 } }, -- M356HAND (enemy fighter 0x164)
+    source = { ["SLES-03936"] = { file = 1826, bones = 52, motions = 0 }, ["SLUS-01436"] = { file = 1810, bones = 52, motions = 0 }, ["SLPS-03446"] = { file = 1810, bones = 52, motions = 0 } }, -- M356HAND (enemy fighter 0x164)
     -- Andromon. Shoulder joints and plates with the chest; legs hybrid,
     -- their motions damped to 0.4 (in full Andromon's march kicked the long
     -- legs' feet up to 220 high; damped about 50, as Andromon's own)
@@ -1643,7 +1653,7 @@ M.list = {
     -- back (as tall a Champion as Clockmon), left and a little up
     view = { -150, 290, -700 },
     icon_head = { 10 }, icon_head_scale = 1.0, -- the star is its head
-    source = { ["SLUS-01193"] = { model = 442, anim = 439 } }, -- DW2 Digimon 199
+    source = { ["SLUS-01193"] = { model = 442, anim = 439 }, ["SLPS-02844"] = { model = 442, anim = 439 } }, -- DW2 Digimon 199
     -- Ninjamon (Mamemon's rig): a body with arms and legs and no head, a
     -- brisk upright walk; the scarf with the star
     donor = 58, donor_file = "IGAM.MMD",
@@ -1671,7 +1681,7 @@ M.list = {
       care = 10, weight = 15, discipline = -1, happiness = -1, battles = -1, techs = 30, flags = 0x10 },
     view = { 50, 310, -1030 },   -- Angemon's camera, a little higher (it is shorter)
     icon_head = { 3 },           -- head and hat (on Angemon's head)
-    source = { ["SLUS-01193"] = { model = 2903, anim = 2908 } }, -- DW2 Digimon 194
+    source = { ["SLUS-01193"] = { model = 2903, anim = 2908 }, ["SLPS-02844"] = { model = 2903, anim = 2908 } }, -- DW2 Digimon 194
     -- Angemon: it carries a staff in the same hand. Chest, head and hat on
     -- Angemon's head (they stay upright through the walk; on the chest the
     -- hat tipped forward), collar and cape with the chest, legs hybrid
@@ -1702,7 +1712,7 @@ M.list = {
     requirements = { digimon = 30, hp = -1, mp = 1, offense = -1, defense = -1, speed = 1, brain = -1,
       care = 0, weight = 10, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
     icon_head = { 2 }, icon_head_scale = 1.0, -- the round body is its head
-    source = { ["SLES-03936"] = { file = 507, bones = 24, motions = 0 } }, -- M217PDEV (enemy fighter 0xD9)
+    source = { ["SLES-03936"] = { file = 507, bones = 24, motions = 0 }, ["SLUS-01436"] = { file = 492, bones = 24, motions = 0 }, ["SLPS-03446"] = { file = 492, bones = 24, motions = 0 } }, -- M217PDEV (enemy fighter 0xD9)
     -- Patamon: it flies on its ear-wings. The round body on Patamon's body
     -- (on its head it nodded with Patamon's bob), wings on the ears' middle
     -- bones, legs dangling on its hind legs
@@ -1758,7 +1768,7 @@ M.list = {
     raise_from = 20,             -- a Champion's care (Angemon; Gabumon is a Rookie)
     view = { 420, 230, -1610 },  -- Gabumon's camera (Angemon's, with its care, left it tiny)
     icon_head = { 3 },
-    source = { ["SLUS-01193"] = { model = 2677, anim = 2670 } }, -- DW2 Digimon 233
+    source = { ["SLUS-01193"] = { model = 2677, anim = 2670 }, ["SLPS-02844"] = { model = 2677, anim = 2670 } }, -- DW2 Digimon 233
     -- Gabumon: upright and small, a tail; the tail with the hips, hybrid legs
     donor = 17, donor_file = "GABU.MMD",
     mapping = {
@@ -1791,7 +1801,7 @@ M.list = {
       care = 5, weight = 40, discipline = 80, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
     raise_from = 12,             -- an Ultimate's care (MetalGreymon; Angemon is a Champion)
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 724, bones = 66, motions = 0 } }, -- M211HANG (partner fighter 0xD3)
+    source = { ["SLES-03936"] = { file = 724, bones = 66, motions = 0 }, ["SLUS-01436"] = { file = 709, bones = 66, motions = 0 }, ["SLPS-03446"] = { file = 709, bones = 66, motions = 0 } }, -- M211HANG (partner fighter 0xD3)
     -- Angemon: its eight wings on Angemon's wing bones (they flap), legs
     -- hybrid and damped to 0.6 (its longer legs lifted the feet ~100,
     -- Angemon's own ~40)
@@ -1822,7 +1832,7 @@ M.list = {
       care = 5, weight = 25, discipline = 70, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
     raise_from = 12,             -- an Ultimate's care (MetalGreymon)
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 691, bones = 68, motions = 0 } }, -- M234ANGW (partner fighter 0xEA)
+    source = { ["SLES-03936"] = { file = 691, bones = 68, motions = 0 }, ["SLUS-01436"] = { file = 676, bones = 68, motions = 0 }, ["SLPS-03446"] = { file = 676, bones = 68, motions = 0 } }, -- M234ANGW (partner fighter 0xEA)
     -- Angemon: its eight wings on Angemon's wing bones, its sash with the
     -- chest, legs hybrid and damped (as MagnaAngemon's)
     donor = 20, donor_file = "ANGE.MMD",
@@ -1862,7 +1872,7 @@ M.list = {
       care = 15, weight = 25, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
     raise_from = 12,             -- an Ultimate's care (MetalGreymon)
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 1129, bones = 44, motions = 0 } }, -- M177LDDV (enemy fighter 0xB1)
+    source = { ["SLES-03936"] = { file = 1129, bones = 44, motions = 0 }, ["SLUS-01436"] = { file = 1113, bones = 44, motions = 0 }, ["SLPS-03446"] = { file = 1113, bones = 44, motions = 0 } }, -- M177LDDV (enemy fighter 0xB1)
     -- Angemon (on Devimon one clawed hand stuck out at head height through
     -- the walk): its wing capes on Angemon's upper wings, legs hybrid and
     -- damped (as MagnaAngemon's)
@@ -1897,7 +1907,7 @@ M.list = {
     raise_from = 59,             -- a Mega's care (Phoenixmon)
     view = { 120, 400, -1230 },  -- Phoenixmon's camera, a little higher
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 1104, bones = 62, motions = 0 } }, -- M214SRPH (partner fighter 0xD6)
+    source = { ["SLES-03936"] = { file = 1104, bones = 62, motions = 0 }, ["SLUS-01436"] = { file = 1088, bones = 62, motions = 0 }, ["SLPS-03446"] = { file = 1088, bones = 62, motions = 0 } }, -- M214SRPH (partner fighter 0xD6)
     -- Angemon: five feathers a side on its four wing bones (they flap; on
     -- Andromon they stayed rigid and its legs pinched together), cloths with
     -- the chest, legs hybrid and damped (as MagnaAngemon's)
@@ -1933,7 +1943,7 @@ M.list = {
     view = { 120, 400, -1230 },  -- as Seraphimon
     icon_head = { 3 },
     -- Seraphimon's model with its own texture
-    source = { ["SLES-03936"] = { file = 1114, bones = 62, motions = 0 } }, -- M447SRP2 (enemy fighter 0x1BF)
+    source = { ["SLES-03936"] = { file = 1114, bones = 62, motions = 0 }, ["SLUS-01436"] = { file = 1098, bones = 62, motions = 0 }, ["SLPS-03446"] = { file = 1098, bones = 62, motions = 0 } }, -- M447SRP2 (enemy fighter 0x1BF)
     donor = 20, donor_file = "ANGE.MMD",
     damp = { [19] = 0.6, [20] = 0.6, [21] = 0.6, [22] = 0.6, [23] = 0.6, [24] = 0.6 },
     mapping = {
@@ -1966,7 +1976,7 @@ M.list = {
     -- camera (120, 430, -1230); stands back and to the left
     view = { -850, 660, 250 },
     icon_head = { 4, 5 },        -- Garurumon's head and jaw
-    source = { ["SLES-03936"] = { file = 1998, bones = 71, motions = 0 } }, -- M470AGRY (partner fighter 0x1D6)
+    source = { ["SLES-03936"] = { file = 1998, bones = 71, motions = 0 }, ["SLUS-01436"] = { file = 1983, bones = 71, motions = 0 }, ["SLPS-03446"] = { file = 1983, bones = 71, motions = 0 } }, -- M470AGRY (partner fighter 0x1D6)
     -- Garurumon: on all fours as on DW2003 (Unimon's gallop threw its legs
     -- about). Legs in their own stance, damped to 0.6: turned to Garurumon's
     -- narrow legs (hybrid) its feet pinched together, the rear ones touching.
@@ -2001,7 +2011,7 @@ M.list = {
       care = 15, weight = 50, discipline = -1, happiness = -1, battles = 80, techs = 45, flags = 0 },
     raise_from = 59,             -- a Mega's care (Phoenixmon)
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 729, bones = 49, motions = 0 } }, -- M267BKWG (partner fighter 0x10B)
+    source = { ["SLES-03936"] = { file = 729, bones = 49, motions = 0 }, ["SLUS-01436"] = { file = 714, bones = 49, motions = 0 }, ["SLPS-03446"] = { file = 714, bones = 49, motions = 0 } }, -- M267BKWG (partner fighter 0x10B)
     -- Andromon: upright (Leomon's run hunched it over). Legs in their own
     -- stance, their motions damped to 0.5 (turned, and in full, its feet
     -- floated at rest and kicked high); shield and flaps with chest and hips
@@ -2036,7 +2046,7 @@ M.list = {
     raise_from = 59,             -- a Mega's care (Phoenixmon)
     view = { -300, 500, -500 },  -- back a little from Phoenixmon's camera (lance and shield)
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 1063, bones = 56, motions = 0 } }, -- M369DUKE (partner fighter 0x171)
+    source = { ["SLES-03936"] = { file = 1063, bones = 56, motions = 0 }, ["SLUS-01436"] = { file = 1047, bones = 56, motions = 0 }, ["SLPS-03446"] = { file = 1047, bones = 56, motions = 0 } }, -- M369DUKE (partner fighter 0x171)
     -- Angemon: upright, its lance in the staff hand, shield on the other
     -- (Leomon's run hunched it over). Legs in their own stance, damped to
     -- 0.6 (turned, its feet floated 30-97 at rest); cape with the chest
@@ -2073,7 +2083,7 @@ M.list = {
     -- The Digimon page: long, it stands back and to the left
     view = { -850, 660, 250 },
     icon_head = { 4, 5 },        -- Unimon's head and jaw
-    source = { ["SLES-03936"] = { file = 503, bones = 27, motions = 0 } }, -- M148IPDR (partner fighter 0x94)
+    source = { ["SLES-03936"] = { file = 503, bones = 27, motions = 0 }, ["SLUS-01436"] = { file = 488, bones = 27, motions = 0 }, ["SLPS-03446"] = { file = 488, bones = 27, motions = 0 } }, -- M148IPDR (partner fighter 0x94)
     -- Unimon: four legs and wings. Each long leg rigid from its thigh, the
     -- thighs, bodies and wings damped (at full swing its front feet went
     -- 350 into the ground and 470 above it; damped within -41..75)
@@ -2106,7 +2116,7 @@ M.list = {
       care = 15, weight = 30, discipline = -1, happiness = -1, battles = 40, techs = 35, flags = 0 },
     raise_from = 12,             -- an Ultimate's care (MetalGreymon)
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 1820, bones = 44, motions = 0 } }, -- M364MUMY (enemy fighter 0x16C)
+    source = { ["SLES-03936"] = { file = 1820, bones = 44, motions = 0 }, ["SLUS-01436"] = { file = 1804, bones = 44, motions = 0 }, ["SLPS-03446"] = { file = 1804, bones = 44, motions = 0 } }, -- M364MUMY (enemy fighter 0x16C)
     -- Angemon: upright, its gun in the staff hand (Ogremon kicked its long
     -- legs high, Devimon flung its arms out); bandages with the head, legs
     -- hybrid and damped (as the angels')
@@ -2141,7 +2151,7 @@ M.list = {
     -- and to the left
     view = { -500, 520, -300 },
     icon_head = { 4 },           -- Monochromon's head
-    source = { ["SLES-03936"] = { file = 769, bones = 54, motions = 0 } }, -- M212MANM (enemy fighter 0xD4)
+    source = { ["SLES-03936"] = { file = 769, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 754, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 754, bones = 54, motions = 0 } }, -- M212MANM (enemy fighter 0xD4)
     -- Monochromon (Garurumon crouched it): trunk and ears with the head,
     -- mouth on the jaw. Legs in their own stance (hybrid set the feet in
     -- under the body), damped to 0.6 for a heavier tread
@@ -2182,7 +2192,7 @@ M.list = {
     -- 430, -1230); at MetalGreymon's distance, a little lower
     view = { -30, 430, -780 },
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 1828, bones = 44, motions = 0 } }, -- M358PHAR (enemy fighter 0x166)
+    source = { ["SLES-03936"] = { file = 1828, bones = 44, motions = 0 }, ["SLUS-01436"] = { file = 1812, bones = 44, motions = 0 }, ["SLPS-03446"] = { file = 1812, bones = 44, motions = 0 } }, -- M358PHAR (enemy fighter 0x166)
     -- Andromon: upright (Leomon hunched it, Angemon's stride was wild). Its
     -- splayed legs in their own stance, damped to 0.5; cape with the chest,
     -- loincloth with the hips. (Two flat-coloured slivers on its face are
@@ -2215,7 +2225,7 @@ M.list = {
     raise_from = 59,             -- a Mega's care (Phoenixmon)
     view = { -500, 520, -300 },  -- as Mammothmon
     icon_head = { 4 },           -- Monochromon's head
-    source = { ["SLES-03936"] = { file = 775, bones = 54, motions = 0 } }, -- M215SMAN (enemy fighter 0xD7)
+    source = { ["SLES-03936"] = { file = 775, bones = 54, motions = 0 }, ["SLUS-01436"] = { file = 760, bones = 54, motions = 0 }, ["SLPS-03446"] = { file = 760, bones = 54, motions = 0 } }, -- M215SMAN (enemy fighter 0xD7)
     -- Monochromon, as Mammothmon: legs in their own stance, damped to 0.6
     donor = 47, donor_file = "MONO.MMD",
     damp = { [7] = 0.6, [8] = 0.6, [9] = 0.6, [10] = 0.6, [11] = 0.6, [12] = 0.6,
@@ -2247,7 +2257,7 @@ M.list = {
     -- and to the left
     view = { 200, 420, -1300 },
     icon_head = { 2 }, icon_head_scale = 1.0, -- its face is on its trunk
-    source = { ["SLES-03936"] = { file = 686, bones = 48, motions = 0 } }, -- M222WOOD (enemy fighter 0xDE)
+    source = { ["SLES-03936"] = { file = 686, bones = 48, motions = 0 }, ["SLUS-01436"] = { file = 671, bones = 48, motions = 0 }, ["SLPS-03446"] = { file = 671, bones = 48, motions = 0 } }, -- M222WOOD (enemy fighter 0xDE)
     -- Ogremon: its long arms hang as Ogremon's do (Mojyamon and Frigimon
     -- flung them out, Monzaemon tipped it over). Its six roots are rigid,
     -- each side's three on that side's thigh
@@ -2278,7 +2288,7 @@ M.list = {
     requirements = { digimon = -1, hp = 100, mp = -1, offense = 120, defense = -1, speed = 80, brain = -1,
       care = 5, weight = 30, discipline = 50, happiness = -1, battles = -1, techs = 25, flags = 0x10 },
     icon_head = { 2 }, icon_head_scale = 1.0, -- its face is on its body
-    source = { ["SLUS-01193"] = { model = 621, anim = 618 } }, -- DW2 Digimon 184
+    source = { ["SLUS-01193"] = { model = 621, anim = 618 }, ["SLPS-02844"] = { model = 621, anim = 618 } }, -- DW2 Digimon 184
     -- Frigimon: round, a stomping walk and punches (Monzaemon tipped it,
     -- Mojyamon's walk was looser); eyes, spines and crown with the body,
     -- hybrid legs
@@ -2312,7 +2322,7 @@ M.list = {
     -- DW2's model (DW2003's M121JURE is the same one; the user's pick over
     -- Digimon World's own Misty Trees NPC, type 121, which it also replaces:
     -- `npc` below)
-    source = { ["SLUS-01193"] = { model = 2825, anim = 2824 } }, -- DW2 Digimon 121
+    source = { ["SLUS-01193"] = { model = 2825, anim = 2824 }, ["SLPS-02844"] = { model = 2825, anim = 2824 } }, -- DW2 Digimon 121
     -- Centarumon: four legs for its roots, and it stays upright (Mojyamon
     -- and Frigimon tipped the crown about, Vegiemon hops); the crown with the
     -- trunk, each side's three branch arms on that side's arm, the eight
@@ -2368,7 +2378,7 @@ M.list = {
       care = 10, weight = 20, discipline = 60, happiness = -1, battles = -1, techs = 35, flags = 0x10 },
     raise_from = 12,             -- an Ultimate's care (MetalGreymon)
     icon_head = { 3 },
-    source = { ["SLUS-01193"] = { model = 117, anim = 30 } }, -- DW2 Digimon 186
+    source = { ["SLUS-01193"] = { model = 117, anim = 30 }, ["SLPS-02844"] = { model = 117, anim = 30 } }, -- DW2 Digimon 186
     -- Angemon, as the angels: its four petal wings on Angemon's wings,
     -- legs hybrid and damped
     donor = 20, donor_file = "ANGE.MMD",
@@ -2400,7 +2410,7 @@ M.list = {
     raise_from = 59,             -- a Mega's care (Phoenixmon)
     view = { 120, 400, -1230 },  -- as Seraphimon
     icon_head = { 3 },
-    source = { ["SLES-03936"] = { file = 1739, bones = 66, motions = 0 } }, -- M144ROSE (partner fighter 0x2A)
+    source = { ["SLES-03936"] = { file = 1739, bones = 66, motions = 0 }, ["SLUS-01436"] = { file = 1724, bones = 66, motions = 0 }, ["SLPS-03446"] = { file = 1724, bones = 66, motions = 0 } }, -- M144ROSE (partner fighter 0x2A)
     -- Angemon, as the angels: cape and shoulders with the chest, hair and
     -- petals with the head, the whip in its right hand; legs hybrid and
     -- damped
@@ -2432,7 +2442,7 @@ M.list = {
     requirements = { digimon = 30, hp = 1, mp = -1, offense = -1, defense = -1, speed = -1, brain = -1,
       care = 0, weight = 30, discipline = -1, happiness = -1, battles = -1, techs = -1, flags = 0 },
     icon_head = { 3 },           -- Betamon's head
-    source = { ["SLUS-01193"] = { model = 210, anim = 207 } }, -- DW2 Digimon 182
+    source = { ["SLUS-01193"] = { model = 210, anim = 207 }, ["SLPS-02844"] = { model = 210, anim = 207 } }, -- DW2 Digimon 182
     -- Betamon: low on four limbs, the same crawl (Penguinmon flapped its
     -- flippers about); chest with the body, tufts with the head
     donor = 4, donor_file = "BETA.MMD",
@@ -2460,7 +2470,7 @@ M.list = {
     -- The Digimon page: Garurumon's camera cut its horn off; a little lower
     view = { 150, 360, -1100 },
     icon_head = { 2 }, icon_head_scale = 1.0, -- its head is one with its body
-    source = { ["SLUS-01193"] = { model = 1546, anim = 1547 } }, -- DW2 Digimon 209
+    source = { ["SLUS-01193"] = { model = 1546, anim = 1547 }, ["SLPS-02844"] = { model = 1546, anim = 1547 } }, -- DW2 Digimon 209
     -- Garurumon: on all fours, its feet stepping clearly (Monochromon tipped
     -- it forward); snout, jaw and whiskers with the body (its head is part of
     -- it), hybrid front legs, the rear flippers turned to the hind legs
@@ -2493,7 +2503,7 @@ M.list = {
     -- a little lower and to the left
     view = { -60, 440, -700 },
     icon_head = { 3 },
-    source = { ["SLUS-01193"] = { model = 116, anim = 29 } }, -- DW2 Digimon 185
+    source = { ["SLUS-01193"] = { model = 116, anim = 29 }, ["SLPS-02844"] = { model = 116, anim = 29 } }, -- DW2 Digimon 185
     -- Frigimon: upright and stocky, its hammer over its shoulder (Ogremon and
     -- Leomon pitched it forward, Andromon flung the hammer out); the hammer
     -- in its left hand, tail with the body, legs hybrid
@@ -2547,7 +2557,7 @@ M.list = {
     -- back, as Mammothmon
     view = { -300, 500, -500 },
     icon_head = { 3 },           -- its neck and head (rigid on Monochromon's neck)
-    source = { ["SLUS-01193"] = { model = 812, anim = 810 } }, -- DW2 Digimon 232 (Preciomon there)
+    source = { ["SLUS-01193"] = { model = 812, anim = 810 }, ["SLPS-02844"] = { model = 812, anim = 810 } }, -- DW2 Digimon 232 (Preciomon there)
     -- Monochromon: it walks on its flippers, its neck up (Seadramon bent the
     -- neck down, Whamon flicked its tail out); the long neck and head rigid on
     -- Monochromon's neck, the tail on its tail
@@ -2579,7 +2589,7 @@ M.list = {
     -- The Digimon page: farther back than Phoenixmon's camera, as Plesiomon
     view = { -300, 500, -500 },
     icon_head = { 3, 4 },        -- MegaSeadramon's head and jaw
-    source = { ["SLES-03936"] = { file = 1149, bones = 36, motions = 0 } }, -- M204MSDR (enemy fighter 0xCC)
+    source = { ["SLES-03936"] = { file = 1149, bones = 36, motions = 0 }, ["SLUS-01436"] = { file = 1133, bones = 36, motions = 0 }, ["SLPS-03446"] = { file = 1133, bones = 36, motions = 0 } }, -- M204MSDR (enemy fighter 0xCC)
     -- MegaSeadramon, its rearing stance kept (DW2003's): head, jaw and cannon
     -- on MegaSeadramon's head, the body's segments turned along its body
     -- (each toward the next, keeping its roll), fins on its fins

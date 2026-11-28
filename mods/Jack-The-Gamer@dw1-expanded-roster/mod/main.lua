@@ -160,7 +160,7 @@ do
   if not dw3 then
     dwrc.log("no Digimon World 2003 disc in the library: the Digimon from it are left out")
   elseif not t3 then
-    dwrc.log("Digimon World 2003 " .. dw3.serial .. " isn't supported yet (only the European disc, SLES-03936): the Digimon from it are left out")
+    dwrc.log("Digimon World 2003 " .. dw3.serial .. " isn't supported yet (the European SLES-03936, American SLUS-01436 and Japanese SLPS-03446 discs are): the Digimon from it are left out")
   else
     local exe3 = iso.disc(function(lba, count) return dwrc.discs.read("dw3", lba, count) end):read(t3.exe)
     sources.dw3 = { info = dw3, file = function(n)
@@ -174,7 +174,7 @@ do
   if not dw2 then
     dwrc.log("no Digimon World 2 disc in the library: the Digimon from it are left out")
   elseif not t2 then
-    dwrc.log("Digimon World 2 " .. dw2.serial .. " isn't supported yet (only the American disc, SLUS-01193): the Digimon from it are left out")
+    dwrc.log("Digimon World 2 " .. dw2.serial .. " isn't supported yet (the American SLUS-01193 and Japanese SLPS-02844 discs are): the Digimon from it are left out")
   else
     local exe2 = iso.disc(function(lba, count) return dwrc.discs.read("dw2", lba, count) end):read(t2.exe)
     sources.dw2 = { info = dw2, file = function(n)
@@ -224,7 +224,7 @@ do
           m3 = dw2model.read(src.file(spec.model))
           mats = dw2model.pose(m3, src.file(spec.anim), 0, 0)
         else
-          m3 = dw3model.read(src.file(spec.file), spec.bones, spec.motions)
+          m3 = dw3model.read(src.file(spec.file), spec.bones, spec.motions, spec.order)
           mats = dw3model.pose(m3, m3.idle_frame)
         end
         local entry = alltim:sub(b.donor * TEXTURE_SIZE + 1, (b.donor + 1) * TEXTURE_SIZE)
@@ -336,7 +336,7 @@ do
             n3 = dw2model.read(src.file(spec.model))
             nmats = dw2model.pose(n3, src.file(spec.anim), 0, 0)
           else
-            n3 = dw3model.read(src.file(spec.file), spec.bones, spec.motions)
+            n3 = dw3model.read(src.file(spec.file), spec.bones, spec.motions, spec.order)
             nmats = dw3model.pose(n3, n3.idle_frame)
           end
           local nmmd = convert.convert(n.mapping, n3, nmats, skeleton(n.type), read_game_file(n.file), entry, { height = n.height })
