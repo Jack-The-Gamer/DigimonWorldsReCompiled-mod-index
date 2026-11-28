@@ -1,11 +1,11 @@
 [mod]
 id = "dw1-wild-randomizer"
 name = "DW1 Wild Digimon Randomizer"
-version = "0.6.0"
+version = "0.7.0"
 author = "Jack-The-Gamer"
 description = "Each wild Digimon you meet on the field becomes another Digimon of the same stage that shares at least two of its specialties, fighting with techniques drawn at random from its own. Story Digimon and recruits stay as they are. Works with DW1 Expanded Roster, whose new Digimon can turn up too."
 game = "dw1"
-serials = ["SLUS-01032"]
+serials = ["SLUS-01032", "SLES-02914"]
 script = "main.lua"
 categories = ["GAMEPLAY"]
 tags = ["randomizer", "wild digimon", "enemies", "battle"]

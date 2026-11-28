@@ -103,29 +103,104 @@
 -- kept technique slots u16 at +6, "NPC" at +8, size at +12); without that (versions
 -- up to 0.11.0) a new Digimon counts as the largest model a partner can
 -- have. None of its hooks share an address with these.
+--
+-- Releases: the addresses above are the USA release's. Digimon World
+-- (Europe, SLES-02914) has the same code and tables at other addresses
+-- (found by name in dw_decomp's config/eu symbols), but its executable was
+-- compiled with less optimisation, so every hook spot and checked word was
+-- found again in its own code: loadMapEntities keeps loadMapDigimon's
+-- arguments on its stack (data sp+40, map sp+44) rather than in s3/s5;
+-- scriptLoadModel reaches loadMMD through loadNPCModel and thunkLoadMMD as
+-- real calls (each with its own frame) rather than jumps, so a map
+-- script's load is told by both return addresses; loadMMD keeps the path at
+-- sp+44 and the type in s2; startTournament passes sp+56. Its DigimonPara
+-- has no name (32 bytes; names are full-width Shift-JIS strings behind
+-- DIGIMON_NAMES), and DW1 Expanded Roster is USA-only, so its Digimon never
+-- join there.
 
-local POST_LOAD = 0x800A9BD8
-local JAL_LOAD_MAP_DIGIMON = 0x0C02D743   -- at 0x800A9BD0
-local SCRIPT_LOAD_MODEL, SCRIPT_UNLOAD_MODEL, SCRIPT_SET_DIGIMON = 0x801069C0, 0x80106C08, 0x800B6118
-local FIRST_WORDS = { [SCRIPT_LOAD_MODEL] = 0x27BDFFE8, [SCRIPT_UNLOAD_MODEL] = 0x27BDFFE8, [SCRIPT_SET_DIGIMON] = 0x27BDFFD0 }
-
-local MAP_DIGIMON_TABLE, MAP_DIGIMON_SIZE, FOLLOW_MODE, LIST_LENGTH = 0x8013CB50, 0xC4, 0xBC, 194
-local NPC_ENTITIES, NPC_SIZE, NPC_MOVES = 0x80155828, 0x68, 0x44
-local LOADED_DIGIMON_MODELS = 0x801BE7EC
-local NPC_MODELS, NPC_MODEL_SIZE, NPC_MODEL_COUNT = 0x80137140, 0x1C, 5
-local MAP_ENTRIES = 0x801292D4
-local FREEP = 0x80115A24
-local FILE_OFFSET_TABLE = 0x8011FE1C
-local VANILLA_ORIGINAL_TYPES = 0x8012A84C  -- s16 per type below 180, -1 = itself
-
-local REFS = {
-  data = { 0x800AA374, 0x800AA378, 0x8012CEB4 },
-  names = { 0x800A2120, 0x800A2128, 0x8011D19C },
-  moves = { 0x800BC3F0, 0x800BC3F8, 0x8012623C },
+local RELEASES = {
+  ["SLUS-01032"] = {
+    name = "USA",
+    -- after loadMapEntities' `jal loadMapDigimon` (data in s3, map in s5)
+    post_load = 0x800A9BD8, jal_load_map_digimon = 0x0C02D743,
+    map_args = function(ctx) return ctx:reg("s3"), ctx:reg("s5") & 0xFFFF end,
+    script_load_model = 0x801069C0, script_unload_model = 0x80106C08, script_set_digimon = 0x800B6118,
+    first_words = { 0x27BDFFE8, 0x27BDFFE8, 0x27BDFFD0 },  -- addiu sp, sp, -N of each
+    map_digimon_table = 0x8013CB50, npc_entities = 0x80155828, loaded_digimon_models = 0x801BE7EC,
+    npc_models = 0x80137140, map_entries = 0x801292D4, freep = 0x80115A24, file_offset_table = 0x8011FE1C,
+    original_types = 0x8012A84C,  -- ORIGINAL_DIGIMON_TYPES: s16 per type below 180, -1 = itself
+    -- DigimonPara: name[20] first; byte offsets of boneCount, level, special[3], moves[16]
+    para = { size = 0x34, name = 0, bones = 20, level = 29, special = 30, moves = 35 },
+    -- the tables, read through the game's own `lui`/`addiu` (Expanded Roster moves them)
+    refs = {
+      data = { 0x800AA374, 0x800AA378, 0x8012CEB4 },
+      names = { 0x800A2120, 0x800A2128, 0x8011D19C },  -- PTR_DIGIMON_FILE_NAMES
+      moves = { 0x800BC3F0, 0x800BC3F8, 0x8012623C },
+    },
+    limit_slti = 0x800A1F98, roster = true,
+    init_heap3 = 0x80090F24,
+    -- loadMMD's NPC branch: `sb v0, 49(sp)`, `jal lookupFileSize`, `addiu a0, sp, 40`
+    path_built = 0x800A2190, path_words = { [0x800A218C] = 0xA3A20031, [0x800A2190] = 0x0C028CB3, [0x800A2194] = 0x27A40028 },
+    path_at = 40, path_type = "s1",
+    -- loadNPCModel and thunkLoadMMD are jumps: loadMMD's saved ra is scriptLoadModel's
+    from_script = function(ctx, sp) return ctx:read32(sp + 36) == 0x80106A04 end,
+    lookup_file_table = 0x800A31F8, lookup_words = { 0x27BDFFD8, 0xAFBF0020 }, lookup_frame = 40,
+    pool_read = 0x800E6980, pool_word = 0x24540002,  -- addiu s4, v0, 2
+    call_std = 0x800E6C14, call_std_words = { [0x800E6C14] = 0x0C015E76, [0x800E6C18] = 0x27A4003C },  -- jal STD_tournamentMain; addiu a0, sp, 60
+    std_arg = 60,
+    partner_type = 0x801557A8,  -- PARTNER_ENTITY: Entity.type (s32) first
+  },
+  ["SLES-02914"] = {
+    name = "Europe",
+    -- after `lw a0, 40(sp)`, `lh a1, 44(sp)`, `jal loadMapDigimon`, nop
+    post_load = 0x800AB3AC, jal_load_map_digimon = 0x0C02E78A,
+    map_args = function(ctx) local sp = ctx:reg("sp") return ctx:read32(sp + 40), ctx:read16(sp + 44) end,
+    script_load_model = 0x800EEB1C, script_unload_model = 0x800EEDDC, script_set_digimon = 0x800BA5F0,
+    first_words = { 0x27BDFFE0, 0x27BDFFE0, 0x27BDFFE0 },
+    map_digimon_table = 0x80144118, npc_entities = 0x8016C878, loaded_digimon_models = 0x8016552C,
+    npc_models = 0x8013E134, map_entries = 0x801328E0, freep = 0x8011B968, file_offset_table = 0x80125F44,
+    original_types = 0x8013AA8C,
+    para = { size = 0x20, bones = 0, level = 9, special = 10, moves = 15 },
+    names_table = 0x8013A1DC,  -- DIGIMON_NAMES: char *[180]
+    refs = { data = { [3] = 0x80138B5C }, names = { [3] = 0x80123110 }, moves = { [3] = 0x8012FCB8 } },
+    init_heap3 = 0x80091074,
+    -- `sb v0, 53(sp)`, `addiu a0, sp, 44`, `jal lookupFileSize`
+    path_built = 0x800A18BC, path_words = { [0x800A18B4] = 0xA3A20035, [0x800A18B8] = 0x27A4002C, [0x800A18BC] = 0x0C028BC1 },
+    path_at = 44, path_type = "s2",
+    -- loadMMD (frame 88, ra at +36) <- thunkLoadMMD (frame 24, ra at +16) <- loadNPCModel,
+    -- whose one caller is scriptLoadModel
+    from_script = function(ctx, sp) return ctx:read32(sp + 36) == 0x8009FD54 and ctx:read32(sp + 88 + 16) == 0x800BA508 end,
+    lookup_file_table = 0x800A2E10, lookup_words = { 0x27BDFFE0, 0xAFBF001C }, lookup_frame = 32,
+    pool_read = 0x80102440, pool_word = 0x24520002,  -- addiu s2, v0, 2
+    call_std = 0x801027CC, call_std_words = { [0x801027C8] = 0x27A40038, [0x801027CC] = 0x0C015F1C },  -- addiu a0, sp, 56; jal STD_tournamentMain
+    std_arg = 56,
+    partner_type = 0x8016C7F8,
+  },
 }
-local LIMIT_SLTI, VANILLA_TYPES = 0x800A1F98, 180
+local R = RELEASES[dwrc.serial]
+if not R then
+  dwrc.log("DW1 Wild Randomizer: made for Digimon World (USA, SLUS-01032; Europe, SLES-02914); this disc is " .. tostring(dwrc.serial) .. ", so it does nothing")
+  return
+end
 
-local PARA_SIZE = 0x34
+local POST_LOAD = R.post_load
+local JAL_LOAD_MAP_DIGIMON = R.jal_load_map_digimon   -- at POST_LOAD - 8
+local SCRIPT_LOAD_MODEL, SCRIPT_UNLOAD_MODEL, SCRIPT_SET_DIGIMON = R.script_load_model, R.script_unload_model, R.script_set_digimon
+local FIRST_WORDS = { [SCRIPT_LOAD_MODEL] = R.first_words[1], [SCRIPT_UNLOAD_MODEL] = R.first_words[2], [SCRIPT_SET_DIGIMON] = R.first_words[3] }
+
+local MAP_DIGIMON_TABLE, MAP_DIGIMON_SIZE, FOLLOW_MODE, LIST_LENGTH = R.map_digimon_table, 0xC4, 0xBC, 194
+local NPC_ENTITIES, NPC_SIZE, NPC_MOVES = R.npc_entities, 0x68, 0x44
+local LOADED_DIGIMON_MODELS = R.loaded_digimon_models
+local NPC_MODELS, NPC_MODEL_SIZE, NPC_MODEL_COUNT = R.npc_models, 0x1C, 5
+local MAP_ENTRIES = R.map_entries
+local FREEP = R.freep
+local FILE_OFFSET_TABLE = R.file_offset_table
+local VANILLA_ORIGINAL_TYPES = R.original_types
+
+local REFS = R.refs
+local LIMIT_SLTI, VANILLA_TYPES = R.limit_slti, 180
+
+local PARA = R.para
 local MAX_MODEL = 0x18800       -- the partner model buffer: no Digimon's model is bigger
 local NPC_TAG = 0x0043504E      -- "NPC\0": Expanded Roster's map copy of a model, its size after it
 local ARENA_TAG = 0x41          -- "A" at +5: Expanded Roster draws it in the Arena's bracket
@@ -134,7 +209,7 @@ local WILD, CHOSEN, LIST_SIGN = 0x4000, 0x8000, 0x5A
 local CHAIN_SIGN, CHAIN_LOAD, CHAIN_UNLOAD = 0x5B, 1, 2
 
 local EVERY_VISIT = dwrc.options.reroll ~= "Fixed"
-local WITH_ROSTER = dwrc.options.expanded_roster ~= false
+local WITH_ROSTER = R.roster and dwrc.options.expanded_roster ~= false  -- Expanded Roster is USA-only
 local RANDOM_TECHNIQUES = dwrc.options.techniques ~= "Matched"
 local ARENA = dwrc.options.arena ~= false
 
@@ -143,8 +218,8 @@ if not dwrc.data.seed then
   dwrc.save()
 end
 -- The 8 MiB heap and Fixed's seed above it (see the top).
-local INIT_HEAP3_ARGS_READ = 0x80090F2C   -- InitHeap3: `beq a1, zero` after `beq a0, zero; nop`
-local INIT_HEAP3_WORDS = { [0x80090F24] = 0x10800015, [0x80090F2C] = 0x10A00013 }
+local INIT_HEAP3_ARGS_READ = R.init_heap3 + 8   -- InitHeap3: `beq a1, zero` after `beq a0, zero; nop`
+local INIT_HEAP3_WORDS = { [R.init_heap3] = 0x10800015, [R.init_heap3 + 8] = 0x10A00013 }
 local SEED_AT, SEED_SIGN = 0x807FFFF0, 0x31445352   -- "RSD1", then the seed
 local BIG_HEAP, BIG_HEAP_END = 0x80200000, SEED_AT
 
@@ -204,6 +279,7 @@ local function block(bytes) return ((bytes + 7) & ~7) + 8 end  -- one malloc3 wi
 -- `lui r, hi` + `addiu r, r, lo` -> the address, or the game's own when the
 -- words aren't that.
 local function ref(ctx, r)
+  if not r[1] then return r[3] end
   local lui, add = ctx:read32(r[1]), ctx:read32(r[2])
   if (lui >> 26) ~= 0x0F or (add >> 26) ~= 0x09 or ((lui >> 16) & 31) ~= ((add >> 21) & 31) then return r[3] end
   return ((lui & 0xFFFF) << 16) + sext16(add & 0xFFFF)
@@ -388,6 +464,23 @@ local function read_file_sizes(ctx)
   end
 end
 
+-- Europe's names are full-width Shift-JIS (Ｂｅｔａｍｏｎ, padded with
+-- full-width spaces): letters, digits and spaces back to ASCII.
+local function ascii(s)
+  return (s:gsub("[\x81\x82].", function(c)
+    local a, b = c:byte(1, 2)
+    if a == 0x81 and b == 0x40 then return " " end
+    if a == 0x82 and b >= 0x4F and b <= 0x58 then return string.char(b - 0x4F + 48) end
+    if a == 0x82 and b >= 0x60 and b <= 0x79 then return string.char(b - 0x60 + 65) end
+    if a == 0x82 and b >= 0x81 and b <= 0x9A then return string.char(b - 0x81 + 97) end
+  end):gsub(" +$", ""))
+end
+
+local function digimon_name(ctx, raw, o, t)
+  if PARA.name then return raw:sub(o + PARA.name + 1, o + PARA.name + 20):match("^[^%z]*") end
+  return ascii(cstring(ctx, ctx:read32(R.names_table + 4 * t), 40))
+end
+
 -- Every Digimon type: name, level, specialties, techniques, bones, model
 -- size, and group (one Digimon under several numbers: the game's partner
 -- copies, Expanded Roster's raisable versions of the enemies).
@@ -395,20 +488,20 @@ local function read_types(ctx)
   if not file_sizes then read_file_sizes(ctx) end
   local data, names, moves = ref(ctx, REFS.data), ref(ctx, REFS.names), ref(ctx, REFS.moves)
   local limit = VANILLA_TYPES
-  local slti = ctx:read32(LIMIT_SLTI)
+  local slti = LIMIT_SLTI and ctx:read32(LIMIT_SLTI) or 0
   if WITH_ROSTER and (slti >> 16) == 0x2A21 then limit = math.max(VANILLA_TYPES, math.min(slti & 0xFFFF, 400)) end
 
-  local raw = ctx:read_bytes(data, limit * PARA_SIZE)
+  local raw = ctx:read_bytes(data, limit * PARA.size)
   local types, by_name = {}, {}
   for t = 0, limit - 1 do
-    local o = t * PARA_SIZE
+    local o = t * PARA.size
     local spec, techs, any = {}, {}, false
     for i = 0, 2 do
-      local s = raw:byte(o + 31 + i)
+      local s = raw:byte(o + PARA.special + 1 + i)
       if s ~= 0xFF then spec[s] = true end
     end
     for k = 0, 15 do
-      local m = raw:byte(o + 36 + k)
+      local m = raw:byte(o + PARA.moves + 1 + k)
       if m ~= 0xFF then
         techs[#techs + 1] = { k = k, tech = m, kind = ctx:read8(moves + 16 * m + 9) }
         if m ~= 0 then any = true end
@@ -444,8 +537,8 @@ local function read_types(ctx)
       techs = usable
     end
     types[t] = {
-      t = t, name = raw:sub(o + 1, o + 20):match("^[^%z]*"), level = raw:byte(o + 30), spec = spec,
-      techs = techs, ready = ready, bones = string.unpack("<i4", raw, o + 21), size = size, arena = arena,
+      t = t, name = digimon_name(ctx, raw, o, t), level = raw:byte(o + PARA.level + 1), spec = spec,
+      techs = techs, ready = ready, bones = string.unpack("<i4", raw, o + PARA.bones + 1), size = size, arena = arena,
       light = t < VANILLA_TYPES and light[file .. ".MMD"] and light[file .. ".MMD"].size or nil,
     }
   end
@@ -612,8 +705,8 @@ end
 local function mark_wild(ctx)
   if ctx:read32(POST_LOAD - 8) ~= JAL_LOAD_MAP_DIGIMON then return end
   visit = visit + 1
-  local map = ctx:reg("s5") & 0xFFFF
-  local n = ctx:read16(ctx:reg("s3"))
+  local list, map = R.map_args(ctx)
+  local n = ctx:read16(list)
   for i = 0, 7 do ctx:write16(slot_at(i) + 2, 0) end
   ctx:write16(slot_at(0) + LIST_LENGTH, 0)
   ctx:write8(slot_at(5) + LIST_LENGTH, 0)  -- no model chain
@@ -897,11 +990,10 @@ end)
 
 -- The light copies (see "Light copies") ------------------------------------------------
 
-local PATH_BUILT = 0x800A2190   -- loadMMD's NPC branch: jal lookupFileSize, the path complete
-local PATH_WORDS = { [0x800A218C] = 0xA3A20031, [0x800A2190] = 0x0C028CB3, [0x800A2194] = 0x27A40028 }
-local FROM_SCRIPT = 0x80106A04  -- loadMMD's saved ra (sp+36) for a map script's load
-local LOOKUP_FILE_TABLE = 0x800A31F8   -- lookupFileTable(FileLookup *lookup, char *path)
-local LOOKUP_WORDS = { [0x800A31F8] = 0x27BDFFD8, [0x800A31FC] = 0xAFBF0020 }  -- addiu sp,sp,-40; sw ra,32(sp)
+local PATH_BUILT = R.path_built   -- loadMMD's NPC branch: jal lookupFileSize, the path complete
+local PATH_WORDS = R.path_words
+local LOOKUP_FILE_TABLE = R.lookup_file_table   -- lookupFileTable(FileLookup *lookup, char *path)
+local LOOKUP_WORDS = { [LOOKUP_FILE_TABLE] = R.lookup_words[1], [LOOKUP_FILE_TABLE + 4] = R.lookup_words[2] }  -- addiu sp,sp,-N; sw ra,M(sp)
 
 -- Only wild Digimon of this map have type u, one of them a replacement.
 local function only_wild(ctx, u)
@@ -929,11 +1021,11 @@ if next(light) then
   dwrc.on_exec(PATH_BUILT, function(ctx)
     if not path_code(ctx) then return false end
     local sp = ctx:reg("sp")
-    if ctx:read32(sp + 36) ~= FROM_SCRIPT then return false end
-    local path = cstring(ctx, sp + 40, 32)
+    if not R.from_script(ctx, sp) then return false end  -- a map script's load
+    local path = cstring(ctx, sp + R.path_at, 32)
     local file = (path:match("([^\\]+)$") or path):upper()
     local copy = light[file]
-    if copy and only_wild(ctx, ctx:reg("s1")) then ctx:write_bytes(sp + 40 + #path - 4, ".WLD") end
+    if copy and only_wild(ctx, ctx:reg(R.path_type)) then ctx:write_bytes(sp + R.path_at + #path - 4, ".WLD") end
     return false
   end)
   dwrc.on_exec(LOOKUP_FILE_TABLE + 4, function(ctx)
@@ -947,7 +1039,7 @@ if next(light) then
     ctx:write8(lookup + 1, bcd(i // 75 % 60))
     ctx:write8(lookup + 2, bcd(i % 75))
     ctx:write32(lookup + 4, copy.size)
-    ctx:set_reg("sp", ctx:reg("sp") + 40)  -- undo the first instruction
+    ctx:set_reg("sp", ctx:reg("sp") + R.lookup_frame)  -- undo the first instruction
     ctx:ret(1)
     return true
   end)
@@ -977,13 +1069,13 @@ end
 -- from the pool), all different and none the partner's own. The pool is
 -- used whole: being recruited is no longer needed.
 
-local POOL_READ = 0x800E6980
-local POOL_WORD = 0x24540002
-local CALL_STD = 0x800E6C14
-local CALL_STD_WORDS = { [0x800E6C14] = 0x0C015E76, [0x800E6C18] = 0x27A4003C }  -- jal STD_tournamentMain; addiu a0, sp, 60
+local POOL_READ = R.pool_read
+local POOL_WORD = R.pool_word
+local CALL_STD = R.call_std
+local CALL_STD_WORDS = R.call_std_words
 local ARENA_TYPES = 112
 local LAST_GRADE_CUP = 5         -- cups 0..5: Grade D, C, B, A, S, R (STD_GRADES); 6..10 versions, 11..22 themes
-local PARTNER_TYPE = 0x801557A8  -- PARTNER_ENTITY: Entity.type (s32) first
+local PARTNER_TYPE = R.partner_type
 local cup_pool    -- the current cup's pool (set of types), or false: any Digimon
 local tournaments = 0
 
@@ -1028,7 +1120,7 @@ if ARENA then
   end)
   dwrc.on_exec(CALL_STD, function(ctx)
     if not std_call(ctx) then return false end
-    local at = ctx:reg("sp") + 60
+    local at = ctx:reg("sp") + R.std_arg
     local cup = ctx:read8(at)
     local types, limit = read_types(ctx)
     tournaments = tournaments + 1
@@ -1055,5 +1147,5 @@ if ARENA then
   end)
 end
 
-dwrc.log(string.format("DW1 Wild Randomizer: %s%s", EVERY_VISIT and "new Digimon every visit" or "the same Digimon every visit",
+dwrc.log(string.format("DW1 Wild Randomizer (%s): %s%s", R.name, EVERY_VISIT and "new Digimon every visit" or "the same Digimon every visit",
   WITH_ROSTER and ", Expanded Roster's Digimon included when it is installed" or ""))
