@@ -19,12 +19,13 @@
 --   rows of the menu text texture each frame the screen is shown; the game
 --   clears those rows before writing the status screen's words.
 --
--- Made for Digimon World (USA, SLUS-01032) and (Japan, SLPS-01797). The
--- Japanese executable was built separately (unoptimised code, other
--- addresses), but its status screen is the same code and the same tables, so
--- each release has its own list of addresses below. Every instruction and
--- table entry the mod relies on is checked first; on anything else it does
--- nothing.
+-- Made for Digimon World (USA, SLUS-01032), (Europe, SLES-02914) and
+-- (Japan, SLPS-01797). The European and Japanese executables were built
+-- separately (unoptimised code, other addresses), but their status screen is
+-- the same code and the same tables, so each release has its own list of
+-- addresses below (Europe's matched instruction by instruction against
+-- Japan's, and by dw_decomp's symbols). Every instruction and table entry the
+-- mod relies on is checked first; on anything else it does nothing.
 
 -- Each release: partner values (signed 16-bit), game functions and places,
 -- the words the game has at checked addresses, and the rows to move.
@@ -68,6 +69,42 @@ local RELEASES = {
     },
     -- condition bubbles: `addi s4/v0, v0/s5, -0x78`
     bubbles = { { 0x800bed8c, 0xff88 }, { 0x800bee74, 0xff88 } },
+  },
+  -- Same code as Japan's, instruction for instruction; English text, but
+  -- written in full-width Shift-JIS letters like Japan's (its "Off" is Ｏｆｆ).
+  -- The DIGI box is 10 pixels wider than on the other two (ends at 304).
+  ["SLES-02914"] = {
+    name = "Europe",
+    tiredness = 0x8013fa4a, care_mistakes = 0x8013fa7a, battles = 0x8013fa7c,
+    f = {
+      number = 0x80100a34, square = 0x800c4a4c, segbar = 0x800c4b78,
+      sprite = 0x801012f8, rect = 0x800bdaf0, string = 0x800a467c,
+    },
+    draw_branch  = 0x800c12fc,
+    strings_done = 0x800c12ec,
+    work_ptr     = 0x8013dfc4,
+    ot_holder    = -0x6b44,
+    scratch      = 0x44,
+    tired        = "\x82\x73\x82\x89\x82\x92\x82\x85\x82\x84", -- Ｔｉｒｅｄ
+    -- The DIGI box ends at 304 here: both boxes 5 more pixels apart, so BATTLES ends in line with it.
+    mistakes_box = 201, battles_box = 278,
+    checks = {
+      { 0x800c12fc, 0x3c048013 }, { 0x800c12ec, 0x24020001 }, { 0x800c12d8, 0x0c031389 },
+      { 0x800c154c, 0x0c04028d }, { 0x800c2194, 0x0c031293 }, { 0x800c2144, 0x0c0312de },
+      { 0x800c13a4, 0x0c0404be }, { 0x800c1c14, 0x0c02f6bc }, { 0x800c4e9c, 0x0c02919f },
+      { 0x800c1294, 0x3c188013 }, { 0x8009789c, 0x3c028014 }, { 0x800978a0, 0x8c42dfc4 },
+      { 0x800bdb14, 0x8f8294bc },
+    },
+    moves = {
+      { 0x8012c376, 34 }, { 0x8012c37e, 64 }, { 0x8012c386, 79 },
+      { 0x8012c01a, 49 }, { 0x8012bfe2, 79 }, { 0x8012c032, 79 },
+      { 0x8012bf4a, 171 }, { 0x8012bf52, 186 }, { 0x8012bf5a, 201 },
+      { 0x800c1c08, 0x22 }, { 0x800c1c60, 0x22 }, { 0x800c1ce8, 0x31 }, { 0x800c1d48, 0x31 },
+      { 0x800c1de8, 0x35 }, { 0x800c1e3c, 0x35 }, { 0x800c1ed4, 0x35 }, { 0x800c1f40, 0x40 },
+      { 0x800c1fa0, 0x40 }, { 0x800c2024, 0x44 }, { 0x800c2078, 0x44 }, { 0x800c20e8, 0x44 },
+      { 0x800c213c, 0x52 },
+    },
+    bubbles = { { 0x800c52ac, 0xff88 }, { 0x800c5318, 0xff88 } },
   },
   -- Same layout: the data tables sit 0xc880 higher, the partner values
   -- 0xa2ec higher; the code was matched call by call.
@@ -367,7 +404,7 @@ dwrc.on_frame(function(c)
     R = RELEASES[dwrc.serial]
     if not R then
       state = "off"
-      dwrc.log("DW1 Expanded Stats: made for Digimon World (USA, SLUS-01032 and Japan, SLPS-01797); this disc is " .. tostring(dwrc.serial) .. ", so it does nothing")
+      dwrc.log("DW1 Expanded Stats: made for Digimon World (USA, SLUS-01032; Europe, SLES-02914; Japan, SLPS-01797); this disc is " .. tostring(dwrc.serial) .. ", so it does nothing")
       return
     end
   end
@@ -379,15 +416,18 @@ dwrc.on_frame(function(c)
       return
     end
   end
+  -- A save state made with the mod brings the rows already moved.
   for _, m in ipairs(R.moves) do
-    if c:read16(m[1]) ~= m[2] then
+    local v = c:read16(m[1])
+    if v ~= m[2] and v ~= (m[2] + DY) & 0xFFFF then
       state = "off"
       dwrc.log(string.format("DW1 Expanded Stats: unexpected value at %08x; status screen left as it is", m[1]))
       return
     end
   end
   for _, b in ipairs(R.bubbles) do
-    if c:read16(b[1]) ~= b[2] then state = "off" return end
+    local v = c:read16(b[1])
+    if v ~= b[2] and v ~= (b[2] + BUBBLE_DY) & 0xFFFF then state = "off" return end
   end
   ensure_moved(c)
   install()

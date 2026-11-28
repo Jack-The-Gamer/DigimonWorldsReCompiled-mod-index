@@ -25,6 +25,10 @@ The mod also works on Digimon World (Japan, SLPS-01797), in Japanese to match th
 - **つかれ** (tiredness) sits under のろい, written in the same lettering as ごきげん and しつけ.
 - **ミス** (care mistakes) and **バトル** (battles) sit after おもさ, in the bold kana of なまえ / タイプ / とし / おもさ. The Japanese screen shows numbers full-width and has a "G" after the weight, so these two boxes are wider and end in line with the タイプ box.
 
-Made for Digimon World (USA, SLUS-01032) and (Japan, SLPS-01797) and checked on both. Before it changes anything, the mod checks that the status screen's code is exactly what it expects. On any other version (such as the European release) it does nothing.
+**European version**
+
+The mod also works on Digimon World (Europe, SLES-02914). "Tired" is written in the European font like "Life" and "Disc.", and since the European DIGI box is a little wider, MISTAKES and BATTLES sit a few pixels further apart so the BATTLES box still ends in line with it.
+
+Made for Digimon World (USA, SLUS-01032), (Europe, SLES-02914) and (Japan, SLPS-01797) and checked on all three. Before it changes anything, the mod checks that the status screen's code is exactly what it expects. On any other version it does nothing.
 
 Needs Re:Compiled 0.2.6 or newer.
