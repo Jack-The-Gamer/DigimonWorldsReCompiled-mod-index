@@ -24,17 +24,21 @@
 -- from 0x8005D604) are redirected. Cells are dealt in PARTICIPANT_TYPES
 -- order, so a save state mid-tournament finds the same ones.
 
+local R = require("lib.release")
+
 local M = {}
 
-local PARTICIPANT_TYPES = 0x80135150
-local ADD_BRACKET = 0x8005DEEC              -- STD_addBracket(track)
-local ADD_BRACKET_WORDS = { 0x27BDFFE8, 0x3C018013, 0xAFBF0014 }
-local RENDER_TILE = 0x8005D5B0              -- STD_renderBracketDigimon: addu s4, s1, zero (s1 = tile)
-local RENDER_WORDS = { [0x8005D578] = 0x90510000, [0x8005D5B0] = 0x0220A021, [0x8005D5FC] = 0x0C024AAF }
-local GET_CLUT = 0x80092ABC                 -- GetClut(x, y)
-local FROM_RENDER = 0x8005D604              -- its return address in STD_renderBracketDigimon
-local LOAD_IMAGE = 0x800948A8               -- LoadImage(RECT *, u_long *)
-local DRAW_SYNC = 0x800947B0                -- DrawSync(0)
+-- (USA addresses in these comments; lib/release.lua has each release's)
+local A = R.arena or {}
+local PARTICIPANT_TYPES = A.participant_types
+local ADD_BRACKET = A.add_bracket           -- STD_addBracket(track)
+local ADD_BRACKET_WORDS = A.add_bracket_words
+local RENDER_TILE = A.render_tile           -- STD_renderBracketDigimon: addu s4, s1, zero (s1 = tile)
+local RENDER_WORDS = A.render_words
+local GET_CLUT = A.get_clut                 -- GetClut(x, y)
+local FROM_RENDER = A.from_render           -- its return address in STD_renderBracketDigimon
+local LOAD_IMAGE = A.load_image             -- LoadImage(RECT *, u_long *)
+local DRAW_SYNC = A.draw_sync               -- DrawSync(0)
 local FIRST_TILE, TILES = 117, 11
 local CLUT_X, CLUT_ROW = 0x130, 0x1E7
 

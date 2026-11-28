@@ -1,6 +1,7 @@
--- The game's per-Digimon tables (Digimon World, USA: SLUS-01032; addresses
--- and names from the dw_decomp decompilation), moved with room for CAPACITY
--- types, and the mod's other data in the game's RAM.
+-- The game's per-Digimon tables (Digimon World, USA: SLUS-01032 and Europe:
+-- SLES-02914, addresses in lib/release.lua; names from the dw_decomp
+-- decompilation), moved with room for CAPACITY types, and the mod's other
+-- data in the game's RAM.
 --
 -- The game sizes them for its own 180 types (66 for the ones that can be a
 -- partner). They move when the game sets its heap up (InitHeap3, the first
@@ -17,36 +18,41 @@
 --  3. only what doesn't fit: the bottom of the heap, whose start is raised
 --     past it.
 
+local R = require("lib.release")
+
 local M = {}
 
 M.CAPACITY = 260            -- Digimon types after the move (the game has 180)
-M.INIT_HEAP3 = 0x80090F24   -- InitHeap3(start, size), called by initializeHeap()
-M.HEAP_START = 0x801BFB70   -- what initializeHeap() passes (from _end)
-M.HEAP_END = 0x801EFF00     -- where it ends: 64 KiB below the stack top
-M.STACK_TOP = 0x801FFFF0
+M.INIT_HEAP3 = R.init_heap3 -- InitHeap3(start, size), called by initializeHeap()
+M.HEAP_START = R.heap_start -- what initializeHeap() passes (from _end)
+M.HEAP_END = R.heap_end     -- where it ends: 64 KiB below the stack top
+M.STACK_TOP = R.stack_top
 M.STACK_KEEP = 0x4000       -- the stack's own (16 KiB, ~4x the deepest seen)
 
 -- name, address, entries, entry size, entries after the move, fill byte for new entries
+local T = R.tables
 local DEFS = {
-  { "DIGIMON_DATA",           0x8012CEB4, 180, 0x34, M.CAPACITY },
-  { "DIGIMON_SKELETONS",      0x8011CE60, 180, 4,    M.CAPACITY },
-  { "PTR_DIGIMON_FILE_NAMES", 0x8011D19C, 180, 4,    M.CAPACITY },
-  { "ORIGINAL_DIGIMON_TYPES", 0x8012A84C, 180, 2,    M.CAPACITY },
-  { "TOURNAMENT_SCHEDULE",    0x80130198, 180, 1,    M.CAPACITY },
-  { "DIGIMON_VBALL_SOUND_ID", 0x80127F40, 180, 1,    M.CAPACITY },
-  { "RAISE_DATA",             0x801225BC, 66,  0x1C, M.CAPACITY },
-  { "ITEM_TAKE_DISTANCE",     0x80122D24, 66,  1,    M.CAPACITY },
-  { "DIGIMON_VLALL_SOUND_ID", 0x80127EFC, 66,  1,    M.CAPACITY },
-  { "CARD_DATA",              0x8012FFD8, 66,  4,    M.CAPACITY },
-  { "EVOLUTION_REQS",         0x8012ABEC, 63,  0x1C, M.CAPACITY },
-  { "EVOLUTION_STATS_GAINS",  0x8012B2D0, 66,  0xE,  M.CAPACITY },
+  { "DIGIMON_DATA",           T.DIGIMON_DATA,           180, R.para.size, M.CAPACITY },
+  { "DIGIMON_SKELETONS",      T.DIGIMON_SKELETONS,      180, 4,    M.CAPACITY },
+  { "PTR_DIGIMON_FILE_NAMES", T.PTR_DIGIMON_FILE_NAMES, 180, 4,    M.CAPACITY },
+  { "ORIGINAL_DIGIMON_TYPES", T.ORIGINAL_DIGIMON_TYPES, 180, 2,    M.CAPACITY },
+  { "TOURNAMENT_SCHEDULE",    T.TOURNAMENT_SCHEDULE,    180, 1,    M.CAPACITY },
+  { "DIGIMON_VBALL_SOUND_ID", T.DIGIMON_VBALL_SOUND_ID, 180, 1,    M.CAPACITY },
+  { "RAISE_DATA",             T.RAISE_DATA,             66,  0x1C, M.CAPACITY },
+  { "ITEM_TAKE_DISTANCE",     T.ITEM_TAKE_DISTANCE,     66,  1,    M.CAPACITY },
+  { "DIGIMON_VLALL_SOUND_ID", T.DIGIMON_VLALL_SOUND_ID, 66,  1,    M.CAPACITY },
+  { "CARD_DATA",              T.CARD_DATA,              66,  4,    M.CAPACITY },
+  { "EVOLUTION_REQS",         T.EVOLUTION_REQS,         63,  0x1C, M.CAPACITY },
+  { "EVOLUTION_STATS_GAINS",  T.EVOLUTION_STATS_GAINS,  66,  0xE,  M.CAPACITY },
   -- indexed by type - 1; -1 (0xFF) means "no Digimon"
-  { "EVOLUTION_PATHS",        0x8012B66C, 62,  11,   M.CAPACITY - 1, 0xFF },
+  { "EVOLUTION_PATHS",        T.EVOLUTION_PATHS,        62,  11,   M.CAPACITY - 1, 0xFF },
   -- by technique, not by type (`techniques`): names (char *) and Move
   -- {power, mpCost, ...}, room for MOVES
-  { "MOVE_NAMES",             0x80126054, 122, 4,    0xF9, nil, true },
-  { "MOVE_DATA",              0x8012623C, 122, 0x10, 0xF9, nil, true },
+  { "MOVE_NAMES",             T.MOVE_NAMES,             122, 4,    0xF9, nil, true },
+  { "MOVE_DATA",              T.MOVE_DATA,              122, 0x10, 0xF9, nil, true },
 }
+-- Europe: the names are a table of their own (char *, full-width Shift-JIS)
+if T.DIGIMON_NAMES then DEFS[#DEFS + 1] = { "DIGIMON_NAMES", T.DIGIMON_NAMES, 180, 4, M.CAPACITY } end
 
 -- Techniques: 0x00..0x39 learnable, 0x3A..0x70 finishers, 0x71..0x78 the
 -- In-Training Bubbles, 0x79 the generic attack; a Digimon names them by
@@ -92,6 +98,10 @@ local extra = {
   { "TEXT", 16 }, { "EVL_SCRATCH", M.EVL_SCRATCH_SIZE }, { "BORROW", 12 * M.BORROW_SLOTS },
   { "RAISED", M.CAPACITY - 180 },
 }
+-- Europe: the new Digimon's names (full-width Shift-JIS, 2 bytes a letter;
+-- DIGIMON_NAMES points here), NAME_BYTES each.
+M.NAME_BYTES = 44
+if T.DIGIMON_NAMES then extra[#extra + 1] = { "NAMES", M.NAME_BYTES * (M.CAPACITY - 180) } end
 
 -- Placing them, biggest first, each in the first free place it fits (8-byte
 -- aligned): the stack's reserve, then the old tables (adjacent ones joined),
@@ -190,8 +200,9 @@ function M.install(wipe, setup)
     ctx:write_bytes(M.STRINGS, string.rep("\0", M.STRINGS_SIZE))
     ctx:write_bytes(M.MOVE_STRINGS, string.rep("\0", M.MOVE_STRING_BYTES * M.NEW_FINISHERS))
     ctx:write_bytes(M.RAISED, string.rep("\0", M.CAPACITY - 180))
+    if M.NAMES then ctx:write_bytes(M.NAMES, string.rep("\0", M.NAME_BYTES * (M.CAPACITY - 180))) end
     -- the Bubbles and the generic attack to their new numbers: their
-    -- entries, and every Digimon's moves[] (DigimonPara +35, 16 bytes)
+    -- entries, and every Digimon's moves[] (DigimonPara.moves, 16 bytes)
     local names, data = M.by_name.MOVE_NAMES, M.by_name.MOVE_DATA
     for old, new in pairs(M.MOVED_MOVES) do
       ctx:write32(names.new + 4 * new, ctx:read32(names.new + 4 * old))
@@ -199,7 +210,7 @@ function M.install(wipe, setup)
     end
     local dd = M.by_name.DIGIMON_DATA
     for ty = 0, 179 do
-      local at = dd.new + ty * dd.entry + 35
+      local at = dd.new + ty * dd.entry + R.para.moves
       local moves = { string.byte(ctx:read_bytes(at, 16), 1, 16) }
       local changed = false
       for i, m in ipairs(moves) do

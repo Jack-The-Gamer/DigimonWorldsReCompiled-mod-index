@@ -1,22 +1,16 @@
 -- The game's checks against its own number of Digimon, raised to the moved
--- tables' CAPACITY (SLUS-01032; functions named as in dw_decomp). Checks
+-- tables' CAPACITY (lib/release.lua; functions named as in dw_decomp). Checks
 -- that loop over the game's own roster (medals, the evolution chart, card
 -- rolls) stay as they are, and so do compares with 62-66 that aren't about
 -- Digimon (battle timers, screen positions, the sound library).
 
 local tables = require("lib.tables")
+local R = require("lib.release")
 
 local M = {}
 
--- address, the instruction there (slti/sltiu rt, rs, limit)
-M.EXE = {
-  { 0x800A1F98, 0x2A2100B4 }, -- loadMMD: type < 180
-  { 0x800A258C, 0x288100B4 }, -- getEntityModelComponent: type < 180
-  { 0x800A2840, 0x2A0100B4 }, -- loadMMDAsync: type < 180 (the evolution's next model)
-  { 0x800A2A70, 0x2A2100B4 }, -- applyMMD: type < 180
-  { 0x800C64F8, 0x2A010042 }, -- loadPartnerSounds: type < 66, else the default voice 15
-  { 0x800E9188, 0x2A010042 }, -- loadVLALL (the evolution's voice): type <= 65, else voice 15
-}
+-- address, the instruction there (slti/sltiu rt, rs, limit): R.type_limits
+M.EXE = R.type_limits
 
 -- Techniques (lib/tables.lua). A finisher is any technique from 0x3A below
 -- a bound, 0x71 in the game; these are every check of it in the US build
@@ -24,62 +18,22 @@ M.EXE = {
 -- partner_impl; 32 in C, 32 here: slti/sltiu rt, rs, 0x71), raised to
 -- tables.FINISHER_END. The other compares with 113 aren't about techniques
 -- (Digimon type 0x71, a rotation, screen positions).
-local FINISHER_CHECKS = {
-  { "SLUS_010.32", 0x800A46C8, 0x2CA10071 }, -- initializePartner
-  { "SLUS_010.32", 0x800F5E34, 0x28A10071 }, -- VS__tickDigimonSenile
-  { "BTL_REL.BIN", 0x80058734, 0x28A10071 }, -- BTL_tickEnemyAI
-  { "BTL_REL.BIN", 0x8005A1AC, 0x28810071 }, -- BTL_tickMeleeAttack
-  { "BTL_REL.BIN", 0x8005BCA4, 0x28E10071 }, -- BTL_calculateHitChance
-  { "BTL_REL.BIN", 0x8005BFC4, 0x2A010071 }, -- BTL_calculateDamage
-  { "BTL_REL.BIN", 0x8005C10C, 0x2A010071 }, -- BTL_calculateDamage
-  { "BTL_REL.BIN", 0x8005D3D8, 0x28410071 }, -- BTL_isMoveUsable
-  { "BTL_REL.BIN", 0x8005D824, 0x2A610071 }, -- BTL_startQueuedMove
-  { "BTL_REL.BIN", 0x8005DB2C, 0x2A210071 }, -- BTL_setupMoveExecution
-  { "BTL_REL.BIN", 0x8005DCC4, 0x2A210071 }, -- BTL_setupMoveExecution
-  { "BTL_REL.BIN", 0x8005E050, 0x28410071 }, -- BTL_addFinisherProgress
-  { "STD_REL.BIN", 0x8005729C, 0x28410071 }, -- STD_initializeOpponent
-  { "STD_REL.BIN", 0x800574BC, 0x2C610071 }, -- STD_initializeOpponent
-  { "STD_REL.BIN", 0x800601CC, 0x28A10071 }, -- STD_tickEnemyAI
-  { "STD_REL.BIN", 0x80061D74, 0x28810071 }, -- STD_tickMeleeAttack
-  { "STD_REL.BIN", 0x80063D6C, 0x28E10071 }, -- STD_applyPartnerStatsToFighter
-  { "STD_REL.BIN", 0x80063FAC, 0x2A010071 }, -- STD_calculateDamage
-  { "STD_REL.BIN", 0x800640F4, 0x2A010071 }, -- STD_calculateDamage
-  { "STD_REL.BIN", 0x8006517C, 0x28410071 }, -- STD_isMoveUsable
-  { "STD_REL.BIN", 0x800655C8, 0x2A610071 }, -- STD_startQueuedMove
-  { "STD_REL.BIN", 0x800659AC, 0x2A010071 }, -- STD_setupMoveExecution
-  { "STD_REL.BIN", 0x80065B44, 0x2A010071 }, -- STD_setupMoveExecution
-  { "STD_REL.BIN", 0x80065E84, 0x28410071 }, -- STD_addFinisherProgress
-  { "VS_REL.BIN",  0x8005B9F0, 0x28E10071 }, -- VS_applyPartnerStatsToFighter
-  { "VS_REL.BIN",  0x8005BC20, 0x28C10071 }, -- VS_rollAttackOutcome
-  { "VS_REL.BIN",  0x8005CB84, 0x28410071 }, -- VS_isMoveUsable
-  { "VS_REL.BIN",  0x8005CF80, 0x2A610071 }, -- VS_startFighterMove
-  { "VS_REL.BIN",  0x8005D364, 0x2A210071 }, -- VS_playMoveEffect
-  { "VS_REL.BIN",  0x8005D384, 0x2A210071 }, -- VS_playMoveEffect
-  { "VS_REL.BIN",  0x8005D868, 0x28410071 }, -- VS_addFinisherProgress
-  { "EVL_REL.BIN", 0x80063A0C, 0x2C810071 }, -- EVL_applyEvolution
-}
+local FINISHER_CHECKS = R.finisher_checks
 -- The generic attack, technique 0x79 (`tech = 0x79` in getAttackTech:
 -- addiu v0, zero, 0x79), moves with the Bubbles past the finishers. A
 -- flattened Digimon attacks with it too (BTL/STD_tickFlatState and
 -- VS__tickDigimonFlat pass 0x79 to tickRangedAttack: addiu a3, zero, 0x79);
 -- missed at first, which left those reaching technique 0x79, a new
 -- finisher's number since there are nine of them.
-local GENERIC_ATTACK = {
-  { "BTL_REL.BIN", 0x8005B7B8, 0x24020079 },
-  { "STD_REL.BIN", 0x800638AC, 0x24020079 },
-  { "VS_REL.BIN",  0x8005B530, 0x24020079 },
-  { "BTL_REL.BIN", 0x800596DC, 0x24070079 }, -- BTL_tickFlatState
-  { "STD_REL.BIN", 0x8006133C, 0x24070079 }, -- STD_tickFlatState
-  { "SLUS_010.32", 0x800F53D0, 0x24070079 }, -- VS__tickDigimonFlat
-}
+local GENERIC_ATTACK = R.generic_attack
 -- drawMoveName (Battle Mode slots) draws names of techniques < 0x79.
-local NAME_CHECK = { "SLUS_010.32", 0x8010FC0C, 0x28410079 }
+local NAME_CHECK = R.name_check
 
 local function with_imm(w, v) return (w & 0xFFFF0000) | v end
 
 -- Every rewrite: `patch(file, addr, expect, value)`.
 function M.patch_code(patch)
-  for _, p in ipairs(M.EXE) do patch("SLUS_010.32", p[1], p[2], with_imm(p[2], tables.CAPACITY)) end
+  for _, p in ipairs(M.EXE) do patch(R.exe, p[1], p[2], with_imm(p[2], tables.CAPACITY)) end
   for _, p in ipairs(FINISHER_CHECKS) do patch(p[1], p[2], p[3], with_imm(p[3], tables.FINISHER_END)) end
   for _, p in ipairs(GENERIC_ATTACK) do patch(p[1], p[2], p[3], with_imm(p[3], tables.MOVED_MOVES[0x79])) end
   patch(NAME_CHECK[1], NAME_CHECK[2], NAME_CHECK[3], with_imm(NAME_CHECK[3], tables.MOVES))
@@ -88,7 +42,7 @@ end
 -- hasDigimonRaised(type) is isTriggerSet(0x200 + type), and only the game's
 -- first 63 types have such a flag (setDigimonRaised ignores the rest): a new
 -- Digimon reads as never raised instead of reading some other flag.
-local HAS_DIGIMON_RAISED = 0x800FF824
+local HAS_DIGIMON_RAISED = R.has_digimon_raised
 
 -- A Digimon's size: initializeDigimonObject (0x800A0E68) gives the root
 -- bone a scale of 0x1000, or 0x1800 for type 0x71; both paths meet at
@@ -97,15 +51,15 @@ local HAS_DIGIMON_RAISED = 0x800FF824
 -- matrices are chained), so a new Digimon built on a smaller donor's
 -- skeleton grows evenly, joints included. type -> scale (4096 = 1).
 M.root_scale = {}
-local ROOT_SCALE_SET = 0x800A1094
+local ROOT_SCALE = R.root_scale -- {at, type = {reg} or {stack offset}, root register}
 
 -- A new type is raised once setDigimonRaised (0x800FF7F8: every evolution in
 -- EVL, and the new game's partner) has been called for it: a byte per new
 -- type at tables.RAISED, kept with each save (dwrc.save_ram, program 1.10)
 -- and cleared for a new game (newGameScene, 0x800EF1E0) or a save made
 -- without the mod. Being RAM, save states keep it too.
-local SET_DIGIMON_RAISED = 0x800FF7F8
-local NEW_GAME_SCENE = 0x800EF1E0
+local SET_DIGIMON_RAISED = R.set_digimon_raised
+local NEW_GAME_SCENE = R.new_game_scene
 -- Also called at setDigimonRaised, with (ctx, type): one hook per address.
 M.on_raised = {}
 -- New types that count as raised whatever the save says (type -> true):
@@ -141,7 +95,7 @@ M.efe_source = {}
 -- answers its donor's original type, the skeleton and animations it uses:
 -- type -> original type.
 M.original_type = {}
-local GET_ORIGINAL_TYPE = 0x800D9A3C
+local GET_ORIGINAL_TYPE = R.get_original_type
 
 -- A new finisher can use another Digimon's effect from points of its own
 -- (technique -> {type, points = {{bone, x, y, z}, ...}}): in its private copy
@@ -185,14 +139,10 @@ local function find_origin_lists(data)
   return out
 end
 for old, new in pairs(tables.MOVED_MOVES) do M.efe_source[new] = old end -- the Bubbles, the generic attack
-local GET_EFEDAT_ENTRY = 0x800AEFF4
+local GET_EFEDAT_ENTRY = R.get_efedat_entry
 -- The three battle overlays load at the same address (0x80052AE0): each
 -- hook acts only when its own overlay's code is there.
-local SETUP_LOADED_EFE = {
-  { "BTL_REL.BIN", 0x800650EC },
-  { "STD_REL.BIN", 0x8006D7D4 },
-  { "VS_REL.BIN",  0x800638A4 },
-}
+local SETUP_LOADED_EFE = R.setup_loaded_efe
 local code_words = {} -- file -> { addr -> its first 4 words (from the disc) }
 
 -- The evolution scene (EVL_REL.BIN at 0x80060000) breaks the old model into
@@ -202,7 +152,7 @@ local code_words = {} -- file -> { addr -> its first 4 words (from the disc) }
 -- of them; MetalGreymon has 815). Past it lie the scene's flash data and
 -- its random bone order: a bigger model (Guilmon has 1141) reads garbage
 -- bones and the scene hangs. The scratch moves to tables.EVL_SCRATCH.
-local EVL_SET_SCRATCH_TOP = 0x800601B0
+local EVL_SET_SCRATCH_TOP = R.evl_set_scratch_top
 
 -- A Digimon using another one's techniques on its donor's skeleton (type ->
 -- {type = the other's original type, bones = {its bone -> {bone, x, y, z}}}).
@@ -222,9 +172,9 @@ local EVL_SET_SCRATCH_TOP = 0x800601B0
 -- Lists can be long (Megaton Punch's has 29 entries).
 M.borrow = {}
 local loaded = {} -- effect file address -> {stop, technique} (the battle's loaded effects)
-local CHECK_TECH = { { "BTL_REL.BIN", 0x8006D8FC }, { "STD_REL.BIN", 0x80075ED8 }, { "VS_REL.BIN", 0x8006BFA8 } }
-local EFE_DATA_STACK = 0x80134CC8     -- int32 * (pop: *--ptr)
-local EFE_SCRIPT_CONTEXT = 0x80134CE8 -- EfeSubEffect * (sourceEntity at +16)
+local CHECK_TECH = R.check_tech
+local EFE_DATA_STACK = R.efe_data_stack         -- int32 * (pop: *--ptr)
+local EFE_SCRIPT_CONTEXT = R.efe_script_context -- EfeSubEffect * (sourceEntity at +16)
 
 -- Called with every code file's words while the mod loads (main.lua).
 function M.note_code(file, base, words)
@@ -330,7 +280,7 @@ function M.install()
       local list = ctx:read32(top)
       local own = M.original_type[t] or t
       local found, near, gap
-      local function height(ty) return ctx:read_s16(tables.entry("DIGIMON_DATA", ty) + 26) end
+      local function height(ty) return ctx:read_s16(tables.entry("DIGIMON_DATA", ty) + R.para.height) end
       local mine = height(t)
       for k = 0, 47 do
         local ty = ctx:read_s16(list + 10 * k)
@@ -354,7 +304,7 @@ function M.install()
         end
         local data = tables.entry("DIGIMON_DATA", t)
         to = (b.points and kind and b.points[kind]) or b.fallback
-          or { 0, 0, -(ctx:read_s16(data + 26) * 3 // 5), -ctx:read16(data + 24) }
+          or { 0, 0, -(ctx:read_s16(data + R.para.height) * 3 // 5), -ctx:read16(data + R.para.radius) }
       end
       if to then bone, x, y, z = to[1], to[2], to[3], to[4] end
       local slot = tables.BORROW + 12 * ((list >> 1) % tables.BORROW_SLOTS)
@@ -367,10 +317,11 @@ function M.install()
     if is_here(ctx, EVL_SET_SCRATCH_TOP) then ctx:set_reg("a0", tables.EVL_SCRATCH) end
     return false
   end)
-  dwrc.on_exec(ROOT_SCALE_SET, function(ctx)
-    local s = M.root_scale[ctx:reg("s4")]
+  dwrc.on_exec(ROOT_SCALE.at, function(ctx)
+    local ty = ROOT_SCALE.type.reg and ctx:reg(ROOT_SCALE.type.reg) or ctx:read32(ctx:reg("sp") + ROOT_SCALE.type.stack)
+    local s = M.root_scale[ty]
     if s then
-      local root = ctx:reg("s1")
+      local root = ctx:reg(ROOT_SCALE.root)
       ctx:write32(root + 96, s); ctx:write32(root + 100, s); ctx:write32(root + 104, s)
     end
     return false

@@ -1,5 +1,5 @@
 -- The game's evolution pickers, ported to Lua so that targets can be any
--- type (SLUS-01032). The game keeps targets as signed bytes (-1 = none) all
+-- type (lib/release.lua). The game keeps targets as signed bytes (-1 = none) all
 -- through getInTrainingEvolutionTarget, getRookieEvolutionTarget,
 -- getChampionEvolutionTarget and calculateRequirementScore, so types past
 -- 127 can't be picked. These ports follow the dw_decomp decompilation's C
@@ -9,12 +9,13 @@
 -- against the original functions on the same state: see M.compare).
 
 local tables = require("lib.tables")
+local R = require("lib.release")
 
 local M = {}
 
-M.IN_TRAINING = 0x800E2598 -- getInTrainingEvolutionTarget(type) -> int16
-M.ROOKIE = 0x800E2BB4      -- getRookieEvolutionTarget(type)
-M.CHAMPION = 0x800E2F08    -- getChampionEvolutionTarget(type)
+M.IN_TRAINING = R.pickers.in_training -- getInTrainingEvolutionTarget(type) -> int16
+M.ROOKIE = R.pickers.rookie            -- getRookieEvolutionTarget(type)
+M.CHAMPION = R.pickers.champion        -- getChampionEvolutionTarget(type)
 -- tickConditions (0x800A8F38) picks a target by level at every clock tick
 -- once the map has been up 25 frames ("isInDaytimeTransition" only checks
 -- that): Fresh at evoTimer 6, In-Training 24, Rookie 72, Champion 144 (the
@@ -25,15 +26,15 @@ M.CHAMPION = 0x800E2F08    -- getChampionEvolutionTarget(type)
 -- 5 and has no targets. (The evolution then keeps evoTimer, as it does
 -- between Digimon of one level, and adds 96 hours of life, as for any
 -- Ultimate.)
-M.ULTIMATE_CHECK = 0x800A9254
+M.ULTIMATE_CHECK = R.ultimate_check.at -- (Europe: s1 = level, s0 = evoTimer)
 M.MEGA_HOURS = 144
-local EVOLUTION_TARGET = 0x80134E50 -- int16, -1 = none
+local EVOLUTION_TARGET = R.evolution_target -- int16, -1 = none
 
-local PARTNER_ENTITY = 0x801557A8
+local PARTNER_ENTITY = R.partner_entity
 local BASE = PARTNER_ENTITY + 0x38    -- BaseStats {off, def, speed, brain, movesPrio[4], moves[4], hp, mp}
 local LEARNED = PARTNER_ENTITY + 0x58 -- learnedMoves[2]
-local PARA = 0x80138460               -- PartnerPara
-local TRIGGER_BASE_PTR = 0x80134FB8   -- [gp - 27508]: getTriggerOffset's base
+local PARA = R.partner_para            -- PartnerPara
+local TRIGGER_BASE_PTR = R.trigger_base_ptr -- (USA [gp - 27508]): getTriggerOffset's base
 
 local function s16(v) v = v & 0xFFFF; return v >= 0x8000 and v - 0x10000 or v end
 local function s8(v) v = v & 0xFF; return v >= 0x80 and v - 0x100 or v end
@@ -91,7 +92,7 @@ local function score(ctx, current, target, max_cm, max_battles, best)
   local weight = ctx:read_s16(PARA + 0x42)
   if r.weight - 5 <= weight and weight <= r.weight + 5 then points = points + 1 end
   local stats = { hp10(ctx), mp10(ctx), ctx:read_s16(BASE), ctx:read_s16(BASE + 2), ctx:read_s16(BASE + 4), ctx:read_s16(BASE + 6) }
-  if ctx:read8(tables.entry("DIGIMON_DATA", target) + 29) == 3 then -- DigimonPara.level: a Rookie
+  if ctx:read8(tables.entry("DIGIMON_DATA", target) + R.para.level) == 3 then -- DigimonPara.level: a Rookie
     local want = { r.hp, r.mp, r.offense, r.defense, r.speed, r.brain }
     local highest
     for i = 1, 6 do
@@ -211,7 +212,7 @@ end
 
 function M.install_megas()
   dwrc.on_exec(M.ULTIMATE_CHECK, function(ctx)
-    if ctx:reg("s0") == 5 and s16(ctx:reg("s1")) >= M.MEGA_HOURS then
+    if ctx:reg(R.ultimate_check.level) == 5 and s16(ctx:reg(R.ultimate_check.timer)) >= M.MEGA_HOURS then
       local t = M.ultimate(ctx, ctx:read32(PARTNER_ENTITY))
       if t ~= -1 then ctx:write16(EVOLUTION_TARGET, t) end
     end
@@ -250,7 +251,7 @@ function M.compare(at, rounds)
   local function build(ctx)
     queue = {}
     for t = 1, 65 do
-      local p = PICKER_OF_LEVEL[ctx:read8(tables.entry("DIGIMON_DATA", t) + 29)]
+      local p = PICKER_OF_LEVEL[ctx:read8(tables.entry("DIGIMON_DATA", t) + R.para.level)]
       if p and t <= 62 then queue[#queue + 1] = { p, t } end
     end
   end

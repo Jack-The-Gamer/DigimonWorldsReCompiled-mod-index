@@ -15,6 +15,10 @@
 -- lib/dw2model.lua, lib/convert.lua),
 -- with their chart icons (lib/icon.lua), finishers (lib/limits.lua) and
 -- evolutions (lib/tree.lua, lib/evolution.lua, lib/chart.lua).
+-- It runs on Digimon World (USA, SLUS-01032) and (Europe, SLES-02914):
+-- lib/release.lua holds what differs between them (addresses, the hooks'
+-- code, DigimonPara's layout: Europe keeps names in a table of their own,
+-- in full-width text, lib/text.lua).
 
 local bin = require("lib.bin")
 local iso = require("lib.iso")
@@ -36,22 +40,25 @@ local techniques = require("lib.techniques")
 local special = require("lib.special")
 local names = require("lib.names")
 local arena = require("lib.arena")
+local R = require("lib.release")
+local text = require("lib.text")
 
-if dwrc.serial ~= "SLUS-01032" then
-  dwrc.log("DW1 Expanded Roster only works with Digimon World (USA) for now")
+if not R then
+  dwrc.log("DW1 Expanded Roster works with Digimon World (USA, SLUS-01032) and (Europe, SLES-02914), not " .. dwrc.serial)
   return
 end
 
-local EXE = "SLUS_010.32"
-local EXE_CODE = 0x80090800          -- the executable's first byte after its 2 KiB header
-local REL_BIN_OFFSETS = 0x8012B96C   -- the overlays' load addresses (16 words)
-local REL_BIN_FILES = 0x8012BA8C     -- and their names (16 pointers)
-local FILE_OFFSET_TABLE = 0x8011FE1C -- every file: {sector, size, name*}, up to size 0
+local EXE = R.exe
+local EXE_CODE = R.exe_code                   -- the executable's first byte after its 2 KiB header
+local REL_BIN_OFFSETS = R.rel_bin_offsets     -- the overlays' load addresses (16 words)
+local REL_BIN_FILES = R.rel_bin_files         -- and their names (16 pointers)
+local FILE_OFFSET_TABLE = R.file_offset_table -- every file: {sector, size, name*}, up to size 0
+local P = R.para                              -- DigimonPara: its size and fields' offsets
 local TEXTURE_SIZE = 0x4800          -- ALLTIM.TIM: one 9-sector TIM per type
 
 local t0 = os.clock()
 local exe, exe_lba, exe_size = iso.read(EXE)
-assert(exe:sub(1, 8) == "PS-X EXE", "SLUS_010.32 is not an executable")
+assert(exe:sub(1, 8) == "PS-X EXE", EXE .. " is not an executable")
 local function exe_off(addr) return addr - EXE_CODE + 0x800 end
 
 -- A file by name, as the game finds it: its first sector and size.
@@ -89,7 +96,7 @@ local total = 0
 for _, f in ipairs(code_files) do
   local data, lba, size = iso.read(f.name)
   if f.name == EXE then data = exe end
-  local code = data:sub(f.skip + 1, size)
+  local code = data:sub(f.skip + 1, R.code_end and R.code_end[f.name] or size)
   local words = bin.words(code)
   limits.note_code(f.name, f.base, words)
   local patches, refs = reloc.scan(words, f.base, tables.move, f.name)
@@ -119,8 +126,15 @@ for name in pairs(extra) do error("patches for " .. name .. ", which isn't one o
 local textures, replaced = {}, {}
 
 -- --- the Digimon from Digimon World 2003 and Digimon World 2 ---------------------
-local DIGIMON_DATA = 0x8012CEB4      -- the game's own copy (USA: boneCount at +20)
-local DIGIMON_SKELETONS = 0x8011CE60 -- pointers to {s8 object, s8 parent}[boneCount]
+local DIGIMON_DATA = R.tables.DIGIMON_DATA           -- the game's own copy
+local DIGIMON_SKELETONS = R.tables.DIGIMON_SKELETONS -- pointers to {s8 object, s8 parent}[boneCount]
+
+-- A game Digimon's name, from the executable (Europe: DIGIMON_NAMES' full-width
+-- text, read as ASCII).
+local function game_name(t)
+  if R.names then return text.ascii(bin.cstr(exe, exe_off(bin.u32(exe, exe_off(R.names + 4 * t))))) end
+  return bin.cstr(exe, exe_off(DIGIMON_DATA + t * P.size))
+end
 local built = {}                     -- the backports that were built (type -> entry)
 local npc_models = {}                -- their NAME.NPC: type -> {size, slots (bit k = technique slot k kept)}
 
@@ -131,9 +145,9 @@ local npc_models = {}                -- their NAME.NPC: type -> {size, slots (bi
 -- three choices of four (DW1 Wild Digimon Randomizer, research notes).
 local function npc_techniques(b)
   local moves = {}
-  local data = DIGIMON_DATA + (b.techniques and b.techniques.from or b.donor) * 0x34
+  local data = DIGIMON_DATA + (b.techniques and b.techniques.from or b.donor) * P.size
   for k = 0, 15 do
-    moves[k] = b.techniques and b.techniques.moves and (b.techniques.moves[k + 1] or 0xFF) or exe:byte(exe_off(data + 35 + k) + 1)
+    moves[k] = b.techniques and b.techniques.moves and (b.techniques.moves[k + 1] or 0xFF) or exe:byte(exe_off(data + P.moves + k) + 1)
   end
   local slots = {}
   for k = 0, 15 do
@@ -153,7 +167,7 @@ end
 -- The other games' discs the backports come from: game -> {info, file(n)}
 -- (files by number through each executable's own file table); "dw1" is this
 -- disc (an NPC-only Digimon's own model on a partner's skeleton).
-local sources = { dw1 = { info = { serial = dwrc.serial, title = "Digimon World" } } }
+local sources = { dw1 = { info = { serial = "SLUS-01032", title = "Digimon World" } } } -- (DW1 sources: the same types and files on every release)
 do
   local dw3 = dwrc.discs.info("dw3")
   local t3 = dw3 and backports.DW3[dw3.serial]
@@ -196,7 +210,7 @@ do
       local ok, err = pcall(function()
         local t1 = os.clock()
         local function skeleton(t)
-          local out, count = {}, bin.s32(exe, exe_off(DIGIMON_DATA + t * 0x34 + 20))
+          local out, count = {}, bin.s32(exe, exe_off(DIGIMON_DATA + t * P.size + P.bones))
           local sk = bin.u32(exe, exe_off(DIGIMON_SKELETONS + 4 * t))
           for i = 0, count - 1 do out[i] = { string.unpack("<i1i1", exe, exe_off(sk + 2 * i) + 1) }; out[i][3] = nil end
           return out
@@ -244,7 +258,7 @@ do
           -- the donor's technique motions
           local kinds, dm = {}, {}
           for _, k in ipairs(b.specialties) do if k ~= 255 then kinds[#kinds + 1] = k end end
-          for k = 0, 15 do dm[k + 1] = exe:byte(exe_off(DIGIMON_DATA + b.donor * 0x34 + 35 + k) + 1) end
+          for k = 0, 15 do dm[k + 1] = exe:byte(exe_off(DIGIMON_DATA + b.donor * P.size + P.moves + k) + 1) end
           b.techniques.moves, b.techniques.motions = techniques.build(function(a) return exe:byte(exe_off(a) + 1) end, dm, kinds, f.from, f.anim)
         end
         if b.techniques then
@@ -254,10 +268,10 @@ do
           -- and travel made bigger (leap: KingSukamon's King Stamp), or
           -- another Digimon's motion (motion)
           alias = {}
-          local data = DIGIMON_DATA + (b.techniques.from or b.donor) * 0x34
+          local data = DIGIMON_DATA + (b.techniques.from or b.donor) * P.size
           for k, m in ipairs(b.techniques.motions) do
             local slot = k - 1
-            local tech = b.techniques.moves and b.techniques.moves[k] or exe:byte(exe_off(data + 35 + slot) + 1)
+            local tech = b.techniques.moves and b.techniques.moves[k] or exe:byte(exe_off(data + P.moves + slot) + 1)
             local l, leap
             if f and tech == f.from then l, leap = f.lunge, f.leap end
             if f and tech == f.from and f.motion then
@@ -272,14 +286,14 @@ do
         elseif f and f.motion then
           -- the finisher plays one of the source's own animations, retargeted
           -- (a DW1 source: Machinedramon's Infinity Cannon)
-          local data = DIGIMON_DATA + b.donor * 0x34
+          local data = DIGIMON_DATA + b.donor * P.size
           for k = 0, 15 do
-            if exe:byte(exe_off(data + 35 + k) + 1) == f.from then alias = { [0x2E + k] = other_motion() } end
+            if exe:byte(exe_off(data + P.moves + k) + 1) == f.from then alias = { [0x2E + k] = other_motion() } end
           end
         elseif f and f.anim then
-          local data, from_k, anim_k = DIGIMON_DATA + b.donor * 0x34, nil, nil
+          local data, from_k, anim_k = DIGIMON_DATA + b.donor * P.size, nil, nil
           for k = 0, 15 do
-            local m = exe:byte(exe_off(data + 35 + k) + 1)
+            local m = exe:byte(exe_off(data + P.moves + k) + 1)
             if m == f.from then from_k = k end
             if m == f.anim then anim_k = k end
           end
@@ -354,7 +368,7 @@ end
 -- (not at boot) so the battle effect hooks know them in every session, a
 -- loaded state's too: each looks like its donor finisher in battle.
 local finisher_id = {}
-local ORIGINAL_DIGIMON_TYPES = 0x8012A84C -- s16 per type, -1 = itself
+local ORIGINAL_DIGIMON_TYPES = R.tables.ORIGINAL_DIGIMON_TYPES -- s16 per type, -1 = itself
 for t, b in pairs(built) do
   local o = string.unpack("<i2", exe, exe_off(ORIGINAL_DIGIMON_TYPES + 2 * b.donor) + 1)
   limits.original_type[t] = o >= 0 and o or b.donor -- battle effects treat it as its donor
@@ -392,9 +406,10 @@ do
   end
 end
 
--- Developer option: the last type (259), a copy of Agumon, for testing new type numbers.
+-- Developer option: type 254, a copy of Agumon, for testing new type numbers
+-- (an evolution target is a byte, 0xFF none: the last type, 259, can't be one).
 local test_clone = dwrc.options.test_clone
-local CLONE, CLONE_OF, CLONE_FILE = tables.CAPACITY - 1, 3, "XAGU"
+local CLONE, CLONE_OF, CLONE_FILE = 254, 3, "XAGU"
 if test_clone then
   local alltim = read_game_file("ALLTIM.TIM")
   textures[CLONE] = alltim:sub(CLONE_OF * TEXTURE_SIZE + 1, (CLONE_OF + 1) * TEXTURE_SIZE)
@@ -424,6 +439,19 @@ end
 -- models it can load and gives each its kept techniques), its NAME.NPC
 -- follows: the technique slots it keeps (u16 at +6, bit k), "NPC" (+8) and
 -- its size (+12).
+-- A new type's name: in its DigimonPara (USA, name[20]) or in the mod's
+-- room for names, full width, with DIGIMON_NAMES pointing there (Europe).
+local function write_name(ctx, t, name)
+  if R.names then
+    local at = tables.NAMES + tables.NAME_BYTES * (t - 180)
+    local fw = text.fullwidth(name):sub(1, tables.NAME_BYTES - 2)
+    ctx:write_bytes(at, fw .. string.rep("\0", tables.NAME_BYTES - #fw))
+    ctx:write32(tables.entry("DIGIMON_NAMES", t), at)
+  else
+    ctx:write_bytes(tables.entry("DIGIMON_DATA", t), name .. string.rep("\0", 20 - #name))
+  end
+end
+
 local NPC_TAG = 0x0043504E -- "NPC\0"
 local ARENA_TAG = 0x41     -- "A" at +5: it has a picture for the Arena's bracket (lib/arena.lua)
 local function set_file_name(ctx, t, name)
@@ -435,7 +463,7 @@ local function set_file_name(ctx, t, name)
     ctx:write32(at + 8, NPC_TAG)
     ctx:write32(at + 12, npc.size)
   end
-  if icons[t] then ctx:write8(at + 5, ARENA_TAG) end
+  if icons[t] and R.arena then ctx:write8(at + 5, ARENA_TAG) end
   ctx:write32(tables.entry("PTR_DIGIMON_FILE_NAMES", t), at)
 end
 
@@ -445,7 +473,7 @@ end
 -- executable, so the lists past the slots (evolution.extra, .extra_from)
 -- are known in every session, a save state's too; the rows are written to
 -- the moved table at boot (setup).
-local EVOLUTION_PATHS_EXE = 0x8012B66C -- 62 rows in the executable
+local EVOLUTION_PATHS_EXE = R.tables.EVOLUTION_PATHS -- 62 rows in the executable
 local rows = {}                        -- type -> its 11 bytes (1-based)
 
 local function row(t)
@@ -511,13 +539,14 @@ do
   local function level(t)
     if level_of[t] then return level_of[t] end
     if built[t] then return built[t].level end
-    return exe:byte(exe_off(DIGIMON_DATA + t * 0x34 + 29) + 1)
+    return exe:byte(exe_off(DIGIMON_DATA + t * P.size + P.level) + 1)
   end
   local function stage(t) return chart.stage[t] or level(t) end
   local by_name = {}
-  for t = 1, 61 do by_name[bin.cstr(exe, exe_off(DIGIMON_DATA + t * 0x34))] = t end
+  for t = 1, 61 do by_name[game_name(t)] = t end
   for t, b in pairs(built) do by_name[b.name] = t end
-  local function resolve(n) return by_name[tree.aliases[n] or n] end
+  -- (Europe spells HerculesKabuterimon out, USA has the alias's H-Kabuterimon)
+  local function resolve(n) return by_name[n] or by_name[tree.aliases[n]] end
   local function has(list, v) for _, x in ipairs(list) do if x == v then return true end end return false end
   local game_to, all = {}, {}
   for t = 1, 62 do
@@ -584,7 +613,7 @@ do
       for s = 1, 61 do
         if has(game_to[s], t) and stage(s) == st - 1 then
           to[s][#to[s] + 1] = t
-          interim[#interim + 1] = bin.cstr(exe, exe_off(DIGIMON_DATA + s * 0x34)) .. " -> " .. bin.cstr(exe, exe_off(DIGIMON_DATA + t * 0x34))
+          interim[#interim + 1] = game_name(s) .. " -> " .. game_name(t)
         end
       end
     end
@@ -594,7 +623,7 @@ do
       for _, x in ipairs(game_to[t]) do
         if stage(x) == 5 then
           to[t][#to[t] + 1] = x
-          interim[#interim + 1] = bin.cstr(exe, exe_off(DIGIMON_DATA + t * 0x34)) .. " -> " .. bin.cstr(exe, exe_off(DIGIMON_DATA + x * 0x34))
+          interim[#interim + 1] = game_name(t) .. " -> " .. game_name(x)
         end
       end
     end
@@ -642,7 +671,8 @@ end
 --     redraws it: rows 0..239 of the page for icons, 240..255 for CLUTs (4
 --     a row): 64 more, 128 in all.
 local icon_slots = {}
-for s = 2, 7 do icon_slots[#icon_slots + 1] = { s * 32, 72 } end
+-- (Europe: from slot 4, past "Champi", "Ultima" and the mod's "Mega" in rows 72..83)
+for s = R.chart and R.chart.first_icon_slot or 2, 7 do icon_slots[#icon_slots + 1] = { s * 32, 72 } end
 for band = 1, 7 do
   for s = 0, 7 do
     if not (band == 7 and s >= 6) then icon_slots[#icon_slots + 1] = { s * 32, 72 + band * 16 } end
@@ -650,7 +680,7 @@ for band = 1, 7 do
 end
 for s = 3, 6 do icon_slots[#icon_slots + 1] = { s * 32, 212 } end
 local PAGE_1B, PAGE_1A = 0x1B, 0x1A
-local IN_1B = 64                       -- icons in page 0x1B before 0x1A's
+local IN_1B = #icon_slots              -- icons in page 0x1B before 0x1A's (64; Europe 62)
 do
   local types = {}
   for t in pairs(icons) do types[#types + 1] = t end
@@ -705,9 +735,9 @@ local function setup(ctx)
     -- lib/limits.lua)
     if b.techniques and b.techniques.moves then
       local m = b.techniques.moves
-      ctx:write_bytes(tables.entry("DIGIMON_DATA", t) + 35, string.char(table.unpack(m)) .. string.rep(string.char(0xFF), 16 - #m))
+      ctx:write_bytes(tables.entry("DIGIMON_DATA", t) + P.moves, string.char(table.unpack(m)) .. string.rep(string.char(0xFF), 16 - #m))
     elseif b.techniques then
-      ctx:write_bytes(tables.entry("DIGIMON_DATA", t) + 35, ctx:read_bytes(tables.entry("DIGIMON_DATA", b.techniques.from) + 35, 16))
+      ctx:write_bytes(tables.entry("DIGIMON_DATA", t) + P.moves, ctx:read_bytes(tables.entry("DIGIMON_DATA", b.techniques.from) + P.moves, 16))
     end
     -- RaiseData (meals, sleep, poop, favourite food, training, default
     -- weight, the Digimon page's camera) from another Digimon: a Rookie on a
@@ -715,15 +745,15 @@ local function setup(ctx)
     if b.raise_from then
       ctx:write_bytes(tables.entry("RAISE_DATA", t), ctx:read_bytes(tables.entry("RAISE_DATA", b.raise_from), 0x1C))
     end
-    local data = tables.entry("DIGIMON_DATA", t) -- USA: name[20], ..., height +26, level +29
-    ctx:write_bytes(data, b.name .. string.rep("\0", 20 - #b.name))
-    ctx:write16(data + 26, b.height)
-    ctx:write8(data + 29, b.level)
+    local data = tables.entry("DIGIMON_DATA", t)
+    write_name(ctx, t, b.name)
+    ctx:write16(data + P.height, b.height)
+    ctx:write8(data + P.level, b.level)
     set_file_name(ctx, t, b.file)
-    -- DigimonPara: radius +24, attribute +28, specialties +30..32
-    if b.radius then ctx:write16(data + 24, b.radius) end
-    if b.attribute then ctx:write8(data + 28, b.attribute) end
-    if b.specialties then ctx:write_bytes(data + 30, string.char(table.unpack(b.specialties))) end
+    -- DigimonPara: radius, attribute (type), specialties[3]
+    if b.radius then ctx:write16(data + P.radius, b.radius) end
+    if b.attribute then ctx:write8(data + P.attribute, b.attribute) end
+    if b.specialties then ctx:write_bytes(data + P.special, string.char(table.unpack(b.specialties))) end
     -- Its own finisher (finisher_id): the donor finisher's stats (power,
     -- MP, range...) under its own name, in place of that one in its
     -- moves[] (DigimonPara +35, technique by animation slot: the
@@ -740,8 +770,8 @@ local function setup(ctx)
       if f.power then ctx:write16(tables.entry("MOVE_DATA", id) + 4, f.power) end
       local found = false
       for i = 0, 15 do
-        if ctx:read8(data + 35 + i) == f.from then
-          ctx:write8(data + 35 + i, id)
+        if ctx:read8(data + P.moves + i) == f.from then
+          ctx:write8(data + P.moves + i, id)
           found = true
         end
       end
@@ -760,7 +790,7 @@ local function setup(ctx)
   -- the game's Digimon that change (backports.changes: the Megas)
   for _, c in ipairs(changed) do
     write_evolution(ctx, c.type, c)
-    if c.level then ctx:write8(tables.entry("DIGIMON_DATA", c.type) + 29, c.level) end -- DigimonPara.level
+    if c.level then ctx:write8(tables.entry("DIGIMON_DATA", c.type) + P.level, c.level) end -- DigimonPara.level
   end
   -- the evolution lists worked out above
   for t, r in pairs(rows) do ctx:write_bytes(tables.entry("EVOLUTION_PATHS", t), string.char(table.unpack(r))) end
@@ -769,8 +799,8 @@ local function setup(ctx)
   -- DigimonPara (USA): name[20] first; level at +29 (a Champion, so the
   -- clone is what Agumon evolves into)
   local data = tables.entry("DIGIMON_DATA", CLONE)
-  ctx:write_bytes(data, "Test Agumon" .. string.rep("\0", 9))
-  ctx:write8(data + 29, 4)
+  write_name(ctx, CLONE, "Test Agumon")
+  ctx:write8(data + P.level, 4)
   -- Agumon's only evolution is the clone, with requirements it meets:
   -- care mistakes >= -1, every stat (HP/10 >= 0, the one it averages) and
   -- the "from Agumon" bonus make 3 points; the weight point (-1 +- 5) is
@@ -793,7 +823,7 @@ files.install()
 -- Bracket pictures in File City's Arena (lib/arena.lua), from the chart
 -- icons, uploaded through the evolution scene's buffer (no evolution runs
 -- during a tournament).
-arena.install(icons, tables.EVL_SCRATCH, tables.EVL_SCRATCH_SIZE)
+if R.arena then arena.install(icons, tables.EVL_SCRATCH, tables.EVL_SCRATCH_SIZE) end
 do
   local new_types = {}
   for t, b in pairs(built) do
@@ -802,10 +832,10 @@ do
   end
   if test_clone then new_types[#new_types + 1] = CLONE end
   table.sort(new_types)
-  chart.install(new_types)
+  if R.chart then chart.install(new_types) else dwrc.log("the Digivolution Chart stays the game's on " .. R.title .. " for now: the new Digimon aren't on it") end
 end
 if dwrc.options.check_evolution then
-  evolution.compare(0x800DD7AC, 200) -- from partnerTick, every frame in the field
+  evolution.compare(R.partner_tick, 200) -- from partnerTick, every frame in the field
 else
   evolution.install()
   evolution.numemon = special.numemon -- Numemon, or Raremon (lib/special.lua)
@@ -826,7 +856,7 @@ end
 -- Long names on the Digimon page squeezed into the box (lib/names.lua):
 -- MasterTyrannomon, MetalTyrannomon and PlatinumSukamon were cut off, and a
 -- 120-pixel name ran under the specialty icons.
-do
+if R.long_names then
   local ok, why = names.check(function(a) return bin.u32(exe, exe_off(a)) end)
   if ok then names.install() else dwrc.log("long names are left as they were: unexpected code at " .. why) end
 end
@@ -874,21 +904,34 @@ do
     end
     return table.concat(out)
   end
-  local AT = 0x740C6 -- section 6 of script 162 (script 162 starts at 0x73000)
+  -- R.sukamon_hint: section 6 of script 162 in each script file (USA DG.SCN
+  -- 0x740C6, script 162 at 0x73000). Europe's text box draws full width only
+  -- (no ASCII) and the script's slot is full, so there the first page ("Let's
+  -- see what's around here.") makes way for a shorter hint after the second.
+  -- Europe's other languages (DG1..DG4.SCN) keep his lines.
   local lines = { { "Let's see what's around here." }, { "I don't like the toilet, but", "everything else seems Ok!" } }
-  local old = "\x1B\x06\x1A\0" .. pages(lines, sjis) .. "\xFE\0"
-  lines[#lines + 1] = { "Eating poop helps", "Sukamon evolve!" }
-  local new = "\x1B\x06\x1A\0" .. pages(lines, ascii) .. "\xFE\0"
-  if #new < #old then new = new .. string.rep("\0", #old - #new) end
-  local lba = game_file("DG.SCN")
-  local first, last = AT // 2048, (AT + #old - 1) // 2048
-  local data = dwrc.disc.read(lba + first, last - first + 1)
-  local o = AT - first * 2048
-  if #new ~= #old then
-    dwrc.log(string.format("Sukamon's lines and hint are %d bytes, more than %d: his hint is left out", #new, #old))
-  elseif data:sub(o + 1, o + #old) ~= old then
-    dwrc.log("Sukamon's lines in File City aren't where expected: his hint is left out")
+  local old, new
+  if R.names then
+    old = "\x1B\x06\x1A\0" .. pages(lines, text.fullwidth) .. "\xFE\0"
+    new = "\x1B\x06\x1A\0" .. pages({ lines[2], { "Eating poop helps", "me evolve!" } }, text.fullwidth) .. "\xFE\0"
   else
-    dwrc.disc.write(lba + first, data:sub(1, o) .. new .. data:sub(o + #new + 1))
+    old = "\x1B\x06\x1A\0" .. pages(lines, sjis) .. "\xFE\0"
+    lines[#lines + 1] = { "Eating poop helps", "Sukamon evolve!" }
+    new = "\x1B\x06\x1A\0" .. pages(lines, ascii) .. "\xFE\0"
+  end
+  if #new < #old then new = new .. string.rep("\0", #old - #new) end
+  for _, h in ipairs(R.sukamon_hint) do
+    local AT = h.at
+    local lba = game_file(h.file)
+    local first, last = AT // 2048, (AT + #old - 1) // 2048
+    local data = dwrc.disc.read(lba + first, last - first + 1)
+    local o = AT - first * 2048
+    if #new ~= #old then
+      dwrc.log(string.format("Sukamon's lines and hint are %d bytes, more than %d: his hint is left out", #new, #old))
+    elseif data:sub(o + 1, o + #old) ~= old then
+      dwrc.log("Sukamon's lines in File City aren't where expected: his hint is left out")
+    else
+      dwrc.disc.write(lba + first, data:sub(1, o) .. new .. data:sub(o + #new + 1))
+    end
   end
 end

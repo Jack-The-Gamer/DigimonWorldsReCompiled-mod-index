@@ -1,5 +1,5 @@
 -- The Digivolution Chart (the Player menu's Chart page), rebuilt so it can
--- hold any number of Digimon (SLUS-01032; names as in dw_decomp).
+-- hold any number of Digimon (lib/release.lua; names as in dw_decomp).
 --
 -- The game's chart is laid out by hand: 61 boxes at fixed places
 -- (EVO_CHART_BOXES {posX, posY, u, v, clut}), five stage panels of fixed
@@ -29,48 +29,53 @@
 
 local tables = require("lib.tables")
 local evolution = require("lib.evolution")
+local R = require("lib.release")
+local C = R.chart or {} -- (USA addresses in the comments)
+local text = require("lib.text")
 
 local M = {}
 
-local RENDER_CHART = 0x800BD940     -- renderEvoChartView()
-local CHART_TICK = 0x800B9654       -- tickPlayerMenu: if (PLAYER_MENU_STATE == 1) {...}
-local CHART_TICK_END = 0x800B9B88   -- the code after that block
-local RENDER_BORDER_BOX = 0x800BE990 -- (x, y, w, h, light, dark, r, g, b, depth)
-local IS_KEY_DOWN = 0x800FC054
-local PLAY_SOUND = 0x800C6374       -- (bank, sound)
-local HAS_DIGIMON_RAISED = 0x800FF824
-local IS_UI_BOX_AVAILABLE = 0x800BA1D4
-local CREATE_ANIMATED_UI_BOX = 0x800C3014 -- (id, ?, ?, &final, &start, NULL, render)
-local REMOVE_ANIMATED_UI_BOX = 0x800C31FC -- (id, &final)
-local RENDER_CHART_DETAIL = 0x800BA930
-local LOAD_IMAGE = 0x800948A8       -- LoadImage(RECT *, u_long *): queued VRAM upload
-local DRAW_SYNC = 0x800947B0        -- DrawSync(0): waits for the queued transfers
-local DRAW_LINE_3P = 0x800E3D14     -- (color, x1, y1, x2, y2, x3, y3, depth, 0)
-local DRAW_LINE_2P = 0x800E3E7C     -- (color, x1, y1, x2, y2, depth, 0)
-local DRAW_CHART_STRINGS = 0x800C0718 -- drawEvoChartStrings(int8_t type)
-local RENDER_STRING = 0x800E5B50     -- (colour, x, y, w, h, u, v, depth, 0): text from the page's text area
-local DRAW_STRING = 0x8010CF24       -- drawString(str, x, y): text into the page's text area
-local MEGA_TEXT_V = 0x48             -- "Mega" goes there (the US page writes nothing in rows 72..99)
-local RENDER_INSET_BOX = 0x800BE734  -- (x, y, w, h, depth): the page's sunken frames (screen pixels)
-local MENU_SUB_STATE = 0x80134D35    -- u8 (2: the detail page's name is drawn every frame)
-local ASCII_TO_SJIS = 0x800F18C8     -- (char): what drawString (0x8010CF24) does per letter...
-local SJIS_TO_FONT = 0x800F1AB0      -- (code)
-local FONT_CODES = 0x801307E0        -- 80 x u16 (byte-swapped font codes): each glyph's code
-local FONT_GLYPHS = 0x80130880       -- 80 x {u16 rows[11], u16 advance}: the glyph drawn for each
-local EVO_CHART_DETAIL_COLORS = 0x80123E6C -- 5 CLUT ids for the detail page's icons
-local CHART_TO_LINE_COLORS = 0x80124A84 -- 6 x 2 RGB8: each place's line colours
+local RENDER_CHART = C.render_chart     -- renderEvoChartView()
+local CHART_TICK = C.chart_tick       -- tickPlayerMenu: if (PLAYER_MENU_STATE == 1) {...}
+local CHART_TICK_END = C.chart_tick_end   -- the code after that block
+local RENDER_BORDER_BOX = C.render_border_box -- (x, y, w, h, light, dark, r, g, b, depth)
+local IS_KEY_DOWN = C.is_key_down
+local PLAY_SOUND = C.play_sound       -- (bank, sound)
+local HAS_DIGIMON_RAISED = R.has_digimon_raised
+local IS_UI_BOX_AVAILABLE = C.is_ui_box_available
+local CREATE_ANIMATED_UI_BOX = C.create_animated_ui_box -- (id, ?, ?, &final, &start, NULL, render)
+local REMOVE_ANIMATED_UI_BOX = C.remove_animated_ui_box -- (id, &final)
+local RENDER_CHART_DETAIL = C.render_chart_detail
+local LOAD_IMAGE = C.load_image       -- LoadImage(RECT *, u_long *): queued VRAM upload
+local DRAW_SYNC = C.draw_sync        -- DrawSync(0): waits for the queued transfers
+local DRAW_LINE_3P = C.draw_line_3p     -- (color, x1, y1, x2, y2, x3, y3, depth, 0)
+local DRAW_LINE_2P = C.draw_line_2p     -- (color, x1, y1, x2, y2, depth, 0)
+local DRAW_CHART_STRINGS = C.draw_chart_strings -- drawEvoChartStrings(int8_t type)
+local RENDER_STRING = C.render_string     -- (colour, x, y, w, h, u, v, depth, 0): text from the page's text area
+local DRAW_STRING = C.draw_string       -- drawString(str, x, y): text into the page's text area
+-- "Mega" goes there (the US page writes nothing in rows 72..99; Europe's
+-- has "Champi" and "Ultima" at u 0..95 of row 72)
+local MEGA_TEXT_U, MEGA_TEXT_V = C.mega_text and C.mega_text[1] or 0, C.mega_text and C.mega_text[2] or 0x48
+local RENDER_INSET_BOX = C.render_inset_box  -- (x, y, w, h, depth): the page's sunken frames (screen pixels)
+local MENU_SUB_STATE = C.menu_sub_state    -- u8 (2: the detail page's name is drawn every frame)
+local ASCII_TO_SJIS = C.ascii_to_sjis     -- (char): what drawString (0x8010CF24) does per letter...
+local SJIS_TO_FONT = C.sjis_to_font      -- (code)
+local FONT_CODES = C.font_codes        -- 80 x u16 (byte-swapped font codes): each glyph's code
+local FONT_GLYPHS = C.font_glyphs       -- 80 x {u16 rows[11], u16 advance}: the glyph drawn for each
+local EVO_CHART_DETAIL_COLORS = C.evo_chart_detail_colors -- 5 CLUT ids for the detail page's icons
+local CHART_TO_LINE_COLORS = C.chart_to_line_colors -- 6 x 2 RGB8: each place's line colours
 local FROM_LINE_DARK, FROM_LINE_LIGHT = 0x65db, 0x794e3
 
-local MENU_STATE = 0x80134D34       -- u8: 0 setting up, 1 shown, 2 cursor, 3 detail open
-local PLAYER_MENU_STATE = 0x80134D37 -- u8: 1 = the Chart page
-local CHART_SELECTED_DIGIMON = 0x80134D40 -- s16
-local MAIN_D_80134D46 = 0x80134D46
-local CHANGED_INPUT = 0x80134EEC    -- buttons pressed this frame
-local PLAYTIME_FRAMES = 0x80134F00
-local EVO_CHART_BOXES = 0x80124544  -- 61 x {s16 posX, s16 posY, u8 u, u8 v, u8 clut, u8 pad}
-local EVO_CHART_VIEW_COLORS = 0x80123E1C -- 5 CLUT ids
-local GS_OUT_PACKET_P = 0x80136FE4  -- libgs's next free primitive (GsGetWorkBase)
-local ACTIVE_ORDERING_TABLE = 0x80134ED0 -- GsOT * (org at +4)
+local MENU_STATE = C.menu_state       -- u8: 0 setting up, 1 shown, 2 cursor, 3 detail open
+local PLAYER_MENU_STATE = C.player_menu_state -- u8: 1 = the Chart page
+local CHART_SELECTED_DIGIMON = C.chart_selected_digimon -- s16
+local MAIN_D_80134D46 = C.main_d_80134d46
+local CHANGED_INPUT = C.changed_input    -- buttons pressed this frame
+local PLAYTIME_FRAMES = C.playtime_frames
+local EVO_CHART_BOXES = C.evo_chart_boxes  -- 61 x {s16 posX, s16 posY, u8 u, u8 v, u8 clut, u8 pad}
+local EVO_CHART_VIEW_COLORS = C.evo_chart_view_colors -- 5 CLUT ids
+local GS_OUT_PACKET_P = C.gs_out_packet_p  -- libgs's next free primitive (GsGetWorkBase)
+local ACTIVE_ORDERING_TABLE = C.active_ordering_table -- GsOT * (org at +4)
 
 local CONFIRM, CANCEL = 64, 16      -- isKeyDown codes
 local LEFT, RIGHT, UP, DOWN = 0x8000, 0x2000, 0x1000, 0x4000
@@ -152,7 +157,7 @@ local function build_layout(ctx, new_types)
   local moved = {} -- the game's Digimon in another section (the Megas): placed like new ones
   for i = 0, 60 do
     local b = EVO_CHART_BOXES + 8 * i
-    local level = ctx:read8(tables.entry("DIGIMON_DATA", i + 1) + 29)
+    local level = ctx:read8(tables.entry("DIGIMON_DATA", i + 1) + R.para.level)
     local d = { type = i + 1, px = ctx:read_s16(b), py = ctx:read_s16(b + 2), u = ctx:read8(b + 4), v = ctx:read8(b + 5), clut = ctx:read8(b + 6) }
     if M.stage[i + 1] then
       moved[#moved + 1] = { stage = M.stage[i + 1], d = d }
@@ -172,7 +177,7 @@ local function build_layout(ctx, new_types)
   end
   local news = moved
   for _, t in ipairs(new_types) do
-    local level = M.stage[t] or ctx:read8(tables.entry("DIGIMON_DATA", t) + 29)
+    local level = M.stage[t] or ctx:read8(tables.entry("DIGIMON_DATA", t) + R.para.level)
     if level >= 1 and level <= STAGES then
       local ic = M.icons[t] or {}
       news[#news + 1] = { stage = level, d = { type = t, u = ic.u, v = ic.v, clutid = ic.clut, tpage = ic.tpage, clut = 0, new = true } }
@@ -410,7 +415,11 @@ local STAGE_LINE_W, NAME_LINE_W = 96, 104
 local TITLE_LINE = { 129, 50, 60, 4 }           -- under "Tree", as the game's
 -- The stage names in the page's text area {w, u, v} by level (the US
 -- game's own renderString calls; a stage without one shows none).
-local STAGE_TEXT = { { 0x2e, 0x24, 0x18 }, { 0x3e, 0x52, 0x18 }, { 0x2f, 0, 0x24 }, { 0x41, 0x2f, 0x24 }, { 0x41, 0, 0x3c } }
+-- (Europe: 48-pixel cells, lib/release.lua)
+local STAGE_TEXT = C.stage_text or { { 0x2e, 0x24, 0x18 }, { 0x3e, 0x52, 0x18 }, { 0x2f, 0, 0x24 }, { 0x41, 0x2f, 0x24 }, { 0x41, 0, 0x3c } }
+-- "Tree" (Europe: "Chart"): x and width; the widest name shown
+local TITLE_X, TITLE_W = C.title_text and C.title_text[1] or -0x14, C.title_text and C.title_text[2] or 0x24
+local NAME_MAX = C.name_max or 0x78
 local PITCH, MIN_PITCH = 19, 8                  -- frames apart, as on the chart
 local INSET = 7                                 -- an icon's distance from its panel's sides
 local ARC_STEP = 18                             -- the game's step in per row from the middle
@@ -481,6 +490,16 @@ end
 local name_widths = {}
 local mega_width = nil
 local function text_width(call, ctx, at)
+  if R.names then -- Europe: full width, drawGlyph's widths
+    local w, i = 0, 0
+    while i < 48 do
+      local b = ctx:read8(at + i)
+      if b == 0 then return w end
+      w = w + text.width((b << 8) | ctx:read8(at + i + 1))
+      i = i + 2
+    end
+    return w
+  end
   local w, i = 0, 0
   while i < 20 do
     local b = ctx:read8(at + i)
@@ -537,21 +556,22 @@ local function draw_detail(call, ctx, t)
   detail_icon(ctx, t, -8, cy, 16)
   frame_box(call, -8, cy, 16)
   -- "Tree", the stage and the name
-  call(RENDER_STRING, 3, -0x14, -0x4f, 0x24, 0xc, 0, 0x18, 4, 0)
+  call(RENDER_STRING, 3, TITLE_X, -0x4f, TITLE_W, 0xc, 0, 0x18, 4, 0)
   local data = tables.entry("DIGIMON_DATA", t)
-  local stage = M.stage[t] or ctx:read8(data + 29)
+  local stage = M.stage[t] or ctx:read8(data + R.para.level)
   local st = STAGE_TEXT[stage]
   if stage == 6 then
     -- the game has no "Mega": drawn into the text area's free rows
-    ctx:write_bytes(tables.TEXT, "Mega ")
-    call(DRAW_STRING, tables.TEXT, 0, MEGA_TEXT_V)
+    ctx:write_bytes(tables.TEXT, R.names and text.fullwidth("Mega") .. " " or "Mega ")
+    call(DRAW_STRING, tables.TEXT, MEGA_TEXT_U, MEGA_TEXT_V)
     mega_width = mega_width or text_width(call, ctx, tables.TEXT) or 0x30
-    call(RENDER_STRING, 0, -(mega_width // 2), STAGE_Y - 120, mega_width, 0xc, 0, MEGA_TEXT_V, 4, 0)
+    call(RENDER_STRING, 0, -(mega_width // 2), STAGE_Y - 120, mega_width, 0xc, MEGA_TEXT_U, MEGA_TEXT_V, 4, 0)
   elseif st then
     call(RENDER_STRING, 0, -(st[1] // 2), STAGE_Y - 120, st[1], 0xc, st[2], st[3], 4, 0)
   end
-  if not name_widths[t] then name_widths[t] = text_width(call, ctx, data) or 0x78 end
-  local w = math.min(name_widths[t], 0x78)
+  local name = R.names and ctx:read32(tables.entry("DIGIMON_NAMES", t)) or data
+  if not name_widths[t] then name_widths[t] = text_width(call, ctx, name) or NAME_MAX end
+  local w = math.min(name_widths[t], NAME_MAX)
   call(RENDER_STRING, 0, -(w // 2), NAME_Y - 120, w, 0xc, 0, 0x30, 4, 0)  -- the sunken frames
   for _, b in ipairs({
     { LEFT_X, PANEL_TOP, PANEL_W, PANEL_H }, { RIGHT_X, PANEL_TOP, PANEL_W, PANEL_H }, CENTRE_BOX, TITLE_LINE,
@@ -599,6 +619,17 @@ function M.install(new_types)
     if ctx:reg("a0") >= 0x80000000 then ctx:set_reg("a0", ctx:read_s16(CHART_SELECTED_DIGIMON) & 0xFFFF) end
     return false
   end)
+  -- Europe keeps the argument on the stack and reads it back as a signed
+  -- byte where it indexes DIGIMON_NAMES (C.name_index: {at, the instruction
+  -- there, register}): the type is put right there too.
+  local ni = C.name_index
+  if ni then
+    dwrc.on_exec(ni[1], function(ctx)
+      if ctx:read32(ni[1]) ~= ni[2] then return false end
+      if ctx:reg(ni[3]) >= 0x80000000 then ctx:set_reg(ni[3], ctx:read_s16(CHART_SELECTED_DIGIMON) & 0xFFFF) end
+      return false
+    end)
+  end
 end
 
 return M

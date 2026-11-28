@@ -22,15 +22,19 @@
 -- opponent through the same branch from its own code and keeps the whole
 -- model.
 
+local R = require("lib.release")
+
 local M = {}
 
-local LOOKUP_FILE_TABLE = 0x800A31F8           -- lookupFileTable(FileLookup *lookup, char *path) -> 1 found / 0
-local ADD_FILE_READ_REQUEST_PATH = 0x800E3938   -- (path, buffer, isRunning, callback, param)
-local ADD_FILE_READ_REQUEST_LOOKUP = 0x800E3BB4 -- the same, through lookupFileTable
-local NPC_PATH_DONE = 0x800A2188                -- loadMMD's NPC branch, its path built
--- addi v0,v0,48; sb v0,49(sp); jal lookupFileSize; addiu a0,sp,40
-local NPC_PATH_WORDS = { 0x20420030, 0xA3A20031, 0x0C028CB3, 0x27A40028 }
-local FROM_SCRIPT = 0x80106A04                  -- scriptLoadModel, after `jal loadNPCModel`
+local LOOKUP_FILE_TABLE = R.lookup_file_table                       -- lookupFileTable(FileLookup *lookup, char *path) -> 1 found / 0
+local ADD_FILE_READ_REQUEST_PATH = R.add_file_read_request_path     -- (path, buffer, isRunning, callback, param)
+local ADD_FILE_READ_REQUEST_LOOKUP = R.add_file_read_request_lookup -- the same, through lookupFileTable
+-- loadMMD's NPC branch with its path built (USA 0x800A2188: addi v0,v0,48;
+-- sb v0,49(sp); jal lookupFileSize; addiu a0,sp,40), the path at sp + path,
+-- and {stack offset, return address} pairs that say the load comes from a
+-- map script (USA: loadMMD's saved ra is scriptLoadModel's 0x80106A04, all
+-- tail calls; Europe: real calls, three frames up)
+local NPC = R.npc_path
 local files = {}
 
 local function find(ctx, path_addr)
@@ -54,17 +58,19 @@ end
 local function bcd(v) return (v // 10) * 16 + v % 10 end
 
 function M.install()
-  dwrc.on_exec(NPC_PATH_DONE, function(ctx)
-    for i, w in ipairs(NPC_PATH_WORDS) do
-      if ctx:read32(NPC_PATH_DONE + 4 * (i - 1)) ~= w then return false end
+  dwrc.on_exec(NPC.at, function(ctx)
+    for i, w in ipairs(NPC.words) do
+      if ctx:read32(NPC.at + 4 * (i - 1)) ~= w then return false end
     end
     local sp = ctx:reg("sp")
-    if ctx:read32(sp + 36) ~= FROM_SCRIPT then return false end
-    local path = ctx:read_bytes(sp + 40, 32)
+    for _, f in ipairs(NPC.from_script) do
+      if ctx:read32(sp + f[1]) ~= f[2] then return false end
+    end
+    local path = ctx:read_bytes(sp + NPC.path, 32)
     path = path:sub(1, (path:find("\0", 1, true) or 33) - 1)
     local name = (path:match("([^\\]+)$") or path):upper()
     if name:sub(-4) == ".MMD" and files[name:sub(1, -5) .. ".NPC"] then
-      ctx:write_bytes(sp + 40 + #path - 4, ".NPC")
+      ctx:write_bytes(sp + NPC.path + #path - 4, ".NPC")
     end
     return false
   end)

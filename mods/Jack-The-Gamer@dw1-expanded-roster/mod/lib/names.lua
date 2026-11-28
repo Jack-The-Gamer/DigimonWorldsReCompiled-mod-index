@@ -1,4 +1,4 @@
--- Long Digimon names on the Digimon page (SLUS-01032), fitted to the box.
+-- Long Digimon names on the Digimon page (lib/release.lua), fitted to the box.
 --
 -- renderDigimonStatsView (src/main/game_menu.c) shows the name from the text
 -- area, where drawDigimonStatsStrings drew it in full (row 0x48 from x 0),
@@ -23,26 +23,26 @@
 -- caller's, only u changes per letter, and it returns to NAME_DONE, where the
 -- next letter is set up. Each hooked instruction is checked first (M.check).
 
+local R = require("lib.release")
+
 local M = {}
 
-local DRAW_STRING = 0x8010CF24      -- drawString(str, x, y): a1 x, a2 y
-local GLYPH_ADVANCE = 0x8010D004    -- addu v0, s1, v0: s1 the glyph's x, v0 its width
-local DRAW_STRING_END = 0x8010D01C  -- its return: s2 y
-local NAME_CALL = 0x800BB85C        -- jal renderString (the name)
-local NAME_DONE = 0x800BB864        -- after it
-local RENDER_STRING = 0x800E5B50    -- renderString(color, x, y, w, h, u, v, page, flag)
+-- {address, the instruction there} each (lib/release.lua; USA in the comments)
+local N = R.long_names or {}
+local DRAW_STRING = N.draw_string and N.draw_string[1]         -- drawString(str, x, y): a1 x, a2 y
+local GLYPH_ADVANCE = N.glyph_advance and N.glyph_advance[1]   -- addu v0, s1, v0: s1 the glyph's x, v0 its width
+local DRAW_STRING_END = N.draw_string_end and N.draw_string_end[1] -- its return: s2 y
+local NAME_CALL = N.name_call and N.name_call[1]               -- jal renderString (the name)
+local NAME_DONE = N.name_done and N.name_done[1]               -- after it
+local RENDER_STRING = N.render_string and N.render_string[1]   -- renderString(color, x, y, w, h, u, v, page, flag)
 local NAME_ROW = 0x48
-local NAME_X, NAME_Y = -0x6C, -0x32 -- where the page puts the name
-M.BOX = 115                         -- x -108 up to the icons at 9, a pixel apart
+local NAME_X, NAME_Y = N.name_x or -0x6C, N.name_y or -0x32 -- where the page puts the name
+M.BOX = N.box or 115               -- x -108 up to the icons at 9, a pixel apart (Europe: -109, 116)
 
-M.CODE = {
-  [DRAW_STRING] = 0x27BDFFE0,       -- addiu sp, sp, -32
-  [GLYPH_ADVANCE] = 0x02221021,     -- addu v0, s1, v0
-  [DRAW_STRING_END] = 0x8FBF001C,   -- lw ra, 28(sp)
-  [NAME_CALL] = 0x0C0396D4,         -- jal 0x800E5B50 (renderString)
-  [NAME_DONE] = 0x3C018014,         -- lui at, 0x8014
-  [RENDER_STRING] = 0x27BDFFC0,     -- addiu sp, sp, -64
-}
+M.CODE = {}
+for _, k in ipairs({ "draw_string", "glyph_advance", "draw_string_end", "name_call", "name_done", "render_string" }) do
+  if N[k] then M.CODE[N[k][1]] = N[k][2] end
+end
 
 -- word(addr): the executable's instruction there; false if one isn't as expected.
 function M.check(word)
@@ -82,11 +82,12 @@ function M.install()
     return false
   end)
   dwrc.on_exec(GLYPH_ADVANCE, function(ctx)
-    if drawing then glyphs[#glyphs + 1] = { ctx:reg("s1") & 0xFFFF, ctx:reg("v0") & 0xFFFF } end
+    if drawing then glyphs[#glyphs + 1] = { ctx:reg(N.glyph_regs.x) & 0xFFFF, ctx:reg(N.glyph_regs.w) & 0xFFFF } end
     return false
   end)
   dwrc.on_exec(DRAW_STRING_END, function(ctx)
-    if drawing and ctx:reg("s2") == NAME_ROW then name = glyphs end
+    local y = N.end_y.reg and ctx:reg(N.end_y.reg) or ctx:read16(ctx:reg("sp") + N.end_y.stack)
+    if drawing and y == NAME_ROW then name = glyphs end
     drawing = false
     return false
   end)

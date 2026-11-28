@@ -17,7 +17,7 @@
 
 local M = {}
 
-local MOVE_DATA = 0x8012623C            -- the game's, 16 bytes a technique: range +8, kind +9
+local MOVE_DATA = require("lib.release").tables.MOVE_DATA -- the game's, 16 bytes a technique: range +8, kind +9
 local TWIN = { [0x30] = 0x2C, [0x39] = 0x37 }
 local RCLASS = { [0] = 0, [1] = 1, [2] = 2, [3] = 2, [4] = 4 }
 

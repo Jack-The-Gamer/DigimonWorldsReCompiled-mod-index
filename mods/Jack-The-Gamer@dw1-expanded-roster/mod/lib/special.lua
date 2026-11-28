@@ -1,4 +1,4 @@
--- The special evolutions around Sukamon and Numemon (SLUS-01032), as the
+-- The special evolutions around Sukamon and Numemon (lib/release.lua), as the
 -- user asked:
 -- * the virus bar's evolution into Sukamon gives PlatinumSukamon a quarter of
 --   the time (and neither of them catches it again);
@@ -12,13 +12,15 @@
 -- Addresses from the dw_decomp decompilation (src/main/partner_impl.c,
 -- config/us/symbols.txt); each hooked instruction is checked first (M.check).
 
+local R = require("lib.release")
+
 local M = {}
 
-local PARTNER_ENTITY = 0x801557A8   -- its type (u32) first
-local PARA = 0x80138460             -- PartnerPara
+local PARTNER_ENTITY = R.partner_entity -- its type (u32) first
+local PARA = R.partner_para             -- PartnerPara
 local POOP_EATEN = PARA + 88        -- s16, PartnerPara.unused5
-local EVOLUTION_TARGET = 0x80134E50 -- s16, -1 = none
-local PARTNER_STATE = 0x80134C5B    -- u8, 1 = idle in the field
+local EVOLUTION_TARGET = R.evolution_target -- s16, -1 = none
+local PARTNER_STATE = R.partner_state       -- u8, 1 = idle in the field
 
 local SUKAMON, NUMEMON = 39, 11
 M.POOPS = 20                        -- piles for KingSukamon
@@ -28,23 +30,19 @@ M.CHANCE = 4                        -- one in four
 -- isn't Sukamon (0x800A92A4), 0x800A92AC sets EVOLUTION_TARGET = 39, keeps the
 -- partner's type and stats for its return, and empties the bar; both paths
 -- meet at 0x800A9328, which starts any evolution set (state 13).
-local VIRUS_SUKAMON = 0x800A92AC
-local CONDITIONS_TAIL = 0x800A9328
+local SP = R.special -- {address, the instruction there} each (the comments give USA addresses)
+local VIRUS_SUKAMON = SP.virus_sukamon[1]
+local CONDITIONS_TAIL = SP.conditions_tail[1]
 -- tickPoopDetection (0x800A7ED0): only Numemon (11) and Sukamon (39) look for
 -- a pile beside the tamer (0x800A7EE4: the Sukamon test, else return); the
 -- search starts at 0x800A7EF0 and sends the partner to eat it (state 9,
 -- partnerTickEatShit), which ends in handleEatingPoop (0x800A8244).
-local POOP_SUKAMON_TEST = 0x800A7EE4
-local POOP_SEARCH = 0x800A7EF0
-local EAT_POOP = 0x800A8244
+local POOP_SUKAMON_TEST = SP.poop_sukamon_test[1]
+local POOP_SEARCH = SP.poop_search[1]
+local EAT_POOP = SP.eat_poop[1]
 
-M.CODE = {
-  [VIRUS_SUKAMON] = 0x24020027,     -- addiu v0, zero, 39
-  [CONDITIONS_TAIL] = 0x87829324,   -- lh v0, -27868(gp)
-  [POOP_SUKAMON_TEST] = 0x24010027, -- addiu at, zero, 39
-  [POOP_SEARCH] = 0x3C018015,       -- lui at, 0x8015
-  [EAT_POOP] = 0x9383913C,          -- lbu v1, -28356(gp)
-}
+M.CODE = {}
+for _, c in pairs(SP) do M.CODE[c[1]] = c[2] end
 
 -- word(addr): the executable's instruction there; false if one isn't as expected.
 function M.check(word)
