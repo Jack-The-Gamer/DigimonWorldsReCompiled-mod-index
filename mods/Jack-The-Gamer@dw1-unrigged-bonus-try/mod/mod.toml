@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-unrigged-bonus-try"
 name = "DW1 Un-Rigged Bonus Try"
-version = "1.0.0"
+version = "1.1.0"
 author = "Jack-The-Gamer"
 description = "The Bonus Try slot machine at the gyms no longer decides before you play that a round can't be won. Choose between the original slot machine without that rigging, or a fully fair one where only your timing counts."
 game = "dw1"

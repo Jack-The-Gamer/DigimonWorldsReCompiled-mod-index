@@ -11,4 +11,4 @@ The Bonus Try slot machine at the gyms is rigged. Before each round starts, the 
 - Works in every gym's Bonus Try (both training overlays).
 - Payouts are unchanged: three of the training's own picture, three of a kind, or the jackpot.
 
-Tested in Digimon World (USA).
+Tested in Digimon World (USA). Also works on Digimon World (Europe): its slot machine is the same code built differently, and the mod finds it in both gyms.

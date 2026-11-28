@@ -1,7 +1,9 @@
 -- DW1 Un-Rigged Bonus Try: takes the rigging out of the gym slot machine.
 --
--- How the game does it (TRN_REL.BIN at 0x8008e824, TRN2_REL.BIN at
--- 0x8008d1fc, both loaded at 0x80088800): pressing X calls a "stop reel"
+-- How the game does it (TRN_chooseReelStop in dw_decomp; USA: TRN_REL.BIN at
+-- 0x8008e824, TRN2_REL.BIN at 0x8008d1fc, both loaded at 0x80088800; Europe
+-- 0x8008f89c / 0x8008de9c, Japan 0x8008f970 / 0x8008df20, the same code
+-- compiled with less optimisation): pressing X calls a "stop reel"
 -- function with the reel (a0, 0-2) and the slot state (a1). It sets how many
 -- more pictures the reel rolls before stopping (byte 14+reel), according to
 -- a mode picked for the round before it starts (byte 34):
@@ -25,7 +27,15 @@
 --   True Slots: every reel stops on the next picture after X (no extra
 --     pictures, no steering), whatever the mode.
 
-local STOP = "27bdffe0 afbf0018 afb10014 afb00010 24010002 108100?? 00a08021 24010001 108100?? 00000000 1480???? 00000000 82020022"
+-- The function's start, by release, and where its strip table's address is loaded.
+local SHAPES = {
+  { -- USA
+    pattern = "27bdffe0 afbf0018 afb10014 afb00010 24010002 108100?? 00a08021 24010001 108100?? 00000000 1480???? 00000000 82020022",
+    first = 0x27bdffe0, second = 0xafbf0018, strips = 0x7c },
+  { -- Europe, Japan
+    pattern = "27bdffe0 afbf001c afb20018 afb10014 afb00010 00808821 00a08021 24010002 122100?? 00000000 24010001 122100?? 00000000 1620???? 00000000 82020022",
+    first = 0x27bdffe0, second = 0xafbf001c, strips = 0x8c },
+}
 local FROM, TO = 0x80088000, 0x80098000
 local PICTURES = 13
 local TRUE_SLOTS = dwrc.options.mode == "True Slots"
@@ -33,20 +43,20 @@ local TRUE_SLOTS = dwrc.options.mode == "True Slots"
 local hooked = {}
 
 -- The strip table address, from the function's `lui v0, hi` / `addiu v0, v0, lo`.
-local function strips_of(ctx, fn)
-  local lui, add = ctx:read32(fn + 0x7c), ctx:read32(fn + 0x80)
+local function strips_of(ctx, fn, shape)
+  local lui, add = ctx:read32(fn + shape.strips), ctx:read32(fn + shape.strips + 4)
   if (lui >> 16) ~= 0x3c02 or (add >> 16) ~= 0x2442 then return nil end
   local lo = add & 0xffff
   if lo >= 0x8000 then lo = lo - 0x10000 end
   return ((lui & 0xffff) << 16) + lo
 end
 
-local function hook(fn, strips)
-  local first, second = 0x27bdffe0, 0xafbf0018
+local function hook(fn, strips, shape)
+  local first, second = shape.first, shape.second
   local fn_at, strips_at = fn, strips -- per-copy locals for the closure
   dwrc.on_exec(fn_at, function(c)
     -- Another overlay may be loaded here now: check before changing anything.
-    if c:read32(fn_at) ~= first or c:read32(fn_at + 4) ~= second or strips_of(c, fn_at) ~= strips_at then
+    if c:read32(fn_at) ~= first or c:read32(fn_at + 4) ~= second or strips_of(c, fn_at, shape) ~= strips_at then
       return false
     end
     local reel, s = c:reg("a0"), c:reg("a1")
@@ -73,16 +83,18 @@ end
 
 dwrc.on_frame(function(ctx)
   if ctx:frame() % 20 ~= 0 then return end
-  local at = ctx:find(STOP, FROM, TO)
-  while at do
-    if not hooked[at] then
-      local strips = strips_of(ctx, at)
-      if strips then
-        hooked[at] = true
-        hook(at, strips)
-        dwrc.log(string.format("DW1 Un-Rigged Bonus Try: slot machine found at %08x (%s)", at, dwrc.options.mode))
+  for _, shape in ipairs(SHAPES) do
+    local at = ctx:find(shape.pattern, FROM, TO)
+    while at do
+      if not hooked[at] then
+        local strips = strips_of(ctx, at, shape)
+        if strips then
+          hooked[at] = true
+          hook(at, strips, shape)
+          dwrc.log(string.format("DW1 Un-Rigged Bonus Try: slot machine found at %08x (%s)", at, dwrc.options.mode))
+        end
       end
+      at = ctx:find(shape.pattern, at + 4, TO)
     end
-    at = ctx:find(STOP, at + 4, TO)
   end
 end)
