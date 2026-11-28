@@ -37,9 +37,6 @@ local CONDITIONS_TAIL = 0x800A9328
 local POOP_SUKAMON_TEST = 0x800A7EE4
 local POOP_SEARCH = 0x800A7EF0
 local EAT_POOP = 0x800A8244
--- setDigimonRaised (0x800FF7F8): called for the new Digimon at every
--- evolution (EVL, after careMistakes and battles are cleared) and new game.
-local SET_DIGIMON_RAISED = 0x800FF7F8
 
 M.CODE = {
   [VIRUS_SUKAMON] = 0x24020027,     -- addiu v0, zero, 39
@@ -47,7 +44,6 @@ M.CODE = {
   [POOP_SUKAMON_TEST] = 0x24010027, -- addiu at, zero, 39
   [POOP_SEARCH] = 0x3C018015,       -- lui at, 0x8015
   [EAT_POOP] = 0x9383913C,          -- lbu v1, -28356(gp)
-  [SET_DIGIMON_RAISED] = 0x27BDFFE8, -- addiu sp, sp, -24
 }
 
 -- word(addr): the executable's instruction there; false if one isn't as expected.
@@ -108,10 +104,10 @@ function M.install(types)
     end
     return false
   end)
-  dwrc.on_exec(SET_DIGIMON_RAISED, function(ctx)
-    ctx:write16(POOP_EATEN, 0)
-    return false
-  end)
+  -- setDigimonRaised: called for the new Digimon at every evolution (EVL,
+  -- after careMistakes and battles are cleared) and new game; its hook is
+  -- lib/limits.lua's
+  table.insert(require("lib.limits").on_raised, function(ctx) ctx:write16(POOP_EATEN, 0) end)
 end
 
 return M

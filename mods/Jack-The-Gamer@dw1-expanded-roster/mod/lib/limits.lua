@@ -99,9 +99,27 @@ local HAS_DIGIMON_RAISED = 0x800FF824
 M.root_scale = {}
 local ROOT_SCALE_SET = 0x800A1094
 
--- New types that count as raised (type -> true); none yet outside the
--- developer option test_raised (a save has no room for them so far).
+-- A new type is raised once setDigimonRaised (0x800FF7F8: every evolution in
+-- EVL, and the new game's partner) has been called for it: a byte per new
+-- type at tables.RAISED, kept with each save (dwrc.save_ram, program 1.10)
+-- and cleared for a new game (newGameScene, 0x800EF1E0) or a save made
+-- without the mod. Being RAM, save states keep it too.
+local SET_DIGIMON_RAISED = 0x800FF7F8
+local NEW_GAME_SCENE = 0x800EF1E0
+-- Also called at setDigimonRaised, with (ctx, type): one hook per address.
+M.on_raised = {}
+-- New types that count as raised whatever the save says (type -> true):
+-- the developer option test_raised.
 M.raised_new = {}
+
+function M.is_raised(ctx, t)
+  if t < 180 or t >= tables.CAPACITY then return false end
+  return M.raised_new[t] or ctx:read8(tables.RAISED + t - 180) ~= 0
+end
+
+local function clear_raised(ctx)
+  ctx:write_bytes(tables.RAISED, string.rep("\0", tables.CAPACITY - 180))
+end
 
 -- A technique's look in battle is its effect file: entry 0x100 + technique
 -- of EFE DAT (getEFEDATEntry(id): sector EFEDAT_CD_LOCATION + 10 * (id -
@@ -239,8 +257,19 @@ function M.install()
   dwrc.on_exec(HAS_DIGIMON_RAISED, function(ctx)
     local t = ctx:reg("a0") & 0xFFFF
     if t < 180 then return false end
-    ctx:ret(M.raised_new[t] and 1 or 0)
+    ctx:ret(M.is_raised(ctx, t) and 1 or 0)
     return true
+  end)
+  dwrc.save_ram(tables.RAISED, tables.CAPACITY - 180)
+  dwrc.on_exec(SET_DIGIMON_RAISED, function(ctx)
+    local t = ctx:reg("a0") & 0xFFFF
+    if t >= 180 and t < tables.CAPACITY then ctx:write8(tables.RAISED + t - 180, 1) end
+    for _, f in ipairs(M.on_raised) do f(ctx, t) end
+    return false
+  end)
+  dwrc.on_exec(NEW_GAME_SCENE, function(ctx) clear_raised(ctx); return false end)
+  dwrc.on_save(function(ctx, info)
+    if info.event == "loaded" and not info.found then clear_raised(ctx) end
   end)
   dwrc.on_exec(GET_ORIGINAL_TYPE, function(ctx)
     local o = M.original_type[ctx:reg("a0")]

@@ -1,0 +1,1078 @@
+DW1 Expanded Roster 0.24.0: digivolution requirements
+=====================================================
+
+For Digimon World (USA, SLUS-01032). Every Digimon you can raise, what it
+comes from, what it aims for and what it becomes.
+
+How a digivolution is chosen
+----------------------------
+Your partner tries to digivolve once it has spent enough hours at its level
+(counted since its last digivolution):
+  Fresh -> In-Training     6 hours (always the same In-Training)
+  In-Training -> Rookie   24 hours
+  Rookie -> Champion      72 hours (nothing met after 96 hours: Numemon, or
+                                    Raremon a quarter of the time)
+  Champion -> Ultimate   144 hours
+  Ultimate -> Mega       144 hours as an Ultimate
+
+Each Digimon it can become is scored, one point for each of:
+  1. Stats: every stat listed is at least that high. For a Rookie it is
+     instead which stat is your partner's highest (one of those listed).
+  2. Care mistakes: within the limit.
+  3. Weight: within the range (the target weight plus or minus 5).
+  4. Bonus: any ONE of the bonus conditions.
+A Digimon needs 3 of the 4 points, so your partner doesn't have to meet
+everything. From an In-Training the highest score wins (on a tie, the one
+listed first). From a Rookie, Champion or Ultimate, of the Digimon scoring
+3 or 4 the one whose listed stats your partner has highest on average wins.
+A Digimon you have already raised never takes the place of one you
+haven't. That counts for the new Digimon too: the mod keeps which ones
+you have raised with each save.
+
+HP and MP are shown as on the Digimon page (the game compares them in tens).
+
+Special digivolutions
+---------------------
+* A full virus bar turns your partner into Sukamon, or PlatinumSukamon a
+  quarter of the time.
+* A Sukamon or PlatinumSukamon that has eaten 20 piles of poop since it
+  digivolved becomes KingSukamon at once.
+* The game's own event digivolutions are unchanged.
+
+Needs Digimon World 2003 (Europe) and Digimon World 2 (USA) imported in the
+launcher for every Digimon below; without one of them the Digimon from that
+game are left out of the tree.
+
+
+FRESH
+=====
+
+Botamon
+  Becomes: Koromon
+
+Poyomon
+  Becomes: Tokomon
+
+Punimon
+  Becomes: Tsunomon
+
+Yuramon
+  Becomes: Tanemon
+
+
+IN-TRAININGS
+============
+
+Koromon
+  From: Botamon
+  Becomes: Agumon, Guilmon, ToyAgumon, Biyomon, Hagurumon
+
+Tanemon
+  From: Yuramon
+  Becomes: Palmon, Kunemon, Tentomon, Gotsumon, Goburimon
+
+Tokomon
+  From: Poyomon
+  Becomes: Patamon, Tsukaimon, Gomamon, DemiDevimon, Penguinmon
+
+Tsunomon
+  From: Punimon
+  Becomes: Gabumon, Veemon, Betamon, Elecmon, Renamon
+
+
+ROOKIES
+=======
+
+Agumon
+  From: Koromon
+  Highest stat: HP, MP or Offense
+  Care mistakes: any (always met)
+  Weight: 10 to 20
+  Bonus (any one): evolving from Koromon
+  Becomes: Greymon, Monochromon, Tyrannomon, Tankmon
+
+Betamon
+  From: Tsunomon
+  Highest stat: HP, MP or Defense
+  Care mistakes: any (always met)
+  Weight: 10 to 20
+  Bonus: always met
+  Becomes: Seadramon, Airdramon, Veedramon, Shellmon
+
+Biyomon
+  From: Koromon
+  Highest stat: MP, Defense or Speed
+  Care mistakes: any (always met)
+  Weight: 10 to 20
+  Bonus: always met
+  Becomes: Birdramon, Kokatorimon, Meramon
+
+DemiDevimon
+  From: Tokomon
+  Highest stat: MP or Speed
+  Care mistakes: any (always met)
+  Weight: 5 to 15
+  Bonus (any one): evolving from Tokomon
+  Becomes: Devimon, Wizardmon, Bakemon, Raremon, Chrysalimon
+
+Elecmon
+  From: Tsunomon
+  Highest stat: HP, Offense or Speed
+  Care mistakes: any (always met)
+  Weight: 5 to 15
+  Bonus: always met
+  Becomes: Leomon, Centarumon, Kyubimon
+
+Gabumon
+  From: Tsunomon
+  Highest stat: Defense, Speed or Brains
+  Care mistakes: any (always met)
+  Weight: 10 to 20
+  Bonus: always met
+  Becomes: Garurumon, Drimogemon, Leomon, Mojyamon, Tortomon
+
+Goburimon
+  From: Tanemon
+  Highest stat: Offense or Speed
+  Care mistakes: any (always met)
+  Weight: 25 to 35
+  Bonus (any one): evolving from Tanemon
+  Becomes: Ogremon, Meramon, Ninjamon, Mojyamon, Devimon
+
+Gomamon
+  From: Tokomon
+  Highest stat: HP
+  Care mistakes: any (always met)
+  Weight: 25 to 35
+  Bonus (any one): evolving from Tokomon
+  Becomes: Ikkakumon, Coelamon, Seadramon, Mojyamon
+
+Gotsumon
+  From: Tanemon
+  Highest stat: HP or Defense
+  Care mistakes: any (always met)
+  Weight: 25 to 35
+  Bonus (any one): evolving from Tanemon
+  Becomes: Golemon, Starmon, PlatinumSukamon, Tortomon, Frigimon
+
+Guilmon
+  From: Koromon
+  Highest stat: Offense or Speed
+  Care mistakes: any (always met)
+  Weight: 20 to 30
+  Bonus (any one): evolving from Koromon
+  Becomes: Growlmon, Tyrannomon, DarkTyrannomon, Monochromon
+
+Hagurumon
+  From: Koromon
+  Highest stat: Brains
+  Care mistakes: any (always met)
+  Weight: 15 to 25
+  Bonus (any one): evolving from Koromon
+  Becomes: Clockmon, Tankmon, Centarumon, Raremon
+
+Kunemon
+  From: Tanemon
+  Highest stat: HP or Defense
+  Care mistakes: any (always met)
+  Weight: 5 to 15
+  Bonus: always met
+  Becomes: Kuwagamon, Kabuterimon
+
+Palmon
+  From: Tanemon
+  Highest stat: MP, Speed or Brains
+  Care mistakes: any (always met)
+  Weight: 10 to 20
+  Bonus: always met
+  Becomes: Togemon, Woodmon, Ogremon, Vegiemon
+
+Patamon
+  From: Tokomon
+  Highest stat: HP, Offense or Brains
+  Care mistakes: any (always met)
+  Weight: 10 to 20
+  Bonus: always met
+  Becomes: Angemon, Centarumon, Unimon, Gatomon
+
+Penguinmon
+  From: Tokomon
+  Highest stat: MP, Defense or Brains
+  Care mistakes: any (always met)
+  Weight: 10 to 20
+  Bonus: always met
+  Becomes: Frigimon, Kokatorimon, Angemon
+
+Renamon
+  From: Tsunomon
+  Highest stat: Speed or Brains
+  Care mistakes: any (always met)
+  Weight: 25 to 35
+  Bonus (any one): evolving from Tsunomon
+  Becomes: Kyubimon, Garurumon, Ninjamon, Leomon, Gatomon
+
+Tentomon
+  From: Tanemon
+  Highest stat: Offense
+  Care mistakes: any (always met)
+  Weight: 15 to 25
+  Bonus (any one): evolving from Tanemon
+  Becomes: Kabuterimon, Kuwagamon
+
+ToyAgumon
+  From: Koromon
+  Highest stat: Defense
+  Care mistakes: any (always met)
+  Weight: 25 to 35
+  Bonus (any one): evolving from Koromon
+  Becomes: Greymon, Growlmon, Deltamon, Golemon
+
+Tsukaimon
+  From: Tokomon
+  Highest stat: Offense or Speed
+  Care mistakes: any (always met)
+  Weight: 15 to 25
+  Bonus (any one): evolving from Tokomon
+  Becomes: Devimon, Centarumon, Unimon
+
+Veemon
+  From: Tsunomon
+  Highest stat: Offense or Brains
+  Care mistakes: any (always met)
+  Weight: 15 to 25
+  Bonus (any one): evolving from Tsunomon
+  Becomes: Veedramon, ExVeemon, Airdramon, Seadramon, Deltamon
+
+
+CHAMPIONS
+=========
+
+Airdramon
+  From: Betamon, Veemon
+  Stats: MP 1000, Speed 100, Brains 100
+  Care mistakes: at most 1
+  Weight: 25 to 35
+  Bonus (any one): discipline 90% or 35 techniques
+  Becomes: Megadramon, AeroVeedramon, Kimeramon
+
+Angemon
+  From: Patamon, Penguinmon
+  Stats: MP 1000, Brains 100
+  Care mistakes: at most 0
+  Weight: 15 to 25
+  Bonus (any one): evolving from Patamon or 35 techniques
+  Becomes: MagnaAngemon, Angewomon, Garudamon, Kimeramon, Andromon
+
+Bakemon
+  From: DemiDevimon
+  Stats: MP 1000
+  Care mistakes: at least 3
+  Weight: 15 to 25
+  Bonus (any one): happiness 50% or 28 techniques
+  Becomes: Digitamamon, SkullGreymon, Giromon
+
+Birdramon
+  From: Biyomon
+  Stats: Speed 100
+  Care mistakes: at least 3
+  Weight: 15 to 25
+  Bonus (any one): evolving from Biyomon or 35 techniques
+  Becomes: Garudamon
+
+Centarumon
+  From: Elecmon, Patamon, Tsukaimon, Hagurumon
+  Stats: Brains 100
+  Care mistakes: at most 3
+  Weight: 25 to 35
+  Bonus (any one): discipline 60% or 28 techniques
+  Becomes: Andromon, MetalMamemon, MagnaAngemon
+
+Chrysalimon
+  From: DemiDevimon
+  Stats: MP 2000, Defense 150, Brains 200
+  Care mistakes: at least 15
+  Weight: 15 to 25
+  Bonus (any one): 30 battles
+  Becomes: Infermon, Digitamamon, Giromon
+
+Clockmon
+  From: Hagurumon
+  Stats: Defense 100, Speed 100, Brains 100
+  Care mistakes: at most 5
+  Weight: 20 to 30
+  Bonus (any one): 25 techniques
+  Becomes: Andromon, Vademon, Giromon, Mummymon, MetalMamemon, Etemon
+
+Coelamon
+  From: Gomamon
+  Stats: Defense 100
+  Care mistakes: at least 3
+  Weight: 25 to 35
+  Bonus (any one): at most 5 battles or 35 techniques
+  Becomes: Whamon, Zudomon, MegaSeadramon
+
+DarkTyrannomon
+  From: Guilmon
+  Stats: HP 1000, Offense 100, Defense 100, Speed 100
+  Care mistakes: at least 15
+  Weight: 30 to 40
+  Bonus (any one): 30 battles
+  Becomes: MasterTyrannomon, MetalTyrannomon, SkullGreymon
+
+Deltamon
+  From: Veemon, ToyAgumon
+  Stats: HP 1000, Offense 100, Defense 100
+  Care mistakes: at most 10
+  Weight: 30 to 40
+  Bonus (any one): 15 battles or 28 techniques
+  Becomes: Kimeramon, AeroVeedramon
+
+Devimon
+  From: DemiDevimon, Tsukaimon, Goburimon
+  Stats: MP 1000, Offense 100, Brains 100
+  Care mistakes: at least 10
+  Weight: 25 to 35
+  Bonus (any one): 30 battles
+  Becomes: LadyDevimon, Kimeramon, Andromon, Mummymon
+
+Drimogemon
+  From: Gabumon
+  Stats: Offense 100
+  Care mistakes: at least 3
+  Weight: 35 to 45
+  Bonus (any one): happiness 50% or 28 techniques
+  Becomes: Mammothmon, Zudomon
+
+ExVeemon
+  From: Veemon
+  Stats: Offense 100, Speed 100
+  Care mistakes: at most 3
+  Weight: 20 to 30
+  Bonus (any one): 10 battles or 30 techniques
+  Becomes: Paildramon, AeroVeedramon
+
+Frigimon
+  From: Penguinmon, Gotsumon
+  Stats: MP 1000, Brains 100
+  Care mistakes: at most 5
+  Weight: 25 to 35
+  Bonus (any one): happiness 50% or 28 techniques
+  Becomes: Monzaemon, WaruMonzaemon
+
+Garurumon
+  From: Gabumon, Renamon
+  Stats: MP 1000, Speed 100
+  Care mistakes: at most 1
+  Weight: 25 to 35
+  Bonus (any one): discipline 90% or 28 techniques
+  Becomes: WereGarurumon, Kimeramon
+
+Gatomon
+  From: Patamon, Renamon
+  Stats: MP 800, Offense 100, Speed 100
+  Care mistakes: at most 5
+  Weight: 10 to 20
+  Bonus (any one): discipline 50% or 25 techniques
+  Becomes: Angewomon, Taomon
+
+Golemon
+  From: Gotsumon, ToyAgumon
+  Stats: HP 1000, Offense 100, Defense 150
+  Care mistakes: at least 15
+  Weight: 40 to 50
+  Bonus (any one): 30 battles
+  Becomes: Mamemon, Andromon, Mummymon
+
+Greymon
+  From: Agumon, ToyAgumon
+  Stats: Offense 100, Defense 100, Speed 100, Brains 100
+  Care mistakes: at most 1
+  Weight: 25 to 35
+  Bonus (any one): discipline 90% or 35 techniques
+  Becomes: MetalGreymon, SkullGreymon, MasterTyrannomon, Megadramon, Kimeramon
+
+Growlmon
+  From: Guilmon, ToyAgumon
+  Stats: Offense 100, Speed 100
+  Care mistakes: at most 3
+  Weight: 25 to 35
+  Bonus (any one): 30 techniques
+  Becomes: WarGrowlmon, Megadramon, WaruSeadramon, SkullGreymon
+
+Ikkakumon
+  From: Gomamon
+  Stats: HP 1000, Defense 100, Brains 80
+  Care mistakes: at most 5
+  Weight: 30 to 40
+  Bonus (any one): discipline 50% or 25 techniques
+  Becomes: Zudomon, MegaSeadramon, Whamon, WereGarurumon, Mammothmon
+
+Kabuterimon
+  From: Kunemon, Tentomon
+  Stats: HP 1000, MP 1000, Offense 100, Speed 100
+  Care mistakes: at most 1
+  Weight: 25 to 35
+  Bonus (any one): evolving from Kunemon or 35 techniques
+  Becomes: MegaKabuterimon, Paildramon, Kimeramon
+
+Kokatorimon
+  From: Penguinmon, Biyomon
+  Stats: HP 1000
+  Care mistakes: at least 3
+  Weight: 25 to 35
+  Bonus (any one): evolving from Biyomon or 28 techniques
+  Becomes: Garudamon
+
+Kuwagamon
+  From: Kunemon, Tentomon
+  Stats: HP 1000, MP 1000, Offense 100, Speed 100
+  Care mistakes: at least 5
+  Weight: 25 to 35
+  Bonus (any one): evolving from Kunemon or 28 techniques
+  Becomes: Okuwamon, MegaKabuterimon, Kimeramon
+
+Kyubimon
+  From: Elecmon, Renamon
+  Stats: MP 1000, Brains 100
+  Care mistakes: at most 5
+  Weight: 20 to 30
+  Bonus (any one): 30 techniques
+  Becomes: Taomon, Angewomon, LadyDevimon
+
+Leomon
+  From: Gabumon, Elecmon, Renamon
+  Stats: Offense 100, Speed 100, Brains 100
+  Care mistakes: at most 1
+  Weight: 15 to 25
+  Bonus (any one): 10 battles or 35 techniques
+  Becomes: WereGarurumon, MagnaAngemon, Garudamon
+
+Meramon
+  From: Biyomon, Goburimon
+  Stats: Offense 100
+  Care mistakes: at least 5
+  Weight: 15 to 25
+  Bonus (any one): 10 battles or 28 techniques
+  Becomes: Garudamon
+
+Mojyamon
+  From: Gabumon, Gomamon, Goburimon
+  Stats: HP 1000
+  Care mistakes: at least 5
+  Weight: 15 to 25
+  Bonus (any one): at most 5 battles or 28 techniques
+  Becomes: Zudomon, Etemon, Piximon, Mammothmon
+
+Monochromon
+  From: Agumon, Guilmon
+  Stats: HP 1000, Defense 100, Brains 100
+  Care mistakes: at most 3
+  Weight: 35 to 45
+  Bonus (any one): at most 5 battles or 35 techniques
+  Becomes: MasterTyrannomon, Kimeramon
+
+Nanimon
+  No requirements: only through the game's own events
+  Becomes: Andromon, Vademon, Etemon
+
+Ninjamon
+  From: Renamon, Goburimon
+  Stats: MP 1000, Offense 100, Speed 100
+  Care mistakes: at most 1
+  Weight: 5 to 15
+  Bonus (any one): 15 battles or 35 techniques
+  Becomes: Mamemon, Piximon, Taomon, MetalMamemon
+
+Numemon
+  No requirements: a Rookie that met no digivolution after 96 hours (Raremon a quarter of the time)
+  Becomes: Monzaemon, WaruMonzaemon
+
+Ogremon
+  From: Palmon, Goburimon
+  Stats: HP 1000, Offense 100
+  Care mistakes: at least 5
+  Weight: 25 to 35
+  Bonus (any one): 15 battles or 35 techniques
+  Becomes: Digitamamon, Piximon, WaruMonzaemon, WereGarurumon
+
+PlatinumSukamon
+  From: Gotsumon
+  Stats: MP 1000, Defense 100, Brains 100
+  Care mistakes: at most 10
+  Weight: 15 to 25
+  Bonus (any one): 28 techniques
+  Becomes: KingSukamon, Mamemon, Giromon
+
+Raremon
+  From: DemiDevimon, Hagurumon
+  Stats: HP 1000, Defense 100
+  Care mistakes: at most 15
+  Weight: 25 to 35
+  Bonus (any one): 25 techniques
+  Becomes: Ex-Tyrannomon, MetalGreymon
+
+Seadramon
+  From: Betamon, Veemon, Gomamon
+  Stats: HP 1000, MP 1000
+  Care mistakes: at least 3
+  Weight: 25 to 35
+  Bonus (any one): at most 5 battles or 28 techniques
+  Becomes: MegaSeadramon, WaruSeadramon, Whamon
+
+Shellmon
+  From: Betamon
+  Stats: HP 1000, Defense 100
+  Care mistakes: at least 5
+  Weight: 35 to 45
+  Bonus (any one): evolving from Betamon or 35 techniques
+  Becomes: WaruSeadramon, Whamon, MegaSeadramon
+
+Starmon
+  From: Gotsumon
+  Stats: Offense 100, Speed 100, Brains 100
+  Care mistakes: at most 5
+  Weight: 15 to 25
+  Bonus (any one): 20 battles
+  Becomes: Mamemon, Piximon, MetalMamemon
+
+Sukamon
+  No requirements: any Digimon whose virus bar fills up (PlatinumSukamon a quarter of the time)
+  Becomes: KingSukamon, Etemon
+
+Tankmon
+  From: Agumon, Hagurumon
+  Stats: HP 1000, Offense 100, Defense 100, Brains 100
+  Care mistakes: at most 5
+  Weight: 40 to 50
+  Bonus (any one): 20 battles or 35 techniques
+  Becomes: MetalGreymon, WarGrowlmon, Megadramon, MetalTyrannomon
+
+Togemon
+  From: Palmon
+  Stats: HP 1000, Offense 120, Speed 80
+  Care mistakes: at most 5
+  Weight: 25 to 35
+  Bonus (any one): discipline 50% or 25 techniques
+  Becomes: Lillymon, Cherrymon
+
+Tortomon
+  From: Gabumon, Gotsumon
+  Stats: HP 1000, Defense 100, Brains 50
+  Care mistakes: at most 10
+  Weight: 40 to 50
+  Bonus (any one): discipline 50%
+  Becomes: Mummymon, Zudomon, Mammothmon
+
+Tyrannomon
+  From: Agumon, Guilmon
+  Stats: HP 1000, Defense 100
+  Care mistakes: at most 5
+  Weight: 25 to 35
+  Bonus (any one): at most 5 battles or 28 techniques
+  Becomes: MasterTyrannomon, MetalTyrannomon, Megadramon, WarGrowlmon, Ex-Tyrannomon
+
+Unimon
+  From: Patamon, Tsukaimon
+  Stats: HP 1000, Speed 100
+  Care mistakes: at most 3
+  Weight: 25 to 35
+  Bonus (any one): 10 battles or 35 techniques
+  Becomes: MagnaAngemon, Angewomon
+
+Veedramon
+  From: Betamon, Veemon
+  Stats: Offense 100, Defense 100, Brains 80
+  Care mistakes: at most 3
+  Weight: 25 to 35
+  Bonus (any one): discipline 70% or 30 techniques
+  Becomes: AeroVeedramon, MasterTyrannomon
+
+Vegiemon
+  From: Palmon
+  Stats: MP 1000
+  Care mistakes: at least 5
+  Weight: 5 to 15
+  Bonus (any one): happiness 50% or 21 techniques
+  Becomes: Cherrymon, Lillymon
+
+Wizardmon
+  From: DemiDevimon
+  Stats: MP 1500, Speed 100, Brains 150
+  Care mistakes: at most 10
+  Weight: 10 to 20
+  Bonus (any one): 30 techniques
+  Becomes: Piximon, LadyDevimon, Taomon
+
+Woodmon
+  From: Palmon
+  Stats: HP 1000, Offense 80, Defense 120
+  Care mistakes: at least 10
+  Weight: 30 to 40
+  Bonus (any one): 25 battles
+  Becomes: Cherrymon, Piximon
+
+
+ULTIMATES
+=========
+
+AeroVeedramon
+  From: Airdramon, Veedramon, ExVeemon, Deltamon
+  Stats: HP 4000, MP 3000, Offense 500, Defense 400, Speed 400, Brains 300
+  Care mistakes: at most 10
+  Weight: 55 to 65
+  Bonus (any one): discipline 90%, 30 battles or 30 techniques
+  Becomes: Imperialdramon
+
+Andromon
+  From: Angemon, Centarumon, Devimon, Nanimon, Clockmon, Golemon
+  Stats: HP 2000, MP 4000, Offense 200, Defense 400, Speed 200, Brains 400
+  Care mistakes: at most 5
+  Weight: 35 to 45
+  Bonus (any one): discipline 95%, 30 battles or 30 techniques
+  Becomes: HiAndromon, Machinedramon
+
+Angewomon
+  From: Angemon, Unimon, Kyubimon, Gatomon
+  Stats: HP 3000, MP 5000, Speed 400, Brains 400
+  Care mistakes: at most 5
+  Weight: 20 to 30
+  Bonus (any one): discipline 70% or 35 techniques
+  Becomes: Seraphimon, Sakuyamon, Rosemon, Phoenixmon
+
+Cherrymon
+  From: Vegiemon, Togemon, Woodmon
+  Stats: HP 4000, MP 3000, Defense 400, Brains 400
+  Care mistakes: at least 15
+  Weight: 45 to 55
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: Rosemon
+
+Digitamamon
+  From: Bakemon, Ogremon, Chrysalimon
+  Stats: HP 3000, MP 3000, Offense 400, Defense 400, Speed 400, Brains 300
+  Care mistakes: at most 0
+  Weight: 5 to 15
+  Bonus (any one): 100 battles or 49 techniques
+  Becomes: Armageddemon
+
+Etemon
+  From: Mojyamon, Nanimon, Sukamon, Clockmon
+  Stats: HP 2000, MP 3000, Offense 400, Defense 200, Speed 400, Brains 300
+  Care mistakes: at most 0
+  Weight: 10 to 20
+  Bonus (any one): 50 battles or 49 techniques
+  Becomes: KingEtemon, MetalEtemon
+
+Ex-Tyrannomon
+  From: Tyrannomon, Raremon
+  Stats: HP 5000, MP 3000, Offense 400, Defense 400
+  Care mistakes: at least 15
+  Weight: 50 to 60
+  Bonus (any one): 30 battles or 30 techniques
+  Becomes: Armageddemon
+
+Garudamon
+  From: Angemon, Birdramon, Kokatorimon, Leomon, Meramon
+  Stats: HP 4000, MP 3000, Offense 400, Defense 300, Speed 400, Brains 300
+  Care mistakes: at most 5
+  Weight: 35 to 45
+  Bonus (any one): discipline 90% or 35 techniques
+  Becomes: Phoenixmon
+
+Giromon
+  From: Bakemon, PlatinumSukamon, Clockmon, Chrysalimon
+  Stats: Offense 400, Speed 300, Brains 400
+  Care mistakes: at least 15
+  Weight: 0 to 10
+  Bonus (any one): happiness 95%, 100 battles or 35 techniques
+  Becomes: Armageddemon
+
+Infermon
+  From: Chrysalimon
+  Stats: HP 4000, MP 4000, Offense 400, Speed 500, Brains 300
+  Care mistakes: at least 15
+  Weight: 25 to 35
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: Armageddemon
+
+Kimeramon
+  From: Airdramon, Angemon, Devimon, Garurumon, Greymon, Kabuterimon, Kuwagamon, Monochromon, Deltamon
+  Stats: HP 4000, MP 4000, Offense 450, Defense 400, Speed 400, Brains 400
+  Care mistakes: at most 15
+  Weight: 50 to 60
+  Bonus (any one): 50 battles or 40 techniques
+  Becomes: Machinedramon
+
+KingSukamon
+  From: Sukamon, PlatinumSukamon
+  Stats: HP 4000, Offense 300, Defense 400
+  Care mistakes: at most 15
+  Weight: 25 to 35
+  Bonus (any one): 30 battles or 35 techniques
+  Becomes: KingEtemon
+
+LadyDevimon
+  From: Devimon, Kyubimon, Wizardmon
+  Stats: MP 4000, Offense 400, Speed 400, Brains 300
+  Care mistakes: at least 15
+  Weight: 20 to 30
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: BlackSeraphimon, Sakuyamon
+
+Lillymon
+  From: Vegiemon, Togemon
+  Stats: MP 3000, Offense 200, Speed 300, Brains 300
+  Care mistakes: at most 10
+  Weight: 15 to 25
+  Bonus (any one): discipline 60% or 35 techniques
+  Becomes: Rosemon
+
+MagnaAngemon
+  From: Angemon, Centarumon, Leomon, Unimon
+  Stats: HP 4000, MP 3000, Offense 400, Defense 400, Speed 300, Brains 300
+  Care mistakes: at most 5
+  Weight: 35 to 45
+  Bonus (any one): discipline 80% or 35 techniques
+  Becomes: Seraphimon, BlackSeraphimon, Phoenixmon
+
+Mamemon
+  From: Ninjamon, PlatinumSukamon, Golemon, Starmon
+  Stats: Offense 400, Defense 300, Speed 300, Brains 400
+  Care mistakes: at least 15
+  Weight: 0 to 10
+  Bonus (any one): happiness 90% or 25 techniques
+  Becomes: HiAndromon
+
+Mammothmon
+  From: Drimogemon, Mojyamon, Tortomon, Ikkakumon
+  Stats: HP 5000, Offense 400, Defense 500, Brains 200
+  Care mistakes: at most 10
+  Weight: 50 to 60
+  Bonus (any one): discipline 60% or 35 techniques
+  Becomes: SkullMammothmon, Plesiomon, SaberLeomon
+
+MasterTyrannomon
+  From: Greymon, Monochromon, Tyrannomon, Veedramon, DarkTyrannomon
+  Stats: HP 4000, MP 3000, Offense 500, Defense 400, Speed 300
+  Care mistakes: at most 10
+  Weight: 45 to 55
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: AncientGreymon, BlackWarGreymon
+
+Megadramon
+  From: Airdramon, Greymon, Tyrannomon, Growlmon, Tankmon
+  Stats: HP 3000, MP 5000, Offense 500, Defense 300, Speed 400, Brains 400
+  Care mistakes: at most 10
+  Weight: 50 to 60
+  Bonus (any one): 30 battles or 30 techniques
+  Becomes: Machinedramon
+
+MegaKabuterimon
+  From: Kabuterimon, Kuwagamon
+  Stats: HP 5000, Offense 400, Defense 500, Speed 300
+  Care mistakes: at most 5
+  Weight: 50 to 60
+  Bonus (any one): 30 battles or 35 techniques
+  Becomes: HerculesKabuterimon
+
+MegaSeadramon
+  From: Coelamon, Seadramon, Shellmon, Ikkakumon
+  Stats: MP 4000, Offense 500, Defense 400, Brains 400
+  Care mistakes: at most 5
+  Weight: 25 to 35
+  Bonus (any one): at most 0 battles or 40 techniques
+  Becomes: MetalSeadramon, Plesiomon
+
+MetalGreymon
+  From: Greymon, Tankmon, Raremon
+  Stats: HP 4000, MP 3000, Offense 500, Defense 500, Speed 300, Brains 300
+  Care mistakes: at most 10
+  Weight: 60 to 70
+  Bonus (any one): discipline 95%, 30 battles or 30 techniques
+  Becomes: BlackWarGreymon, Machinedramon
+
+MetalMamemon
+  From: Centarumon, Ninjamon, Clockmon, Starmon
+  Stats: Offense 500, Defense 400, Speed 400, Brains 400
+  Care mistakes: at most 15
+  Weight: 5 to 15
+  Bonus (any one): happiness 95% or 30 techniques
+  Becomes: HiAndromon, Machinedramon
+
+MetalTyrannomon
+  From: Tyrannomon, Tankmon, DarkTyrannomon
+  Stats: HP 5000, Offense 400, Defense 500, Brains 300
+  Care mistakes: at most 10
+  Weight: 55 to 65
+  Bonus (any one): 30 battles or 35 techniques
+  Becomes: Machinedramon
+
+Monzaemon
+  From: Numemon, Frigimon
+  Stats: HP 3000, MP 3000, Offense 300, Defense 300, Speed 300, Brains 300
+  Care mistakes: at most 0
+  Weight: 35 to 45
+  Bonus (any one): 50 battles or 49 techniques
+  Becomes: SaberLeomon
+
+Mummymon
+  From: Devimon, Clockmon, Golemon, Tortomon
+  Stats: HP 4000, MP 3000, Offense 400, Defense 300, Brains 400
+  Care mistakes: at least 15
+  Weight: 25 to 35
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: Pharaohmon
+
+Okuwamon
+  From: Kuwagamon
+  Stats: HP 4000, MP 3000, Offense 500, Defense 300, Speed 500
+  Care mistakes: at most 10
+  Weight: 40 to 50
+  Bonus (any one): 30 battles or 30 techniques
+  Becomes: GranKuwagamon
+
+Paildramon
+  From: Kabuterimon, ExVeemon
+  Stats: HP 3000, MP 2000, Offense 400, Defense 300, Speed 400, Brains 300
+  Care mistakes: at most 8
+  Weight: 45 to 55
+  Bonus (any one): discipline 90%, 30 battles or 35 techniques
+  Becomes: Imperialdramon, GranKuwagamon
+
+Piximon
+  From: Ninjamon, Mojyamon, Ogremon, Starmon, Wizardmon, Woodmon
+  Stats: Offense 300, Defense 300, Speed 400, Brains 400
+  Care mistakes: at least 15
+  Weight: 0 to 10
+  Bonus (any one): happiness 95% or 25 techniques
+  Becomes: Gallantmon
+
+SkullGreymon
+  From: Bakemon, Greymon, Growlmon, DarkTyrannomon
+  Stats: HP 4000, MP 6000, Offense 400, Defense 400, Speed 200, Brains 500
+  Care mistakes: at least 10
+  Weight: 25 to 35
+  Bonus (any one): 40 battles or 45 techniques
+  Becomes: BlackWarGreymon, SkullMammothmon
+
+Taomon
+  From: Ninjamon, Kyubimon, Gatomon, Wizardmon
+  Stats: HP 3000, MP 4000, Speed 300, Brains 400
+  Care mistakes: at most 5
+  Weight: 25 to 35
+  Bonus (any one): discipline 80% or 35 techniques
+  Becomes: Sakuyamon
+
+Vademon
+  From: Nanimon, Clockmon
+  Stats: MP 4000, Brains 500
+  Care mistakes: at most 15
+  Weight: 15 to 25
+  Bonus (any one): 35 techniques
+  Becomes: MetalEtemon
+
+WarGrowlmon
+  From: Tyrannomon, Growlmon, Tankmon
+  Stats: HP 4000, MP 3000, Offense 500, Defense 300, Speed 500, Brains 300
+  Care mistakes: at most 10
+  Weight: 60 to 70
+  Bonus (any one): discipline 80%, 30 battles or 30 techniques
+  Becomes: Gallantmon, AncientGreymon
+
+WaruMonzaemon
+  From: Numemon, Ogremon, Frigimon
+  Stats: HP 5000, MP 3000, Offense 500, Defense 500
+  Care mistakes: at least 15
+  Weight: 40 to 50
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: MetalEtemon
+
+WaruSeadramon
+  From: Seadramon, Shellmon, Growlmon
+  Stats: HP 4000, MP 3000, Offense 400, Speed 300
+  Care mistakes: at least 15
+  Weight: 40 to 50
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: MetalSeadramon
+
+WereGarurumon
+  From: Garurumon, Leomon, Ogremon, Ikkakumon
+  Stats: HP 4000, Offense 500, Defense 300, Speed 400
+  Care mistakes: at most 10
+  Weight: 35 to 45
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: MetalGarurumon, SaberLeomon
+
+Whamon
+  From: Coelamon, Seadramon, Shellmon, Ikkakumon
+  Stats: HP 4000, Defense 400, Brains 400
+  Care mistakes: at most 10
+  Weight: 45 to 55
+  Bonus (any one): discipline 70% or 30 techniques
+  Becomes: Plesiomon, MetalSeadramon
+
+Zudomon
+  From: Coelamon, Drimogemon, Mojyamon, Tortomon, Ikkakumon
+  Stats: HP 4000, Offense 400, Defense 400
+  Care mistakes: at most 10
+  Weight: 45 to 55
+  Bonus (any one): 40 battles or 35 techniques
+  Becomes: Plesiomon
+
+
+MEGAS
+=====
+
+AncientGreymon
+  From: WarGrowlmon, MasterTyrannomon
+  Stats: HP 8000, MP 5000, Offense 800, Defense 700, Speed 600, Brains 500
+  Care mistakes: at most 10
+  Weight: 55 to 65
+  Bonus (any one): 70 battles or 45 techniques
+
+Armageddemon
+  From: Digitamamon, Giromon, Ex-Tyrannomon, Infermon
+  Stats: HP 8000, MP 6000, Offense 800, Defense 700, Speed 500, Brains 500
+  Care mistakes: at least 15
+  Weight: 55 to 65
+  Bonus (any one): 80 battles or 45 techniques
+
+BlackSeraphimon
+  From: MagnaAngemon, LadyDevimon
+  Stats: HP 7000, MP 6000, Offense 800, Defense 600, Speed 600, Brains 600
+  Care mistakes: at least 15
+  Weight: 40 to 50
+  Bonus (any one): 80 battles or 45 techniques
+
+BlackWarGreymon
+  From: MetalGreymon, SkullGreymon, MasterTyrannomon
+  Stats: HP 7000, MP 5000, Offense 800, Defense 700, Speed 700, Brains 500
+  Care mistakes: at least 15
+  Weight: 45 to 55
+  Bonus (any one): 80 battles or 45 techniques
+
+Gallantmon
+  From: Piximon, WarGrowlmon
+  Stats: HP 7000, MP 5000, Offense 700, Defense 700, Speed 600, Brains 600
+  Care mistakes: at most 10
+  Weight: 45 to 55
+  Bonus (any one): discipline 80% or 45 techniques
+
+GranKuwagamon
+  From: Paildramon, Okuwamon
+  Stats: HP 7000, MP 4000, Offense 800, Defense 600, Speed 600
+  Care mistakes: at most 10
+  Weight: 45 to 55
+  Bonus (any one): 70 battles or 45 techniques
+
+HerculesKabuterimon
+  From: MegaKabuterimon
+  Stats: HP 7000, MP 4000, Offense 600, Defense 700, Speed 500
+  Care mistakes: at most 5
+  Weight: 55 to 65
+  Bonus (any one): 50 battles or 45 techniques
+
+HiAndromon
+  From: Andromon, Mamemon, MetalMamemon
+  Stats: HP 7000, MP 6000, Offense 700, Defense 700, Speed 600, Brains 600
+  Care mistakes: at most 5
+  Weight: 40 to 50
+  Bonus (any one): 60 battles or 45 techniques
+
+Imperialdramon
+  From: Paildramon, AeroVeedramon
+  Stats: HP 8000, MP 5000, Offense 800, Defense 800, Speed 600, Brains 500
+  Care mistakes: at most 10
+  Weight: 65 to 75
+  Bonus (any one): 70 battles or 45 techniques
+
+KingEtemon
+  From: Etemon, KingSukamon
+  Stats: HP 7000, MP 6000, Offense 700, Defense 600, Brains 500
+  Care mistakes: at most 10
+  Weight: 35 to 45
+  Bonus (any one): 60 battles or 45 techniques
+
+Machinedramon
+  From: Andromon, Megadramon, MetalGreymon, MetalMamemon, Kimeramon, MetalTyrannomon
+  Stats: HP 8000, MP 5000, Offense 700, Defense 800, Speed 400, Brains 600
+  Care mistakes: at most 10
+  Weight: 75 to 85
+  Bonus (any one): 80 battles or 45 techniques
+
+MetalEtemon
+  From: Etemon, Vademon, WaruMonzaemon
+  Stats: HP 8000, MP 4000, Offense 700, Defense 800, Speed 500
+  Care mistakes: at most 10
+  Weight: 45 to 55
+  Bonus (any one): 70 battles or 45 techniques
+
+MetalGarurumon
+  From: WereGarurumon
+  Stats: HP 7000, MP 5000, Offense 600, Defense 700, Speed 700, Brains 500
+  Care mistakes: at most 5
+  Weight: 40 to 50
+  Bonus (any one): 60 battles or 45 techniques
+
+MetalSeadramon
+  From: MegaSeadramon, Whamon, WaruSeadramon
+  Stats: HP 8000, MP 5000, Offense 700, Defense 700, Speed 500, Brains 500
+  Care mistakes: at most 10
+  Weight: 55 to 65
+  Bonus (any one): 70 battles or 45 techniques
+
+Pharaohmon
+  From: Mummymon
+  Stats: HP 7000, MP 7000, Offense 700, Defense 600, Speed 500, Brains 700
+  Care mistakes: at least 15
+  Weight: 40 to 50
+  Bonus (any one): 70 battles or 45 techniques
+
+Phoenixmon
+  From: Garudamon, MagnaAngemon, Angewomon
+  Stats: HP 6000, MP 7000, Offense 500, Defense 500, Speed 700, Brains 700
+  Care mistakes: at most 3
+  Weight: 30 to 40
+  Bonus (any one): discipline 100% or 45 techniques
+
+Plesiomon
+  From: MegaSeadramon, Whamon, Zudomon, Mammothmon
+  Stats: HP 7000, MP 6000, Offense 600, Defense 600, Speed 500, Brains 600
+  Care mistakes: at most 10
+  Weight: 50 to 60
+  Bonus (any one): discipline 60% or 45 techniques
+
+Rosemon
+  From: Angewomon, Lillymon, Cherrymon
+  Stats: HP 6000, MP 6000, Offense 500, Defense 400, Speed 600, Brains 500
+  Care mistakes: at most 10
+  Weight: 30 to 40
+  Bonus (any one): discipline 60% or 45 techniques
+
+SaberLeomon
+  From: Monzaemon, WereGarurumon, Mammothmon
+  Stats: HP 7000, MP 4000, Offense 800, Defense 500, Speed 700
+  Care mistakes: at most 10
+  Weight: 45 to 55
+  Bonus (any one): 80 battles or 45 techniques
+
+Sakuyamon
+  From: Taomon, Angewomon, LadyDevimon
+  Stats: HP 6000, MP 7000, Offense 500, Defense 500, Speed 600, Brains 700
+  Care mistakes: at most 5
+  Weight: 30 to 40
+  Bonus (any one): discipline 90% or 45 techniques
+
+Seraphimon
+  From: MagnaAngemon, Angewomon
+  Stats: HP 7000, MP 6000, Offense 600, Defense 700, Speed 500, Brains 700
+  Care mistakes: at most 5
+  Weight: 40 to 50
+  Bonus (any one): discipline 90% or 45 techniques
+
+SkullMammothmon
+  From: SkullGreymon, Mammothmon
+  Stats: HP 8000, MP 4000, Offense 800, Defense 700, Speed 500
+  Care mistakes: at least 15
+  Weight: 60 to 70
+  Bonus (any one): 80 battles or 45 techniques

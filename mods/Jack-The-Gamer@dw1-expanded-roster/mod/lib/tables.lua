@@ -84,11 +84,13 @@ M.NEW_FINISHERS = M.FINISHER_END - M.FIRST_NEW_FINISHER
 -- open; lib/chart.lua);
 M.EVL_SCRATCH_SIZE = 0x3000
 -- translated effect start points (lib/limits.lua: borrow), 12 bytes each:
--- {type, bone, x, y, z} and -1.
+-- {type, bone, x, y, z} and -1;
 M.BORROW_SLOTS = 32
+-- which new types were raised, a byte each (lib/limits.lua; kept with each save).
 local extra = {
   { "STRINGS", M.STRINGS_SIZE }, { "MOVE_STRINGS", M.MOVE_STRING_BYTES * M.NEW_FINISHERS },
   { "TEXT", 16 }, { "EVL_SCRATCH", M.EVL_SCRATCH_SIZE }, { "BORROW", 12 * M.BORROW_SLOTS },
+  { "RAISED", M.CAPACITY - 180 },
 }
 
 -- Placing them, biggest first, each in the first free place it fits (8-byte
@@ -187,6 +189,7 @@ function M.install(wipe, setup)
     end
     ctx:write_bytes(M.STRINGS, string.rep("\0", M.STRINGS_SIZE))
     ctx:write_bytes(M.MOVE_STRINGS, string.rep("\0", M.MOVE_STRING_BYTES * M.NEW_FINISHERS))
+    ctx:write_bytes(M.RAISED, string.rep("\0", M.CAPACITY - 180))
     -- the Bubbles and the generic attack to their new numbers: their
     -- entries, and every Digimon's moves[] (DigimonPara +35, 16 bytes)
     local names, data = M.by_name.MOVE_NAMES, M.by_name.MOVE_DATA
