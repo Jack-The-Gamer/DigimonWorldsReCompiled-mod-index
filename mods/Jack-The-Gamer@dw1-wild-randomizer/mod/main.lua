@@ -71,6 +71,26 @@
 -- once a map's loads are known (see "Learning") only the models its
 -- scripts loaded before are counted, plus the biggest of the others.
 --
+-- The 8 MiB heap (Re:Compiled 1.10, `[hardware] ram_mib = 8`): the game's
+-- heap is 197 KB (initializeHeap 0x800EEBDC: InitHeap3(_end + 16, up to
+-- 64 KiB below the stack top), 0x801BFB70..0x801EFF00) and every NPC model
+-- and its bone data come from it. With a development console's 8 MiB, the
+-- heap moves to 0x80200000..0x80800000 (6 MiB; nothing else of the game's
+-- is there), so a replacement's model always fits beside the rest. Hooked
+-- at InitHeap3's third instruction (0x80090F2C: a0 and a1 untouched so far)
+-- rather than its first (0x80090F24), where DW1 Expanded Roster places its
+-- tables and starts the heap after them: its hook runs first, whatever the
+-- load order, and its tables stay where it put them. The room checks below
+-- stay (the five NPC_MODELS entries still count), they just pass.
+--
+-- Fixed (option) draws from a seed kept in the console's RAM above the
+-- heap (SEED_AT: "RSD1", then the seed), so save states carry it, and kept
+-- with each game save by dwrc.save_ram (a side file beside the memory card):
+-- the game setting its heap up (power on, reset) writes a new one for a New
+-- Game, a loaded save brings its own back, and a save made before 0.6.0
+-- takes the seed all saves shared then (dwrc.data.seed), so its File Island
+-- stays the same.
+--
 -- DW1 Expanded Roster: that mod moves the per-Digimon tables (and raises the
 -- type limit) and rewrites the game's code to use them, so the tables are
 -- read through the game's own instructions: DIGIMON_DATA (lui/addiu at
@@ -122,6 +142,48 @@ if not dwrc.data.seed then
   dwrc.data.seed = math.random(1, 0x7FFFFFFF)
   dwrc.save()
 end
+-- The 8 MiB heap and Fixed's seed above it (see the top).
+local INIT_HEAP3_ARGS_READ = 0x80090F2C   -- InitHeap3: `beq a1, zero` after `beq a0, zero; nop`
+local INIT_HEAP3_WORDS = { [0x80090F24] = 0x10800015, [0x80090F2C] = 0x10A00013 }
+local SEED_AT, SEED_SIGN = 0x807FFFF0, 0x31445352   -- "RSD1", then the seed
+local BIG_HEAP, BIG_HEAP_END = 0x80200000, SEED_AT
+
+local function set_seed(ctx, seed)
+  ctx:write32(SEED_AT, SEED_SIGN)
+  ctx:write32(SEED_AT + 4, seed)
+end
+
+-- Fixed's seed: this playthrough's (a 2 MiB console has no room above the
+-- heap: the seed all saves shared before 0.6.0).
+local function fixed_seed(ctx)
+  if ctx:ram_size() < 0x800000 then return dwrc.data.seed end
+  if ctx:read32(SEED_AT) ~= SEED_SIGN then set_seed(ctx, math.random(1, 0x7FFFFFFF)) end
+  return ctx:read32(SEED_AT + 4)
+end
+
+dwrc.save_ram(SEED_AT, 8)
+dwrc.on_save(function(ctx, info)
+  if info.event ~= "loaded" or ctx:ram_size() < 0x800000 then return end
+  -- found: dwrc.save_ram put the save's own seed back already
+  if not info.found then set_seed(ctx, dwrc.data.seed) end
+  dwrc.log(string.format("DW1 Wild Randomizer: %s loaded, %s", info.file, info.found and "with its own Fixed seed" or "with the seed saves shared before 0.6.0"))
+end)
+dwrc.on_exec(INIT_HEAP3_ARGS_READ, function(ctx)
+  for a, w in pairs(INIT_HEAP3_WORDS) do
+    if ctx:read32(a) ~= w then return false end
+  end
+  if 0x80000000 + ctx:ram_size() < BIG_HEAP_END then
+    dwrc.log("DW1 Wild Randomizer: the console has 2 MiB of RAM; the heap stays the game's")
+    return false
+  end
+  local start, size = ctx:reg("a0"), ctx:reg("a1")
+  if start >= BIG_HEAP then return false end  -- moved already
+  ctx:set_reg("a0", BIG_HEAP)
+  ctx:set_reg("a1", BIG_HEAP_END - BIG_HEAP)
+  set_seed(ctx, math.random(1, 0x7FFFFFFF))  -- a New Game's own, until a save is loaded
+  dwrc.log(string.format("DW1 Wild Randomizer: the heap moves from %08X (%d KB) to %08X (%d KB)", start, size // 1024, BIG_HEAP, (BIG_HEAP_END - BIG_HEAP) // 1024))
+  return false
+end)
 local visit = 0                            -- counts map loads (Every visit)
 local session = math.random(0, 0x7FFFFFFF)  -- so each play session differs
 
@@ -148,7 +210,7 @@ local function ref(ctx, r)
 end
 
 local function cstring(ctx, at, max)
-  if at < 0x80000000 or at >= 0x80200000 then return "" end
+  if at < 0x80000000 or at >= 0x80000000 + ctx:ram_size() then return "" end
   return ctx:read_bytes(at, max or 24):match("^[^%z]*")
 end
 
@@ -519,7 +581,7 @@ local function largest_free(ctx)
   local start = ctx:read32(FREEP)
   local p, best = start, 0
   for _ = 1, 4096 do
-    if p < 0x80000000 or p >= 0x80200000 then break end
+    if p < 0x80000000 or p >= 0x80000000 + ctx:ram_size() then break end
     best = math.max(best, ctx:read32(p + 4) * 8)
     p = ctx:read32(p)
     if p == start then break end
@@ -631,7 +693,7 @@ local function choose(ctx, t)
   local spare = math.min(NPC_MODEL_COUNT - used, free) - models_needed - model_unseen - 1  -- models beyond the first
   local spare_at_start = math.max(spare, 0)
 
-  local nonce = EVERY_VISIT and (session + visit * 0x9E3779B9) or dwrc.data.seed
+  local nonce = EVERY_VISIT and (session + visit * 0x9E3779B9) or fixed_seed(ctx)
   local list = candidates(types, limit, orig)
   for _, c in ipairs(list) do c.order = mix(nonce * 0x100000 + map * 0x400 + t * 0x10000000 + c.t) end
   table.sort(list, function(a, b) return a.order < b.order end)
@@ -970,7 +1032,7 @@ if ARENA then
     local cup = ctx:read8(at)
     local types, limit = read_types(ctx)
     tournaments = tournaments + 1
-    local nonce = EVERY_VISIT and (session + tournaments * 0x9E3779B9) or dwrc.data.seed
+    local nonce = EVERY_VISIT and (session + tournaments * 0x9E3779B9) or fixed_seed(ctx)
     local used, out, names = { [ctx:read32(PARTNER_TYPE)] = true }, {}, {}  -- not the partner's own Digimon
     for i = 1, 7 do out[i] = ctx:read8(at + i) end
     for i = 1, 7 do

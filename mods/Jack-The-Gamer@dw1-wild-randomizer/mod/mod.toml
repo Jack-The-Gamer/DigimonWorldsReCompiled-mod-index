@@ -1,7 +1,7 @@
 [mod]
 id = "dw1-wild-randomizer"
 name = "DW1 Wild Digimon Randomizer"
-version = "0.5.0"
+version = "0.6.0"
 author = "Jack-The-Gamer"
 description = "Each wild Digimon you meet on the field becomes another Digimon of the same stage that shares at least two of its specialties, fighting with techniques drawn at random from its own. Story Digimon and recruits stay as they are. Works with DW1 Expanded Roster, whose new Digimon can turn up too."
 game = "dw1"
@@ -10,14 +10,17 @@ script = "main.lua"
 categories = ["GAMEPLAY"]
 tags = ["randomizer", "wild digimon", "enemies", "battle"]
 license = "MIT"
-engine = ">=1.6"
+engine = ">=1.10"
 github = "Jack-The-Gamer/DigimonWorldsReCompiled-mod-index"
 homepage = "https://github.com/Jack-The-Gamer/DigimonWorldsReCompiled-mod-index/tree/HEAD/mods/Jack-The-Gamer@dw1-wild-randomizer"
+
+[hardware]
+ram_mib = 8   # the game's heap moves to the extra 6 MiB: every replacement's model fits
 
 [[option]]
 id = "reroll"
 name = "New Digimon"
-description = "Every visit: each time you enter an area, its wild Digimon are picked again. Fixed: an area always has the same wild Digimon."
+description = "Every visit: each time you enter an area, its wild Digimon are picked again. Fixed: an area always has the same wild Digimon in one playthrough; each save keeps its own, and a New Game gets a new one."
 type = "choice"
 default = "Every visit"
 choices = ["Every visit", "Fixed"]
