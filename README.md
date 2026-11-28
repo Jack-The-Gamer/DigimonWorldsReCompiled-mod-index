@@ -124,7 +124,9 @@ publish** workflow then
 1. checks the mod with `dwrc-cli mod validate` from the latest Re:Compiled release;
 2. if `<id>-v<version>` has no release yet, packs the committed contents of
    `mod/` as `<id>-<version>.zip` (an `<id>/` folder) and publishes it as a
-   GitHub Release of the index tagged `<id>-v<version>`. Its notes are the
+   GitHub Release of the index tagged `<id>-v<version>`, with any `.txt`
+   file at the top of `mod/` (a guide, a list) attached beside the zip as a
+   download of its own. Its notes are the
    message of the last commit that changed the mod, so write that commit
    message for players;
 3. rebuilds the feed, which now lists the new version.

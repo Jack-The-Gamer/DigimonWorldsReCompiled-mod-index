@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Releases each mod hosted in this index whose mod.toml version has no
 # release yet: tag <id>-v<version>, asset <id>-<version>.zip holding an
-# <id>/ folder (the committed contents of mods/<Author>@<id>/mod/).
+# <id>/ folder (the committed contents of mods/<Author>@<id>/mod/), plus
+# each .txt file at the top of mod/ as an asset of its own.
 # The release notes are the message of the last commit that changed the mod.
 set -euo pipefail
 "$TOOL" hosted > "$RUNNER_TEMP/hosted.tsv"
@@ -23,7 +24,10 @@ while IFS=$'\t' read -r folder id version name; do
   if [ -z "$(tr -d '[:space:]' < "$notes")" ]; then
     echo "$name $version" > "$notes"
   fi
-  gh release create "$tag" "$zip_path" --target "$GITHUB_SHA" --title "$name $version" --notes-file "$notes" --latest=false
+  # .txt files at the top of mod/ (a guide, a list) are also attached on their own
+  extra=()
+  for f in "$work"/*.txt; do [ -f "$f" ] && extra+=("$f"); done
+  gh release create "$tag" "$zip_path" ${extra[@]+"${extra[@]}"} --target "$GITHUB_SHA" --title "$name $version" --notes-file "$notes" --latest=false
   echo "Released $tag"
   echo "- released \`$tag\` ($name $version)" >> "$GITHUB_STEP_SUMMARY"
 done < "$RUNNER_TEMP/hosted.tsv"
